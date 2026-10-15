@@ -46,6 +46,25 @@ fn connect_or_start() -> Result<(TcpStream, Value), String> {
     #[cfg(windows)] {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW; independent of GUI lifetime.
+        // Windows inherits all inheritable handles, not only the replacement Stdio handles.
+        // Do not let a detached engine keep its CLI/MCP parent's protocol pipes open.
+        #[link(name = "kernel32")]
+        unsafe extern "system" {
+            fn GetStdHandle(which: u32) -> *mut std::ffi::c_void;
+            fn GetHandleInformation(handle: *mut std::ffi::c_void, flags: *mut u32) -> i32;
+            fn SetHandleInformation(handle: *mut std::ffi::c_void, mask: u32, flags: u32) -> i32;
+        }
+        for which in [-10i32, -11i32, -12i32] {
+            unsafe {
+                let handle = GetStdHandle(which as u32);
+                if handle.is_null() || handle as isize == -1 { continue; }
+                let mut flags = 0u32;
+                if GetHandleInformation(handle, &mut flags) != 0 && flags & 1 != 0
+                    && SetHandleInformation(handle, 1, 0) == 0 {
+                    return Err("cannot isolate fixture parent stdio handles".into());
+                }
+            }
+        }
     }
     let mut child = cmd.spawn().map_err(|e|e.to_string())?;
     loop {

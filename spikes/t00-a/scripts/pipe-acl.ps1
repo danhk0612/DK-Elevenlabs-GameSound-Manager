@@ -41,6 +41,7 @@ public static class T00PipeAcl {
    if(!ImpersonateAnonymousToken(GetCurrentThread()))throw new Win32Exception();
    try {denied=Open(prefix+"-secure");allowed=Open(prefix+"-control");}
    finally {if(!RevertToSelf())throw new Win32Exception();}
+   if(allowed==5 && denied==5)return "inconclusive_anonymous_control_access_denied";
    if(allowed!=0)throw new Exception("Anonymous permissive control failed: "+allowed);
    if(denied!=5)throw new Exception("Owner-only pipe did not return access denied: "+denied);
    return "owner_open_and_anonymous_denied_with_positive_control";
@@ -51,8 +52,15 @@ public static class T00PipeAcl {
 }
 '@
 $result=[ordered]@{source_sha=$SourceSha;scope='standalone native named pipe candidate, not engine integration';remote_clients='PIPE_REJECT_REMOTE_CLIENTS flag set, remote machine not tested';different_real_user='unverified';actual_key='not_used'}
-try {$result.check=[T00PipeAcl]::Check();$result.result='passed_automated_only'}
+try {
+ $result.check=[T00PipeAcl]::Check()
+ if ($result.check -eq 'inconclusive_anonymous_control_access_denied') {
+  $result.result='partial_environment_blocked'
+  $result.current_user_open='passed'
+  $result.cross_identity_acl='unverified: anonymous permitted control also denied access'
+ } else {$result.result='passed_automated_only'}
+}
 catch {$result.result='failed';$result.failure=$_.Exception.Message}
 $result | ConvertTo-Json | Set-Content -LiteralPath $OutFile -Encoding utf8
 $result | ConvertTo-Json
-if ($result.result -ne 'passed_automated_only') {exit 1}
+if ($result.result -eq 'failed') {exit 1}

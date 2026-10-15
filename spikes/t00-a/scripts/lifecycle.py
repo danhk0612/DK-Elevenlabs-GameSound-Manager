@@ -25,7 +25,13 @@ try:
  with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
   values=list(pool.map(lambda i:cli({'op':'status'}) if i%2 else mcp({'op':'status'}),range(8)))
  pid=values[0]['pid'];assert all(v['ok'] and v['pid']==pid for v in values);mark('cli_mcp_concurrent_autostart_one_owner')
+ started=time.monotonic()
  assert mcp({'op':'submit','id':'busy','delay_ms':30000,'cost':1})['ok']
+ report['mcp_submit_elapsed_seconds']=round(time.monotonic()-started,3)
+ assert report['mcp_submit_elapsed_seconds'] < 15
+ if os.name=='nt':
+  r=subprocess.run(['powershell','-NoProfile','-ExecutionPolicy','Bypass','-File',str(pathlib.Path(__file__).with_name('Invoke-Spike.ps1')),'-BinDirectory',str(b),'-Operation','status'],env=env,capture_output=True,text=True,encoding='utf-8',timeout=15)
+  assert r.returncode==0 and json.loads(r.stdout)['pid']==pid and not r.stderr;mark('powershell_51_json_argument_preserved')
  assert cli({'op':'shutdown_if_idle'})['error']=='engine busy';mark('busy_shutdown_if_idle_rejected')
  time.sleep(3.5)
  state=cli({'op':'status'});assert state['pid']==pid and state['jobs'][0]['state']=='running';mark('busy_job_survives_idle_interval_and_mcp_exit')
