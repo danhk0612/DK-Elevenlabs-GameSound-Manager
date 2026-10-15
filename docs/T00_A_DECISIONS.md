@@ -56,3 +56,20 @@ API Key·크레딧, 사용자 게임·음원 변경, 직접 병합·Release/tag�
 - [CredWriteW](https://learn.microsoft.com/en-us/windows/win32/api/wincred/nf-wincred-credwritew), [CryptProtectData](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata): Credential Manager/DPAPI 비교 근거. 사용자 계정 실제 Key 없음.
 
 - [Winsock accept](https://learn.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-accept): accepted socket의 listener 속성 상속 근거. 2026-10-15 재열람. Windows 스파이크에서 연결별 blocking 모드를 명시해 검증한다.
+
+## 후속 격리 검증 (결과 대기)
+
+수명 후보는 환경변수로 opt-in 한다. idle 수치는 fixture 값이며 제품 정책이 아니다.
+동시 CLI/MCP 자동 기동, busy 종료 거절, 작업 중 idle 유지, 완료 후 idle 종료,
+stale endpoint 재기동·자동 재시도 금지와 두 작업공간 독립성을 검사한다.
+사용자 전체 단일 엔진 선택은 여전히 미결정이다.
+
+GUI는 실제 Edge WebDriver로 버튼을 클릭하고 native WM_CLOSE로 닫은 후
+같은 엔진의 작업 결과를 새 GUI에서 확인하며 합성 WAV의 ended 이벤트를 검사한다.
+사용자 데스크톱·스피커 청감은 별도 결과다. named pipe ACL은 native 별도 후보이며
+엔진 IPC 통합·실제 다른 계정·원격 컴퓨터 차단의 증거로 확대하지 않는다.
+
+추가 공식 근거(2026-10-15 다시 열어 접근 확인):
+[Tauri WebDriver](https://v2.tauri.app/develop/tests/webdriver/),
+[Microsoft WebView2 WebDriver](https://learn.microsoft.com/en-us/microsoft-edge/webview2/how-to/webdriver),
+[Named pipe security](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights).

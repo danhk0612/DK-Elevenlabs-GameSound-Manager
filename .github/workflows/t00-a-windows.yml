@@ -67,12 +67,26 @@ jobs:
           ffmpeg -buildconf 2>&1 | Set-Content evidence/ffmpeg-buildconf.txt
           python scripts/verify.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-automatic.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Opt-in engine lifecycle checks
+        run: |
+          python scripts/lifecycle.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-lifecycle.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Native named pipe ACL candidate
+        run: |
+          ./scripts/pipe-acl.ps1 -SourceSha $env:GITHUB_SHA -OutFile evidence/windows-pipe-acl.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Prepare native WebView2 driver
+        run: ./scripts/webdriver-setup.ps1
+      - name: Real GUI commands close reconnect and media
+        run: |
+          python scripts/gui-webdriver.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-gui.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Package isolated verification artifact
         if: always()
         run: |
           New-Item -ItemType Directory -Force artifact/scripts | Out-Null
           Copy-Item target/release/spike-*.exe artifact -ErrorAction SilentlyContinue
-          Copy-Item scripts/verify.py,scripts/credentials.ps1 artifact/scripts
+          Copy-Item scripts/*.py,scripts/*.ps1 artifact/scripts
           Copy-Item Collect-UserResult.ps1,README.md artifact
           Copy-Item evidence/* artifact -ErrorAction SilentlyContinue
           git rev-parse HEAD | Set-Content artifact/source-sha.txt -Encoding utf8

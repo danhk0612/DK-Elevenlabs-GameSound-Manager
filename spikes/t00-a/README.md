@@ -13,3 +13,15 @@ Windows GUI: `cargo build --locked --release --features gui,custom-protocol --bi
 실행/검사 명령은 scripts/verify.py 참조. stdout에는 CLI JSON/MCP JSON-RPC만 출력한다.
 모의 작업은 DB 예약 → 임시 파일 → 최종 파일 → DB 확정이며 비용은 실험용 정수다.
 원격 과금/서비스 멱등성/제품 보안이나 정식 MCP 클라이언트 호환성을 증명하지 않는다.
+
+추가 수명 후보(실험에 명시적으로 설정할 때만): `T00_SPIKE_AUTOSTART=1`,
+`T00_SPIKE_IDLE_MS=500..60000`. 미설정 시 기존 수동 기동·idle 무기한 유지.
+`shutdown_if_idle`은 작업 중 거절, `shutdown`은 중단 상태를 남기고 종료한다.
+수명 검사는 scripts/lifecycle.py, 실제 WebView2 명령·닫기·재연결·재생 이벤트는
+scripts/gui-webdriver.py와 Microsoft Edge WebDriver로 검사한다. GUI 테스트는
+실제 앱 바이너리를 사용하며 invoke mocking과 autoplay 우회 옵션을 쓰지 않는다.
+스크린샷과 ended 이벤트는 사람의 청감 확인을 대체하지 않는다.
+
+scripts/pipe-acl.ps1은 현재 사용자 SID DACL의 native named pipe를 별도로 생성하고,
+익명 토큰을 거절하는지 permissive control과 비교한다. 엔진은 계속 TCP/token
+스파이크이며 named pipe로 전환하거나 사용자 전체 singleton을 채택하지 않았다.

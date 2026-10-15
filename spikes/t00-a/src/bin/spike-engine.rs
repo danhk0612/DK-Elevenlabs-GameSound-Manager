@@ -5,7 +5,7 @@ use std::{
     fs::{self, OpenOptions},
     io::{BufRead, BufReader, Read, Write},
     net::TcpListener,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 fn now() -> i64 {
     SystemTime::now()
@@ -71,11 +71,17 @@ fn command(db: &mut Connection, c: &Value) -> Result<Value, String> {
             tx.commit().map_err(|e| e.to_string())?;
             Ok(json!({"ok":true,"id":id,"duplicate":false}))
         }
+        "shutdown_if_idle" => {
+            let busy: i64 = db.query_row("SELECT count(*) FROM job WHERE state='running'", [], |r| r.get(0)).map_err(|e|e.to_string())?;
+            if busy != 0 { Err("engine busy".into()) } else { Ok(json!({"ok":true,"shutdown":true})) }
+        },
         "shutdown" => Ok(json!({"ok":true,"shutdown":true})),
         _ => Err("unknown operation".into()),
     }
 }
 fn run() -> Result<(), Box<dyn std::error::Error>> {
+    let idle = std::env::var("T00_SPIKE_IDLE_MS").ok().map(|s| s.parse::<u64>()).transpose()?;
+    if idle.is_some_and(|n| !(500..=60000).contains(&n)) { return Err("invalid fixture idle interval".into()); }
     let root = t00_spike::root()?;
     fs::create_dir_all(&root)?;
     let lock = OpenOptions::new()
@@ -99,6 +105,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         use std::os::unix::fs::PermissionsExt;
         fs::set_permissions(&path, fs::Permissions::from_mode(0o600))?;
     }
+    let mut last_activity = Instant::now();
     loop {
         let mut s = db.prepare("SELECT id FROM job WHERE state='running' AND due<=?")?;
         let due = s
@@ -117,7 +124,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 std::process::exit(86);
             }
             db.execute("UPDATE job SET state='succeeded' WHERE id=?", [id])?;
+            last_activity = Instant::now();
         }
+        let running: i64 = db.query_row("SELECT count(*) FROM job WHERE state='running'", [], |r|r.get(0))?;
+        if running == 0 && idle.is_some_and(|ms| last_activity.elapsed() >= Duration::from_millis(ms)) { break; }
         match listener.accept() {
             Ok((mut stream, _)) => {
                 // Winsock accepted sockets inherit the listener nonblocking mode.
@@ -133,6 +143,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                     if v["token"] != token {
                         json!({"ok":false,"error":"unauthorized"})
                     } else {
+                        last_activity = Instant::now();
                         command(&mut db, &v["command"])
                             .unwrap_or_else(|e| json!({"ok":false,"error":e}))
                     }
