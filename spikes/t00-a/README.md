@@ -23,5 +23,8 @@ scripts/gui-webdriver.py와 Microsoft Edge WebDriver로 검사한다. GUI 테스
 스크린샷과 ended 이벤트는 사람의 청감 확인을 대체하지 않는다.
 
 scripts/pipe-acl.ps1은 현재 사용자 SID DACL의 native named pipe를 별도로 생성하고,
-익명 토큰을 거절하는지 permissive control과 비교한다. 엔진은 계속 TCP/token
+다른 실제 로컬 계정 토큰의 접속을 permissive control과 비교한다.
+CI는 `-UseEphemeralCiUser`로 일회용 GitHub-hosted Windows runner에서만
+임시 계정을 생성하고 finally 삭제까지 검사한다. 사용자 PC에서는 이 모드를 거절한다.
+기본 LocalService 후보는 토큰 발급 권한에 따라 실패할 수 있으며 성공을 보장하지 않는다. 엔진은 계속 TCP/token
 스파이크이며 named pipe로 전환하거나 사용자 전체 singleton을 채택하지 않았다.
