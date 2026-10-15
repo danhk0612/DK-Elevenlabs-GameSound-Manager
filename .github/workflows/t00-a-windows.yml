@@ -40,6 +40,7 @@ jobs:
           npm run build
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Build independent entrypoints and GUI
+        id: build
         run: |
           cargo build --locked --release
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -58,6 +59,7 @@ jobs:
           choco install ffmpeg --no-progress -y
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Process and file execution checks
+        id: core_checks
         run: |
           New-Item -ItemType Directory -Force evidence | Out-Null
           git rev-parse HEAD | Set-Content evidence/source-sha.txt -Encoding utf8
@@ -68,16 +70,21 @@ jobs:
           python scripts/verify.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-automatic.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Opt-in engine lifecycle checks
+        if: always() && steps.core_checks.outcome == 'success'
         run: |
           python scripts/lifecycle.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-lifecycle.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Native named pipe ACL candidate
+        if: always() && steps.core_checks.outcome == 'success'
         run: |
           ./scripts/pipe-acl.ps1 -SourceSha $env:GITHUB_SHA -OutFile evidence/windows-pipe-acl.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Prepare native WebView2 driver
+        id: webdriver_setup
+        if: always() && steps.core_checks.outcome == 'success'
         run: ./scripts/webdriver-setup.ps1
       - name: Real GUI commands close reconnect and media
+        if: always() && steps.webdriver_setup.outcome == 'success'
         run: |
           python scripts/gui-webdriver.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-gui.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }

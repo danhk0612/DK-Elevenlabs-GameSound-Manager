@@ -58,7 +58,7 @@ def race_start():
         raise
 
 def mcp_command(c):
-    lines=[{'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-11-25'}},
+    lines=[{'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'fixture','version':'0'}}},
            {'jsonrpc':'2.0','method':'notifications/initialized'},
            {'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'spike_command','arguments':c}}]
     r=run([bin_dir/('spike-mcp'+suffix)],input='\n'.join(map(json.dumps,lines))+'\n')

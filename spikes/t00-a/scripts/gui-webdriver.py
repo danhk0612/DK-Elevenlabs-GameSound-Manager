@@ -47,7 +47,7 @@ def screenshot(name):
 def close_native_window():
  # WM_CLOSE exercises native Tauri close handling; avoid killing the engine process tree.
  handles=[]
- callback=ctypes.WINFUNCTYPE(ctypes.c_bool,ctypes.c_void_p,ctypes.c_void_p)
+ callback=ctypes.WINFUNCTYPE(ctypes.c_int,ctypes.c_void_p,ctypes.c_void_p)
  user=ctypes.windll.user32
  @callback
  def each(hwnd,_):

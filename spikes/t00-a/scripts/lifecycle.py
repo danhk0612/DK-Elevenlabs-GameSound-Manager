@@ -2,8 +2,8 @@
 import argparse, concurrent.futures, json, os, pathlib, platform, signal, subprocess, tempfile, time, traceback
 p=argparse.ArgumentParser();p.add_argument('--bin',required=True);p.add_argument('--sha',required=True);p.add_argument('--out',required=True);a=p.parse_args()
 b=pathlib.Path(a.bin).resolve();root=pathlib.Path(tempfile.mkdtemp(prefix='T00 수명 한글 '));ext='.exe' if os.name=='nt' else ''
-env=dict(os.environ,T00_SPIKE_ROOT=str(root),T00_SPIKE_AUTOSTART='1',T00_SPIKE_IDLE_MS='1500')
-report={'source_sha':a.sha,'os':platform.platform(),'checks':{},'scope':'fixture root only; not user-wide singleton','fixture_idle_ms':1500};roots=[]
+env=dict(os.environ,T00_SPIKE_ROOT=str(root),T00_SPIKE_AUTOSTART='1',T00_SPIKE_IDLE_MS='3000')
+report={'source_sha':a.sha,'os':platform.platform(),'checks':{},'scope':'fixture root only; not user-wide singleton','fixture_idle_ms':3000};roots=[]
 def cli(c,e=None):
  r=subprocess.run([str(b/('spike-cli'+ext)),json.dumps(c)],env=e or env,capture_output=True,text=True,encoding='utf-8',timeout=15)
  v=json.loads(r.stdout);assert (r.returncode==0)==v['ok'] and not r.stderr;return v
@@ -25,17 +25,21 @@ try:
  with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
   values=list(pool.map(lambda i:cli({'op':'status'}) if i%2 else mcp({'op':'status'}),range(8)))
  pid=values[0]['pid'];assert all(v['ok'] and v['pid']==pid for v in values);mark('cli_mcp_concurrent_autostart_one_owner')
- assert mcp({'op':'submit','id':'busy','delay_ms':3500,'cost':1})['ok']
+ assert mcp({'op':'submit','id':'busy','delay_ms':30000,'cost':1})['ok']
  assert cli({'op':'shutdown_if_idle'})['error']=='engine busy';mark('busy_shutdown_if_idle_rejected')
- time.sleep(2)
+ time.sleep(3.5)
  state=cli({'op':'status'});assert state['pid']==pid and state['jobs'][0]['state']=='running';mark('busy_job_survives_idle_interval_and_mcp_exit')
+ cli({'op':'shutdown'})
  wait(lambda:not (root/'endpoint.json').exists())
- assert (root/'busy.fixture').read_text()=='fixture:busy';mark('idle_after_completion_preserves_result')
- again=cli({'op':'status'});assert again['pid']!=pid and again['jobs'][0]['state']=='succeeded';mark('idle_exit_then_auto_reconnect')
+ active=cli({'op':'status'});assert active['jobs'][0]['state']=='interrupted';mark('explicit_busy_shutdown_preserves_interrupted')
+ assert cli({'op':'submit','id':'done','delay_ms':0,'cost':1})['ok']
+ wait(lambda:not (root/'endpoint.json').exists())
+ assert (root/'done.fixture').read_text()=='fixture:done';mark('idle_after_completion_preserves_result')
+ again=cli({'op':'status'});assert again['pid']!=active['pid'] and next(j for j in again['jobs'] if j['id']=='done')['state']=='succeeded';mark('idle_exit_then_auto_reconnect')
  assert cli({'op':'submit','id':'crash','delay_ms':30000,'cost':1})['ok']
  os.kill(again['pid'],signal.SIGTERM);time.sleep(.2)
  restored=cli({'op':'status'});assert restored['pid']!=again['pid']
- assert next(j for j in restored['jobs'] if j['id']=='crash')['state']=='interrupted' and restored['reserved']==2;mark('stale_endpoint_kill_restart_no_replay')
+ assert next(j for j in restored['jobs'] if j['id']=='crash')['state']=='interrupted' and restored['reserved']==3;mark('stale_endpoint_kill_restart_no_replay')
  other=dict(env,T00_SPIKE_ROOT=str(root/'other workspace'));roots.append(other)
  second=cli({'op':'status'},other);assert second['pid']!=restored['pid'] and second['jobs']==[];mark('two_roots_independent_not_user_wide_singleton')
  bad=dict(env,T00_SPIKE_ROOT=str(root/'bad config'),T00_SPIKE_IDLE_MS='bad')
