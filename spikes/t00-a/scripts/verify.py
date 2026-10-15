@@ -43,11 +43,36 @@ def start():
                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     wait_for(lambda: cli({'op':'status'}).get('pid') == engine.pid)
 
+def race_start():
+    global engine
+    contenders = [subprocess.Popen([str(bin_dir/('spike-engine'+suffix))], env=env,
+                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) for _ in range(2)]
+    try:
+        pid=wait_for(lambda: cli({'op':'status'}).get('pid'))
+        engine=next(c for c in contenders if c.pid==pid)
+        loser=next(c for c in contenders if c.pid!=pid)
+        assert loser.wait(5)!=0 and engine.poll() is None
+    except Exception:
+        for c in contenders:
+            if c.poll() is None: c.kill(); c.wait(5)
+        raise
+
+def mcp_command(c):
+    lines=[{'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-11-25'}},
+           {'jsonrpc':'2.0','method':'notifications/initialized'},
+           {'jsonrpc':'2.0','id':2,'method':'tools/call','params':{'name':'spike_command','arguments':c}}]
+    r=run([bin_dir/('spike-mcp'+suffix)],input='\n'.join(map(json.dumps,lines))+'\n')
+    assert r.returncode==0 and not r.stderr
+    replies=list(map(json.loads,r.stdout.splitlines()))
+    assert len(replies)==2 and replies[-1]['id']==2
+    return json.loads(replies[-1]['result']['content'][0]['text'])
+
 def mark(k): report['checks'][k] = 'passed'
 def submit(id, delay=0, cost=1): return cli({'op':'submit','id':id,'delay_ms':delay,'cost':cost})
 
 try:
-    start()
+    race_start()
+    mark('concurrent_first_engine_start_one_owner')
     assert cli({'op':'status'})['jobs'] == []
     dup = run([bin_dir / ('spike-engine'+suffix)])
     assert dup.returncode != 0 and 'already owns' in dup.stderr
@@ -71,10 +96,10 @@ try:
     assert (root/'same.fixture').read_text()=='fixture:same'
     mark('client_exit_job_continues_and_reconnect')
     with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-        results = list(pool.map(lambda i:submit(f'budget-{i}',cost=3),range(8)))
+        results = list(pool.map(lambda i: (submit(f'budget-{i}',cost=3) if i%2==0 else mcp_command({'op':'submit','id':f'budget-{i}','delay_ms':0,'cost':3})),range(8)))
     assert sum(v['ok'] for v in results)==3
     assert cli({'op':'status'})['reserved']==10
-    mark('concurrent_fixture_budget')
+    mark('concurrent_cli_mcp_fixture_budget')
     lines = [
       {'jsonrpc':'2.0','id':1,'method':'initialize','params':{'protocolVersion':'2025-11-25','capabilities':{},'clientInfo':{'name':'fixture','version':'0'}}},
       {'jsonrpc':'2.0','method':'notifications/initialized'},

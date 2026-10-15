@@ -120,6 +120,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         }
         match listener.accept() {
             Ok((mut stream, _)) => {
+                // Winsock accepted sockets inherit the listener nonblocking mode.
+                stream.set_nonblocking(false)?;
                 stream.set_read_timeout(Some(Duration::from_secs(2)))?;
                 stream.set_write_timeout(Some(Duration::from_secs(2)))?;
                 let mut line = String::new();

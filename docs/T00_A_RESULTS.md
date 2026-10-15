@@ -37,3 +37,8 @@ CLI/엔진/MCP 빌드 후 GUI 실패했으며 자동 실행은 건너뛰었다. 
 5. D01~D06 근거를 고성능 Chat/Work에서 사용자와 검토한다. T00-A 실기/설계 게이트 및 사용자 결정 전 T00-B 금지.
 
 Windows artifact는 합성 신호·EXE·스크립트·SHA/도구 정보·해시만 포함하며 FFmpeg 외부 바이너리, 임시 DB·endpoint token·실제 음원은 포함하지 않는다. FFmpeg 재배포 적합성·제품 라이선스는 판정하지 않았다.
+
+수정 SHA `78ace87755f96f11543c8e1c03094129284fc4ef`의
+[run 38692651462](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/38692651462)는 GUI/CLI/엔진/MCP 빌드와 FFmpeg 준비 통과 후 TCP 인증 거절 검사에서 WinError 10054로 실패했다.
+Windows accepted socket의 nonblocking 상속을 고려해 연결별 blocking 모드와 제한시간을 명시하도록 보완한다. 이 실패를 자동 실행 성공으로 취급하지 않는다.
+artifact `11952673670`은 실행 실패 진단용이다. 후속 검사는 동시 첫 기동·CLI/MCP 혼합 경쟁도 포함한다.
