@@ -1,6 +1,6 @@
 # 개발 Task
 
-상태: PREP 완료 / T00-A 진행 중(Windows 실기·IPC/수명 게이트 대기) / T00-B 이후 미착수. [실측·미검증](docs/T00_A_RESULTS.md), [D01~D06 및 조건부 T00-B 계약](docs/T00_A_DECISIONS.md)을 따른다. T00-A를 완료로 닫지 않는다. 우선순위는 PREP → T00-A → 사용자 결정 → T00-B → T01 → T02 → T03 → T04 → T05 → T06이다. API가 없어도 T01을 검증하고, T02의 계정 접근이 막히면 확정된 범위에서 T03을 진행할 수 있다. 후속 Voice/Music 기능은 이 순서에 자동 포함하지 않는다.
+상태: PREP 완료 / T00-A 진행 중(Windows 사용자 실기·IPC 신원/설계 게이트 대기) / T00-B 이후 미착수. [실측·미검증](docs/T00_A_RESULTS.md), [D01~D06 및 조건부 T00-B 계약](docs/T00_A_DECISIONS.md)을 따른다. T00-A를 완료로 닫지 않는다. 우선순위는 PREP → T00-A → 사용자 결정 → T00-B → T01 → T02 → T03 → T04 → T05 → T06이다. API가 없어도 T01을 검증하고, T02의 계정 접근이 막히면 확정된 범위에서 T03을 진행할 수 있다. 후속 Voice/Music 기능은 이 순서에 자동 포함하지 않는다.
 
 ## PREP — 최초 분석·저장소 초기화
 
@@ -84,6 +84,8 @@
 
 ## 다음 Work에 입력할 지시문
 
+core 16·lifecycle 11·실제 GUI 6 자동 검사는 코드 `c7780481a086174fdf476bfc157694bbb8cef4f6`에서 통과했다. 다른 신원 pipe ACL은 익명 허용 대조군도 거절되어 판정 불가이며 통과 수에 포함하지 않는다. 사람의 Windows 10/11 화면·청감과 사용자 결정은 미확보다.
+
 기존 [PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1)과 작업 브랜치를 유지한다. docs/T00_A_RESULTS.md 및 docs/T00_A_WINDOWS_CHECK.md를 먼저 읽고 정확한 최신 코드 SHA의 미확보 결과를 수집한다. 이미 통과한 Linux 검사를 Windows 실기 증거로 대체하지 않는다. T00-B 계약은 조건부 초안이며 지금 착수하지 않는다.
 
 
@@ -94,6 +96,15 @@ https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager 의 T00-A만 수행
 AGENTS.md, PROJECT.md, REQUIREMENTS.md, ARCHITECTURE.md,
 CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md, API_RESEARCH.md를 먼저 읽어.
 기존 작업이 있으면 보존하고 이 지시와 최신 Task 계약을 대조해.
+
+PR #1과 기존 브랜치를 유지해. docs/T00_A_RESULTS.md의 정확한 SHA별
+33개 Windows 자동 실행 증거를 확인하고, 소스 변경/실패가 없으면 반복하지 마.
+사람의 Windows 10/11 화면·청감은 Collect-UserResult.ps1의 ExpectedSha와
+artifact manifest를 확인한 결과로 수집해. 빈 관찰값은 미검증이야.
+다른 신원 IPC는 허용 대조군의 실제 성공이 있어야 차단 효과를 판정해.
+익명 대조군도 거절된 결과나 CI green을 ACL 검증 통과로 바꾸지 마.
+사용자 전체 엔진/계정 예산 소유권과 파일/DB 대조 복구는 제품 계약 미완료야.
+
 
 task/t00-a-technical-spike에서 Windows x64 실행 환경 또는
 정확한 수정 SHA의 사용자 실기 결과 수집 경로를 먼저 확보해.
