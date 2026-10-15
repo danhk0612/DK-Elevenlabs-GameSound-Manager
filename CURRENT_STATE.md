@@ -1,38 +1,18 @@
 # 현재 상태
 
-기준일: 2026-10-15. 단계: **초기 분석·설계·문서화 완료, 제품 구현 전**.
+기준일: 2026-10-16 KST. **T00-A 진행 중: Windows 33개 자동 검사·별도 타 계정 pipe ACL 검사 통과. 사용자 실기·제품 IPC 통합·설계 결정 미완료.**
 
-## 저장소 확인
+- main: `4c3537c55084b71feb5c42eb2340005bf922f197`. 브랜치 `task/t00-a-technical-spike`, [draft PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1).
+- `spikes/t00-a/`의 Rust 공통 명령·엔진·독립 CLI·stdio MCP·Tauri/React/TS GUI·SQLite·합성 음원만 검증했다. 제품 스택·경로·수명 기본값은 채택하지 않았다. 제품 사운드 관리·API 연결·게임 적용 기능은 없다.
+- 검증 코드 SHA `f8aa463bfd02fa84a10c39f32b353cf83d2c7872`의 [Windows CI](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/38809024678)에서 core 16 + lifecycle 11 + 실제 GUI 6 = **33개 자동 검사 통과**, 별도 named pipe ACL 검사도 통과했다. [artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/38809024678/artifacts/12007313423)의 source SHA·전체 manifest 24개 hash·4개 PE x64를 확인했다. ZIP SHA256 `e7895dc45ebea7c7271e64e6dd4a10061a0fb443b871135aa70c1c80416b45a3`.
+- 실제 WebView2 버튼 호출과 CLI 상태 일치, GUI 제출·native 창 종료 뒤 작업 지속·새 GUI 재연결, 합성 WAV 디코딩/재생 종료 이벤트를 확인했다. 스크린샷도 검토했다. **사용자 Windows 10/11 화면·스피커 청감은 미수령**이다.
+- opt-in 자동 기동·기동 경쟁·busy 종료 거절·idle 종료/재기동·두 작업공간 독립성이 통과했다. Windows 백그라운드 엔진의 부모 stdio 핸들 상속으로 MCP EOF가 지연되던 결함을 수정했다. PowerShell 5.1 JSON 인자도 실제 실행 검사했다. idle 값은 fixture이며 사용자 전체 단일 엔진을 구현한 것이 아니다.
+- dummy Credential Manager 쓰기/읽기/삭제, DPAPI CurrentUser 왕복 및 한글/공백 경로 FFmpeg/ffprobe·합성 원본 hash 보존 통과. 실제 Key·크레딧은 사용하지 않았다.
+- 별도 native named pipe 후보에서 실제 다른 표준 로컬 계정의 SID로 허용 대조군 연결(0)·owner 전용 pipe 거절(5)·원래 신원 복귀를 확인했다. GitHub-hosted Windows runner에서만 임시 계정을 만들고 삭제 성공까지 검사했다. 일반 PC에서는 계정 생성 모드를 거절한다. 엔진은 여전히 TCP/token·작업공간 lock이며 엔진 IPC 통합·원격 차단은 미검증이다. 이전 익명 대조군·LocalService·계정 설명 제한 실패는 해당 SHA의 실패로 보존한다.
+- 파일 확정/DB 기록 사이 종료에서 잔여 파일+interrupted를 재현했다. **파일/DB 자동 대조 복구는 미구현**이다. 직접 접근 대안 비교는 SQLite writer 잠금 fixture에 한정된다.
 
-- 대상: danhk0612/DK-Elevenlabs-GameSound-Manager, 공개 저장소.
-- 작업 시작 당시 기본 브랜치 main, 커밋·HEAD SHA 없음(unborn).
-- GitHub API: default_branch=main, size=0. git clone에서 빈 저장소, git status에서 No commits yet를 확인.
-- 원격 branch/ref 조회 결과 없음. 열린 PR 검색 결과 0개. 기존 기준 문서·구현·검증 없음.
-- 이번 초기 기준 커밋은 main에 게시한다. 자신의 SHA는 파일에 자기 참조로 넣지 않으며 git log -1과 원격 HEAD로 확인한다. 이후 검증 기록은 검증 대상 코드 SHA를 명시한다.
+[정확한 SHA·명령·결과·재개 조건](docs/T00_A_RESULTS.md), [D01~D06 권고와 조건부 T00-B 계약](docs/T00_A_DECISIONS.md), [사용자 Windows 수집 절차](docs/T00_A_WINDOWS_CHECK.md).
 
-## 준비된 내용
+다음 작업은 정확한 SHA의 사용자 화면·청감 결과를 수집하고 D01~D06을 검토하는 것이다. 사용자 범위 엔진·계정 예산 원장·파일/DB 대조 복구의 제안과 후속 Task 경계는 결정 문서에 추가했다. 이 제안은 미채택이며 제품 구현이 아니다. D01~D06은 모두 사용자 미결정이다. T00-A를 완료로 닫지 않으며 **T00-B 미착수**다.
 
-README·AGENTS와 6개 기준 문서, API_RESEARCH.md, 텍스트 형식·Git 제외 규칙을 준비했다. 요구사항·권고·미결정을 구분하고 Task별 선행·완료·금지 영역과 다음 지시문을 작성했다.
-
-실제 사용 가능한 GUI·CLI·MCP·DB·작업 큐·API 연결·오디오 처리·게임 적용 기능은 없다. 프로그램 프로젝트 파일·의존성 lockfile·Windows CI도 아직 없다. 최종 기술 선택 전이므로 실행 소스 폴더와 빌드 체계는 T00 검증 이후 준비한다.
-
-## 검증과 제한
-
-| 항목 | 환경·방법 | 결과 |
-| --- | --- | --- |
-| 저장소 상태 | git clone / status / branch -a / ls-remote, GitHub REST 메타데이터·열린 PR 검색 | 빈 main과 기존 작업 없음 확인 |
-| 요구사항·문서 | 입력 인수인계와 작성 문서 대조, 로컬 링크·필수 문서·Task/요구사항 참조 점검 | 검토 완료 |
-| 텍스트 변경 | git diff --cached --check | 초기 커밋 전 통과 |
-| 공식 기술·API 근거 | API_RESEARCH.md의 직접 열람한 공식 페이지 | 문서 지원 확인. 계정 호출 실측과 구분 |
-| 도구 | Linux, Node v24.19.0, Python 3.12.14 | Rust/cargo 없음, Windows 실행 환경 없음 |
-| 제품 빌드·테스트 | 실행 코드·빌드 설정 없음 | 미실행, 통과로 집계하지 않음 |
-| Windows CI·artifact·GUI 실기 | 구성 및 실행 환경 없음 | 미검증. T00-A에서 확보 |
-| ElevenLabs 계정·무료 등급·크레딧 | Key 미수령, 원격 호출 없음 | 미검증. T02에서 별도 검증 |
-
-## 다음 단계와 차단
-
-T00-A를 고성능 Work에서 수행한다. Windows 실행 결과 수집 경로와 도구체인을 먼저 확보한다. 자료가 없으면 실기 부분을 차단으로 남기고 공식 문서만으로 동작 확인을 대신하지 않는다.
-
-D01~D06은 제안 또는 미결정이다. 격리 검증은 가능하지만 최종 스택·경로·프로세스·인증 저장 방식을 제품 기본으로 고정하려면 실측 후 사용자 확인이 필요하다. T00-B 이후에는 설계가 확정된 구현을 저성능 Work로 인계한다.
-
-원격 음원 생성, 원격 Voice 변경·삭제, 사용자 게임 자료 수정, 제품 라이선스 선택, Release/tag를 수행하지 않았다.
+API Key·크레딧·원격 생성, 실제 게임·음원 수정, 제품 라이선스·배포 확정, 직접 병합·Release/tag는 수행하지 않았다.

@@ -1,0 +1,22 @@
+{
+  "source_sha": "f8aa463bfd02fa84a10c39f32b353cf83d2c7872",
+  "scope": "standalone native named pipe candidate, not engine integration",
+  "remote_clients": "PIPE_REJECT_REMOTE_CLIENTS flag set, remote machine not tested",
+  "actual_key": "not_used",
+  "different_real_user": "temporary standard local account, interactive logon token impersonation",
+  "account_changes": "temporary account only on GitHub-hosted runner; cleanup required",
+  "native_evidence": {
+    "owner_sid": "S-1-5-21-3213014087-2684668049-2838998412-500",
+    "client_sid": "S-1-5-21-3213014087-2684668049-2838998412-1003",
+    "impersonated_sid": "S-1-5-21-3213014087-2684668049-2838998412-1003",
+    "reverted_sid": "S-1-5-21-3213014087-2684668049-2838998412-500",
+    "owner_open_error": 0,
+    "protected_open_error": 5,
+    "permitted_control_open_error": 0
+  },
+  "check": "owner_open_and_distinct_user_denied_with_positive_control",
+  "current_user_open": "passed",
+  "cross_identity_acl": "passed: distinct SID permitted control opened, owner-only pipe returned access denied",
+  "result": "passed_automated_only",
+  "account_cleanup": "passed: temporary account removed"
+}
