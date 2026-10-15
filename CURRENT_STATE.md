@@ -1,38 +1,26 @@
 # 현재 상태
 
-기준일: 2026-10-15. 단계: **초기 분석·설계·문서화 완료, 제품 구현 전**.
+기준일: 2026-10-15. 단계: **T00-A 진행 중, Windows 실기/설계 게이트 미완료. 제품 구현 전.**
 
-## 저장소 확인
+- 시작 main: `4c3537c55084b71feb5c42eb2340005bf922f197`. 작업 시작 시 기존 구현·열린 PR 없음.
+- 브랜치: `task/t00-a-technical-spike`, [검토/결과 수집 PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1).
+- `spikes/t00-a/`에만 Rust 공통 요청·단일 엔진·독립 CLI·stdio MCP·Tauri 2/React/TS 최소 GUI, 임시 SQLite/파일·합성 음원 검사, dummy 자격증명 비교 스크립트와 Windows CI를 격리했다. 제품 스택·경로·수명 기본값으로 채택하지 않았다.
+- 실제 사운드 관리·ElevenLabs 연결·사람 승인·게임 적용 제품 기능은 여전히 없다.
 
-- 대상: danhk0612/DK-Elevenlabs-GameSound-Manager, 공개 저장소.
-- 작업 시작 당시 기본 브랜치 main, 커밋·HEAD SHA 없음(unborn).
-- GitHub API: default_branch=main, size=0. git clone에서 빈 저장소, git status에서 No commits yet를 확인.
-- 원격 branch/ref 조회 결과 없음. 열린 PR 검색 결과 0개. 기존 기준 문서·구현·검증 없음.
-- 이번 초기 기준 커밋은 main에 게시한다. 자신의 SHA는 파일에 자기 참조로 넣지 않으며 git log -1과 원격 HEAD로 확인한다. 이후 검증 기록은 검증 대상 코드 SHA를 명시한다.
+## 검증
 
-## 준비된 내용
+[정확한 SHA·명령·환경·결과](docs/T00_A_RESULTS.md), [D01~D06 근거와 조건부 T00-B 계약](docs/T00_A_DECISIONS.md), [Windows 실기 결과 수집](docs/T00_A_WINDOWS_CHECK.md).
 
-README·AGENTS와 6개 기준 문서, API_RESEARCH.md, 텍스트 형식·Git 제외 규칙을 준비했다. 요구사항·권고·미결정을 구분하고 Task별 선행·완료·금지 영역과 다음 지시문을 작성했다.
+Linux에서 Rust 빌드, GUI UI 타입 검사/빌드, 실제 엔진/CLI/MCP 프로세스, 중복 기동·동시 ID/모의 예산·클라이언트 종료 후 작업·재연결, kill/정상 종료 후 중단 상태·예약 보존, SQLite 무결성, 한글/공백 경로 FFmpeg/ffprobe·합성 원본 hash 보존이 통과했다.
 
-실제 사용 가능한 GUI·CLI·MCP·DB·작업 큐·API 연결·오디오 처리·게임 적용 기능은 없다. 프로그램 프로젝트 파일·의존성 lockfile·Windows CI도 아직 없다. 최종 기술 선택 전이므로 실행 소스 폴더와 빌드 체계는 T00 검증 이후 준비한다.
+파일 확정과 DB 기록 사이 종료에서 잔여 파일+interrupted 상태를 재현했다. **자동 파일/DB 대조 복구는 구현하지 않았다.** 직접 라이브러리 접근 대안은 SQLite writer 잠금 fixture 비교에 한정된다.
 
-## 검증과 제한
+Windows CI는 실행 중이다. GUI 화면·GUI 공통 명령 실제 실행·창 종료/재연결·WebView2 청감은 사용자 결과 미수령. CI 성공이나 GUI 프로세스 생존과 구분한다. Credential Manager/DPAPI는 dummy 검사만 허용하며 실제 Key는 사용하지 않았다.
 
-| 항목 | 환경·방법 | 결과 |
-| --- | --- | --- |
-| 저장소 상태 | git clone / status / branch -a / ls-remote, GitHub REST 메타데이터·열린 PR 검색 | 빈 main과 기존 작업 없음 확인 |
-| 요구사항·문서 | 입력 인수인계와 작성 문서 대조, 로컬 링크·필수 문서·Task/요구사항 참조 점검 | 검토 완료 |
-| 텍스트 변경 | git diff --cached --check | 초기 커밋 전 통과 |
-| 공식 기술·API 근거 | API_RESEARCH.md의 직접 열람한 공식 페이지 | 문서 지원 확인. 계정 호출 실측과 구분 |
-| 도구 | Linux, Node v24.19.0, Python 3.12.14 | Rust/cargo 없음, Windows 실행 환경 없음 |
-| 제품 빌드·테스트 | 실행 코드·빌드 설정 없음 | 미실행, 통과로 집계하지 않음 |
-| Windows CI·artifact·GUI 실기 | 구성 및 실행 환경 없음 | 미검증. T00-A에서 확보 |
-| ElevenLabs 계정·무료 등급·크레딧 | Key 미수령, 원격 호출 없음 | 미검증. T02에서 별도 검증 |
+## 차단과 다음 작업
 
-## 다음 단계와 차단
+T00-A를 완료로 닫지 않는다. 남은 Windows 실기, 사용자 ACL IPC·사용자별 소유권·동시 첫 기동·자동 기동/idle 수명 검증을 확보한다. 현재 loopback TCP/token·작업공간별 lock은 제품 계약이 아니다.
 
-T00-A를 고성능 Work에서 수행한다. Windows 실행 결과 수집 경로와 도구체인을 먼저 확보한다. 자료가 없으면 실기 부분을 차단으로 남기고 공식 문서만으로 동작 확인을 대신하지 않는다.
+D01~D06 사용자 결정 없음. 근거 확인·실기 후 고성능 Chat/Work에서 결정하고, T00-A 완료와 문서 반영 뒤 T00-B는 저성능 Work에 인계한다. 조건부 계약 작성만 했으며 T00-B에 착수하지 않았다.
 
-D01~D06은 제안 또는 미결정이다. 격리 검증은 가능하지만 최종 스택·경로·프로세스·인증 저장 방식을 제품 기본으로 고정하려면 실측 후 사용자 확인이 필요하다. T00-B 이후에는 설계가 확정된 구현을 저성능 Work로 인계한다.
-
-원격 음원 생성, 원격 Voice 변경·삭제, 사용자 게임 자료 수정, 제품 라이선스 선택, Release/tag를 수행하지 않았다.
+API Key·크레딧·원격 생성, 실제 게임·음원 수정, 제품 라이선스·정식 배포 방식 확정, 직접 병합·Release/tag·공개 제품 배포는 수행하지 않았다.

@@ -18,6 +18,6 @@ ElevenLabs TTS·SFX 연동과 외부에서 만든 로컬 사운드 관리를 계
 | [AI_WORKFLOW.md](AI_WORKFLOW.md) | 작업 환경 분담과 인수인계 |
 | [API_RESEARCH.md](API_RESEARCH.md) | 공식 API 근거와 확인 한계 |
 
-다음 작업은 **T00-A: Windows 기술 검증 및 설계 결정 준비**입니다. 기술 스택은 제안 상태이며 최종 사용자 결정과 검증을 거쳐 채택합니다.
+현재 **T00-A: Windows 기술 검증 및 설계 결정 준비**를 진행 중입니다. [검증 현황](docs/T00_A_RESULTS.md)과 [Windows 실기 절차](docs/T00_A_WINDOWS_CHECK.md)를 확인하세요. `spikes/t00-a`는 제품이 아닌 격리 실험입니다. 기술 스택은 제안 상태이며 최종 사용자 결정과 검증을 거쳐 채택합니다.
 
 제품 라이선스와 공개 배포 정책은 미결정입니다. 이 저장소에는 API Key, 사용자 음원, 게임 데이터, 빌드된 외부 바이너리를 저장하지 않습니다.

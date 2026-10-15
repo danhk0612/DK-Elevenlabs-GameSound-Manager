@@ -9,7 +9,7 @@ Rust core/engine/CLI/MCP와 Tauri 2 + React/TypeScript GUI를 비교한다.
 `T00_SPIKE_ROOT`가 필요하며 임시 경로로 지정한다. 설치 폴더와 별개다.
 
 개발: `npm ci && npm run build`, `cargo build --locked --release`,
-Windows GUI: `cargo build --locked --release --features gui --bin spike-gui`.
+Windows GUI: `cargo build --locked --release --features gui,custom-protocol --bin spike-gui`.
 실행/검사 명령은 scripts/verify.py 참조. stdout에는 CLI JSON/MCP JSON-RPC만 출력한다.
 모의 작업은 DB 예약 → 임시 파일 → 최종 파일 → DB 확정이며 비용은 실험용 정수다.
 원격 과금/서비스 멱등성/제품 보안이나 정식 MCP 클라이언트 호환성을 증명하지 않는다.

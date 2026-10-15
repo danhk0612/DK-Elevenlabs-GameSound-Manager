@@ -40,3 +40,6 @@ workspace-data/
 spikes/t00-a/evidence/
 spikes/t00-a/artifact/
 spikes/t00-a/user-*.json
+
+spikes/t00-a/icons/
+spikes/t00-a/gen/

@@ -1,6 +1,6 @@
 # 개발 Task
 
-상태: PREP 완료 / 나머지 미착수. 아래 모든 구현 완료 조건은 아직 미검증이다. 우선순위는 PREP → T00-A → 사용자 결정 → T00-B → T01 → T02 → T03 → T04 → T05 → T06이다. API가 없어도 T01을 검증하고, T02의 계정 접근이 막히면 확정된 범위에서 T03을 진행할 수 있다. 후속 Voice/Music 기능은 이 순서에 자동 포함하지 않는다.
+상태: PREP 완료 / T00-A 진행 중(Windows 실기·IPC/수명 게이트 대기) / T00-B 이후 미착수. [실측·미검증](docs/T00_A_RESULTS.md), [D01~D06 및 조건부 T00-B 계약](docs/T00_A_DECISIONS.md)을 따른다. T00-A를 완료로 닫지 않는다. 우선순위는 PREP → T00-A → 사용자 결정 → T00-B → T01 → T02 → T03 → T04 → T05 → T06이다. API가 없어도 T01을 검증하고, T02의 계정 접근이 막히면 확정된 범위에서 T03을 진행할 수 있다. 후속 Voice/Music 기능은 이 순서에 자동 포함하지 않는다.
 
 ## PREP — 최초 분석·저장소 초기화
 
@@ -83,6 +83,9 @@
 - 환경: 고성능 Work 통합 판단, 반복 패키징·검증 저성능 Work. 배포 실행은 별도 사용자 지시.
 
 ## 다음 Work에 입력할 지시문
+
+기존 [PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1)과 작업 브랜치를 유지한다. docs/T00_A_RESULTS.md 및 docs/T00_A_WINDOWS_CHECK.md를 먼저 읽고 정확한 최신 코드 SHA의 미확보 결과를 수집한다. 이미 통과한 Linux 검사를 Windows 실기 증거로 대체하지 않는다. T00-B 계약은 조건부 초안이며 지금 착수하지 않는다.
+
 
 ```text
 https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager 의 T00-A만 수행해.
