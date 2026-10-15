@@ -98,7 +98,7 @@ try {
   foreach ($c in 'a1!'.ToCharArray()) {$password.AppendChar($c)}
   [Array]::Clear($random,0,$random.Length)
   $password.MakeReadOnly()
-  $testUser=New-LocalUser -Name $name -Password $password -Description 'Ephemeral T00-A pipe ACL fixture; removed in finally' -AccountNeverExpires
+  $testUser=New-LocalUser -Name $name -Password $password -Description 'T00-A temporary ACL fixture' -AccountNeverExpires
   Add-LocalGroupMember -SID 'S-1-5-32-545' -Member $testUser.Name
   $passwordPointer=[Runtime.InteropServices.Marshal]::SecureStringToGlobalAllocUnicode($password)
   $result.different_real_user='temporary standard local account, interactive logon token impersonation'
