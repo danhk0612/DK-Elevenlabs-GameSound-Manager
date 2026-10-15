@@ -77,7 +77,7 @@ jobs:
       - name: Native named pipe ACL candidate
         if: always() && steps.core_checks.outcome == 'success'
         run: |
-          ./scripts/pipe-acl.ps1 -SourceSha $env:GITHUB_SHA -OutFile evidence/windows-pipe-acl.json
+          ./scripts/pipe-acl.ps1 -UseEphemeralCiUser -SourceSha $env:GITHUB_SHA -OutFile evidence/windows-pipe-acl.json
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Prepare native WebView2 driver
         id: webdriver_setup
