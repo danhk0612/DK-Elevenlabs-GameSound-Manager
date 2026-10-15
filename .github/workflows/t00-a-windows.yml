@@ -1,0 +1,74 @@
+name: T00-A Windows spike
+on:
+  push:
+    branches: [task/t00-a-technical-spike]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  spike:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: spikes/t00-a
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            spikes/t00-a/target
+          key: t00-windows-${{ hashFiles('spikes/t00-a/Cargo.lock') }}
+      - name: Versions and UI
+        run: |
+          rustup toolchain install 1.99.0 --profile minimal
+          rustup override set 1.99.0
+          rustc -Vv
+          cargo -V
+          node -v
+          npm ci
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Build independent entrypoints and GUI
+        run: |
+          cargo build --locked --release
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo build --locked --release --features gui --bin spike-gui
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Synthetic audio tooling
+        run: |
+          choco install ffmpeg --no-progress -y
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Process and file execution checks
+        run: |
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          git rev-parse HEAD | Set-Content evidence/source-sha.txt -Encoding utf8
+          rustc -Vv | Set-Content evidence/toolchain.txt
+          cargo -V | Add-Content evidence/toolchain.txt
+          node -v | Add-Content evidence/toolchain.txt
+          ffmpeg -buildconf 2>&1 | Set-Content evidence/ffmpeg-buildconf.txt
+          python scripts/verify.py --bin target/release --sha $env:GITHUB_SHA --out evidence/windows-automatic.json
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Package isolated verification artifact
+        if: always()
+        run: |
+          New-Item -ItemType Directory -Force artifact/scripts | Out-Null
+          Copy-Item target/release/spike-*.exe artifact -ErrorAction SilentlyContinue
+          Copy-Item scripts/verify.py,scripts/credentials.ps1 artifact/scripts
+          Copy-Item Collect-UserResult.ps1,README.md artifact
+          Copy-Item evidence/* artifact -ErrorAction SilentlyContinue
+          git rev-parse HEAD | Set-Content artifact/source-sha.txt -Encoding utf8
+          Get-ChildItem artifact -File -Recurse | ForEach-Object { $h=Get-FileHash $_.FullName -Algorithm SHA256; "$($h.Hash)  $($_.FullName.Substring((Resolve-Path artifact).Path.Length+1))" } | Set-Content artifact/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t00-a-windows-${{ github.sha }}
+          path: spikes/t00-a/artifact/
+          retention-days: 14

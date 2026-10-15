@@ -35,3 +35,8 @@ workspace-data/
 # Local artifacts
 *.log
 *.tmp
+
+# T00-A generated verification evidence (selected reports committed explicitly)
+spikes/t00-a/evidence/
+spikes/t00-a/artifact/
+spikes/t00-a/user-*.json
