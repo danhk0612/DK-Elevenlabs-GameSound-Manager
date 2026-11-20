@@ -148,9 +148,10 @@ impl Store {
         no_link(root)?;
         fs::create_dir_all(root)?;
         let root = local_directory(root)?;
-        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,3)?;
+        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,4)?;
         crate::generation::migrate(&mut catalog)?;
         crate::audio::migrate(&mut catalog)?;
+        crate::audio_queue::migrate(&mut catalog)?;
         Ok(Self { root, catalog })
     }
     pub fn default_root() -> Result<PathBuf> {
@@ -712,4 +713,36 @@ fn recover(root: &Path, db: &mut Connection, c: &Value) -> Result<Value> {
         Value::Null
     };
     Ok(json!({"items":items,"next_after":next}))
+}
+
+pub(crate) fn catalog_connection(root: &Path, write: bool) -> Result<Connection> {
+    if !root.is_absolute() {
+        return Err(Error("app_root_must_be_absolute"));
+    }
+    no_link(root)?;
+    let path = root.join("catalog.sqlite3");
+    no_link(&path)?;
+    for name in [
+        "catalog.sqlite3-wal",
+        "catalog.sqlite3-shm",
+        "catalog.sqlite3-journal",
+    ] {
+        no_link(&root.join(name))?;
+    }
+    let db = Connection::open_with_flags(
+        path,
+        if write {
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_WRITE
+        } else {
+            rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY
+        },
+    )?;
+    db.busy_timeout(Duration::from_secs(3))?;
+    let version: i64 = db.pragma_query_value(None, "user_version", |r| r.get(0))?;
+    let app: i64 = db.pragma_query_value(None, "application_id", |r| r.get(0))?;
+    if version != 4 || app != APP_ID {
+        return Err(Error("unsupported_schema"));
+    }
+    db.pragma_update(None, "foreign_keys", true)?;
+    Ok(db)
 }

@@ -221,14 +221,23 @@ type Shared = Arc<Mutex<State>>;
 type Work = (Value, tokio::sync::oneshot::Sender<Value>);
 type Worker = std::sync::mpsc::SyncSender<Work>;
 
-fn storage_worker(shared: Shared) -> Worker {
+fn storage_worker(shared: Shared) -> (Worker, tokio::sync::oneshot::Receiver<()>) {
     let (sender, receiver) = std::sync::mpsc::sync_channel::<Work>(32);
+    let (ready_sender, ready) = tokio::sync::oneshot::channel();
     std::thread::spawn(move || {
         let mut store = crate::storage::Store::default_root()
             .and_then(|p| crate::storage::Store::open(&p))
             .ok();
+        let _ = ready_sender.send(());
+        let mut audio_turn = true;
+        let mut job_deadline = Instant::now() + Duration::from_millis(50);
         loop {
-            match receiver.recv_timeout(Duration::from_millis(50)) {
+            let incoming = if Instant::now() >= job_deadline {
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout)
+            } else {
+                receiver.recv_timeout(job_deadline.saturating_duration_since(Instant::now()))
+            };
+            match incoming {
                 Ok((command, reply)) => {
                     {
                         let mut state = shared.lock().unwrap();
@@ -249,6 +258,8 @@ fn storage_worker(shared: Shared) -> Worker {
                         state.running -= 1;
                         state.generation_queued =
                             store.as_ref().map(crate::generation::pending).unwrap_or(0);
+                        state.audio_queued =
+                            store.as_ref().map(crate::audio_queue::pending).unwrap_or(0);
                         if state.clients == 0 && !state.busy() {
                             state.last_empty = Instant::now();
                         }
@@ -256,24 +267,45 @@ fn storage_worker(shared: Shared) -> Worker {
                     let _ = reply.send(result);
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    job_deadline = Instant::now() + Duration::from_millis(50);
                     if let Some(store) = store.as_mut() {
-                        let pending = crate::generation::pending(store);
-                        if pending == 0 {
-                            continue;
-                        }
+                        let audio;
                         {
                             let mut state = shared.lock().unwrap();
+                            let remote = crate::generation::pending(store);
+                            let local = crate::audio_queue::pending(store);
+                            state.generation_queued = remote;
+                            state.audio_queued = local;
+                            if remote + local == 0 {
+                                continue;
+                            }
+                            audio = local > 0 && (remote == 0 || audio_turn);
+                            audio_turn = !audio;
                             if state.stopping {
                                 continue;
                             }
-                            state.generation_queued = pending - 1;
-                            state.generation_running = 1;
+                            state.generation_queued = remote;
+                            state.audio_queued = local;
+                            if audio {
+                                state.audio_queued = local - 1;
+                                state.audio_running = 1;
+                            } else {
+                                state.generation_queued = remote - 1;
+                                state.generation_running = 1;
+                            }
                         }
-                        let _ = crate::generation::tick(store);
+                        if audio {
+                            let _ = crate::audio_queue::tick(store);
+                        } else {
+                            let _ = crate::generation::tick(store);
+                        }
+                        job_deadline = Instant::now() + Duration::from_millis(50);
                         {
                             let mut state = shared.lock().unwrap();
                             state.generation_running = 0;
+                            state.audio_running = 0;
                             state.generation_queued = crate::generation::pending(store);
+                            state.audio_queued = crate::audio_queue::pending(store);
                             if state.clients == 0 && !state.busy() {
                                 state.last_empty = Instant::now();
                             }
@@ -284,7 +316,7 @@ fn storage_worker(shared: Shared) -> Worker {
             }
         }
     });
-    sender
+    (sender, ready)
 }
 
 async fn dispatch(command: Value, shared: &Shared, worker: &Worker) -> Value {
@@ -293,6 +325,40 @@ async fn dispatch(command: Value, shared: &Shared, worker: &Worker) -> Value {
     }
     if !command["op"].as_str().unwrap().contains('.') {
         return shared.lock().unwrap().execute(&command);
+    }
+    if matches!(
+        command["op"].as_str(),
+        Some("audio.submit" | "audio.get" | "audio.list" | "audio.cancel")
+    ) {
+        {
+            let mut state = shared.lock().unwrap();
+            if state.stopping {
+                return protocol::error("engine_stopping");
+            }
+            state.running += 1;
+        }
+        let result = tokio::task::spawn_blocking(move || {
+            crate::storage::Store::default_root()
+                .and_then(|root| crate::audio_queue::fast(&root, &command))
+        })
+        .await;
+        let mut state = shared.lock().unwrap();
+        state.running -= 1;
+        match crate::storage::Store::default_root()
+            .and_then(|root| crate::audio_queue::pending_at(&root))
+        {
+            Ok(pending) => state.audio_queued = pending,
+            Err(_) => state.audio_queued = state.audio_queued.max(1),
+        }
+        let response = match result {
+            Ok(Ok((value, _))) => protocol::success(value),
+            Ok(Err(error)) => protocol::error(error.0),
+            Err(_) => protocol::error("local_worker_lost"),
+        };
+        if state.clients == 0 && !state.busy() {
+            state.last_empty = Instant::now();
+        }
+        return response;
     }
     if matches!(command["op"].as_str(), Some("job.get" | "job.list")) {
         if shared.lock().unwrap().stopping {
@@ -366,7 +432,11 @@ pub async fn run_engine() -> Result<(), &'static str> {
         .pipe(&name, true)
         .map_err(|_| "pipe_create_failed")?;
     let shared = Arc::new(Mutex::new(State::default()));
-    let worker = storage_worker(shared.clone());
+    let (worker, ready) = storage_worker(shared.clone());
+    time::timeout(Duration::from_secs(10), ready)
+        .await
+        .map_err(|_| "storage_start_timeout")?
+        .map_err(|_| "local_worker_lost")?;
     let mut tick = time::interval(Duration::from_millis(100));
     loop {
         tokio::select! {

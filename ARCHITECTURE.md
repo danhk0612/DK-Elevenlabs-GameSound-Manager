@@ -110,3 +110,9 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 [편집/분석 계약](docs/T03_AUDIO.md)에 따라 catalog schema 3에 도구 경로/hash/version과 프로젝트별 operation snapshot·입력 hash·상태/결과를 추가했다. 프로젝트 DB는 schema 1이다. FFmpeg/ffprobe는 명시적인 신뢰 경로로 설정하며 shell 없이 제한된 인자/timeout/출력 크기로 실행한다. 현재 local audio 명령은 writer에서 동기 실행하며 status는 분리된다. 장시간 async·취소는 후속이다.
 
 출력/검사 수치는 호출마다 명시하고 D08의 제품 기본값을 만들지 않는다. decoded 첫 스트림의 채널별 샘플을 유지해 peak/RMS/quiet/파형·loop seam을 측정한다. 후보는 별도 출력·hash/output_ready → T01 journal 등록 순서로 저장하고 원본/부모/게임 파일을 보존한다. 처리 중 엔진 종료는 interrupted, 수신 완료 파일은 명시적 등록 복구 대상이다. 검증 수치는 주관 적합성/승인과 별개다. 총 39개 명령/MCP 38개 도구가 같은 검증을 사용한다. 과거 절의 schema/명령 수는 해당 버전 기반이다.
+
+## T04 비동기 오디오 보강
+
+[비동기 큐/취소 계약](docs/T04_ASYNC_AUDIO.md)에 따라 catalog schema 4에 cancel_requested/phase/tools_snapshot을 추가했다. 기존 동기 명령은 유지하고 audio.submit은 동일 편집/분석 입력을 정규화하여 즉시 예약한다. 실행 당시 도구/hash·입력 버전을 고정하고 단일 엔진 실행기가 큐를 처리한다. 짧은 제출/상태 조회/취소는 migration/재시작 정리를 하지 않는 별도 catalog 연결로 처리한다.
+
+취소 플래그를 외부 프로세스/PCM 측정·단계 사이에서 대조하고 output_ready 전환/분석 완료 기록과 원자적으로 조정한다. output_ready 이후에는 취소 대신 등록/복구를 보존한다. 재기동 자동 재생은 없고 큐/실행은 interrupted 또는 이미 취소 요청됐으면 cancelled다. 실행 중 status와 audio 제출/조회/취소를 사용할 수 있으며 다른 일반 명령은 계속 직렬일 수 있다. 전체 41개 공통 명령/MCP 40개 도구다. T04 실제 AI 클라이언트 호환·검토 제출과 T05 승인/게임 적용은 별도다.

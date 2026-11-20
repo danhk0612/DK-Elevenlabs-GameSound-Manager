@@ -31,7 +31,7 @@ CREATE UNIQUE INDEX audio_edit_target ON audio_operations(project_id,asset_id,ve
         tx.pragma_update(None, "user_version", 3)?;
         tx.commit()?;
     }
-    db.execute("UPDATE audio_operations SET state='interrupted',error='engine_restarted' WHERE state='processing'",[])?;
+
     Ok(())
 }
 fn exe(path: &str) -> Result<PathBuf> {
@@ -81,18 +81,22 @@ fn tools(store: &Store) -> Result<Value> {
         .optional()?
         .ok_or(Error("audio_tools_not_configured"))?;
     let v: Value = serde_json::from_str(&text).map_err(|_| Error("audio_tools_invalid"))?;
+    verify_tools(&v)?;
+    Ok(v)
+}
+pub(crate) fn verify_tools(v: &Value) -> Result<()> {
     for key in ["ffmpeg", "ffprobe"] {
         let path = exe(s(&v[key], "path"))?;
         if storage::hash_file(&path)?.0 != s(&v[key], "sha256") {
             return Err(Error("audio_tool_changed"));
         }
     }
-    Ok(v)
+    Ok(())
 }
 fn versions(tools: &Value) -> Value {
     json!({"ffmpeg":{"version":tools["ffmpeg"]["version"],"sha256":tools["ffmpeg"]["sha256"]},"ffprobe":{"version":tools["ffprobe"]["version"],"sha256":tools["ffprobe"]["sha256"]}})
 }
-fn source(store: &mut Store, c: &Value) -> Result<Value> {
+pub(crate) fn source(store: &mut Store, c: &Value) -> Result<Value> {
     let command = json!({"protocol_version":1,"op":"asset.file","project_id":c["project_id"],"asset_id":c["asset_id"],"version_id":if c["op"]=="audio.edit"{&c["parent_version_id"]}else{&c["version_id"]}});
     let result = store.execute(&command);
     if result["ok"] != true {
@@ -100,7 +104,7 @@ fn source(store: &mut Store, c: &Value) -> Result<Value> {
     }
     Ok(result["data"].clone())
 }
-fn probe(tools: &Value, path: &Path) -> Result<Value> {
+fn probe(tools: &Value, path: &Path, control: &crate::audio_queue::Control) -> Result<Value> {
     let mut args = strings(&[
         "-v",
         "error",
@@ -116,12 +120,13 @@ fn probe(tools: &Value, path: &Path) -> Result<Value> {
         "json",
     ]);
     args.push(path.to_string_lossy().to_string());
-    let bytes = audio_process::run(
+    let bytes = audio_process::run_controlled(
         Path::new(s(&tools["ffprobe"], "path")),
         &args,
         None,
         128 * 1024,
         Duration::from_secs(15),
+        &|| control.check(),
     )?;
     let v: Value = serde_json::from_slice(&bytes).map_err(|_| Error("audio_probe_invalid"))?;
     let stream = v["streams"]
@@ -148,9 +153,16 @@ fn op_dir(store: &Store, id: &str) -> Result<PathBuf> {
     storage::directory(&dir)?;
     Ok(dir)
 }
-fn analyze(store: &Store, c: &Value, input: &Value, tools: &Value) -> Result<Value> {
+fn analyze(
+    store: &Store,
+    c: &Value,
+    input: &Value,
+    tools: &Value,
+    control: &crate::audio_queue::Control,
+) -> Result<Value> {
     let path = Path::new(s(input, "path"));
-    let info = probe(tools, path)?;
+    control.phase("probing")?;
+    let info = probe(tools, path, control)?;
     let dir = op_dir(store, s(c, "operation_id"))?;
     let pcm = dir.join("decoded.f32");
     storage::no_link(&pcm)?;
@@ -180,18 +192,22 @@ fn analyze(store: &Store, c: &Value, input: &Value, tools: &Value) -> Result<Val
         "f32le",
         "pipe:1",
     ]));
-    audio_process::run(
+    control.phase("decoding")?;
+    audio_process::run_controlled(
         Path::new(s(&tools["ffmpeg"], "path")),
         &args,
         Some(output),
         PCM_LIMIT,
         Duration::from_secs(90),
+        &|| control.check(),
     )?;
-    let stats = statistics(
+    control.phase("measuring")?;
+    let stats = statistics_controlled(
         &pcm,
         info["sample_rate"].as_u64().unwrap(),
         info["channels"].as_u64().unwrap(),
         c,
+        &|| control.check(),
     )?;
     if storage::hash_file(path)?.0 != s(input, "sha256") {
         return Err(Error("audio_source_changed"));
@@ -208,7 +224,18 @@ fn db(value: f64) -> Value {
         Value::Null
     }
 }
+#[cfg(test)]
 fn statistics(path: &Path, rate: u64, channels: u64, c: &Value) -> Result<Value> {
+    statistics_controlled(path, rate, channels, c, &|| Ok(()))
+}
+fn statistics_controlled(
+    path: &Path,
+    rate: u64,
+    channels: u64,
+    c: &Value,
+    check: &dyn Fn() -> Result<()>,
+) -> Result<Value> {
+    check()?;
     let file = File::open(path)?;
     let bytes = file.metadata()?.len();
     let stride = channels * 4;
@@ -251,6 +278,9 @@ fn statistics(path: &Path, rate: u64, channels: u64, c: &Value) -> Result<Value>
         }
     };
     for frame in 0..frames {
+        if frame % 4096 == 0 {
+            check()?;
+        }
         let index = (frame * count as u64 / frames) as usize;
         let mut frame_peak = 0.0f64;
         for ch in 0..channels {
@@ -303,14 +333,20 @@ fn statistics(path: &Path, rate: u64, channels: u64, c: &Value) -> Result<Value>
     "quiet_ms":quiet as f64*1000.0/rate as f64,"longest_quiet_ms":longest as f64*1000.0/rate as f64,"silence_region_count":region_count,"silence_regions":regions,"silence_regions_truncated":region_count>32,"waveform":wave,"waveform_channels":"combined_min_max","loop_seam_sample_delta":seam,"true_peak_lufs":"not_measured"}),
     )
 }
-fn operation(store: &Store, project: &str, id: &str) -> Result<Value> {
+pub(crate) fn operation(store: &Store, project: &str, id: &str) -> Result<Value> {
     store.project(project)?;
-    store.catalog.query_row("SELECT kind,state,result,error,input_hash,snapshot FROM audio_operations WHERE project_id=?1 AND id=?2",params![project,id],|r|{
+    store.catalog.query_row("SELECT kind,state,result,error,input_hash,snapshot,cancel_requested,phase,tools_snapshot FROM audio_operations WHERE project_id=?1 AND id=?2",params![project,id],|r|{
         let result:Option<String>=r.get(2)?;let request:String=r.get(5)?;
-        Ok(json!({"operation_id":id,"project_id":project,"kind":r.get::<_,String>(0)?,"state":r.get::<_,String>(1)?,"result":result.and_then(|s|serde_json::from_str::<Value>(&s).ok()),"error":r.get::<_,Option<String>>(3)?,"input_sha256":r.get::<_,String>(4)?,"request":serde_json::from_str::<Value>(&request).ok()}))
+        Ok(json!({"operation_id":id,"project_id":project,"kind":r.get::<_,String>(0)?,"state":r.get::<_,String>(1)?,"result":result.and_then(|s|serde_json::from_str::<Value>(&s).ok()),"error":r.get::<_,Option<String>>(3)?,"input_sha256":r.get::<_,String>(4)?,"request":serde_json::from_str::<Value>(&request).ok(),"cancel_requested":r.get::<_,bool>(6)?,"phase":r.get::<_,String>(7)?,"tool_snapshot":r.get::<_,Option<String>>(8)?.and_then(|t|serde_json::from_str::<Value>(&t).ok()).map(|v|versions(&v))}))
     }).optional()?.ok_or(Error("audio_operation_not_found"))
 }
-fn edit(store: &mut Store, c: &Value, input: &Value, tools: &Value) -> Result<Value> {
+fn edit(
+    store: &mut Store,
+    c: &Value,
+    input: &Value,
+    tools: &Value,
+    control: &crate::audio_queue::Control,
+) -> Result<Value> {
     let path = Path::new(s(input, "path"));
     // Decode once to verify real frame count; container duration can be inaccurate.
     let mut measure = c.clone();
@@ -321,7 +357,7 @@ fn edit(store: &mut Store, c: &Value, input: &Value, tools: &Value) -> Result<Va
     // Edit has optional loop metadata in output coordinates, not source coordinates.
     measure.as_object_mut().unwrap().remove("loop_start_ms");
     measure.as_object_mut().unwrap().remove("loop_end_ms");
-    let report = analyze(store, &measure, input, tools)?;
+    let report = analyze(store, &measure, input, tools, control)?;
     if n(c, "end_ms") > n(&report["metrics"], "duration_ms") + 0.001 {
         return Err(Error("audio_trim_out_of_range"));
     }
@@ -396,14 +432,17 @@ fn edit(store: &mut Store, c: &Value, input: &Value, tools: &Value) -> Result<Va
     ]));
     args.extend(codec);
     args.push("pipe:1".into());
-    audio_process::run(
+    control.phase("encoding")?;
+    audio_process::run_controlled(
         Path::new(s(&tools["ffmpeg"], "path")),
         &args,
         Some(output),
         PCM_LIMIT,
         Duration::from_secs(90),
+        &|| control.check(),
     )?;
-    let output_info = probe(tools, &file)?;
+    control.phase("checking_output")?;
+    let output_info = probe(tools, &file, control)?;
     if output_info["sample_rate"] != c["sample_rate"] || output_info["channels"] != c["channels"] {
         return Err(Error("audio_output_mismatch"));
     }
@@ -412,7 +451,7 @@ fn edit(store: &mut Store, c: &Value, input: &Value, tools: &Value) -> Result<Va
     }
     let hash = storage::hash_file(&file)?.0;
     let details = json!({"tools":versions(tools),"output_metadata":output_info,"loop_start_ms":c["loop_start_ms"],"loop_end_ms":c["loop_end_ms"],"approval":"not_granted"});
-    store.catalog.execute("UPDATE audio_operations SET state='output_ready',extension=?2,output_hash=?3,result=?4 WHERE id=?1",params![s(c,"operation_id"),ext,hash,details.to_string()])?;
+    crate::audio_queue::publish_output(store, s(c, "operation_id"), ext, &hash, &details)?;
     attach(store, c, input, &details)?;
     operation(store, s(c, "project_id"), s(c, "operation_id"))
 }
@@ -445,13 +484,19 @@ fn attach(store: &mut Store, c: &Value, input: &Value, details: &Value) -> Resul
     let mut result = details.clone();
     result["candidate"] = candidate;
     store.catalog.execute(
-        "UPDATE audio_operations SET state='succeeded',result=?2,error=NULL WHERE id=?1",
+        "UPDATE audio_operations SET state='succeeded',phase='completed',result=?2,error=NULL WHERE id=?1",
         params![s(c, "operation_id"), result.to_string()],
     )?;
     Ok(())
 }
 pub fn command(store: &mut Store, c: &Value) -> Result<Value> {
     let op = s(c, "op");
+    if op == "audio.submit" {
+        return crate::audio_queue::submit(store, c);
+    }
+    if op == "audio.cancel" {
+        return crate::audio_queue::cancel(store, c);
+    }
     if op == "audio.tools.set" {
         let ffmpeg = tool(s(c, "ffmpeg_path"))?;
         let ffprobe = tool(s(c, "ffprobe_path"))?;
@@ -470,8 +515,8 @@ pub fn command(store: &mut Store, c: &Value) -> Result<Value> {
     if op == "audio.list" {
         store.project(s(c, "project_id"))?;
         let limit = c["limit"].as_i64().unwrap_or(10);
-        let mut statement=store.catalog.prepare("SELECT id,kind,state,asset_id,version_id,error FROM audio_operations WHERE project_id=?1 AND id>?2 ORDER BY id LIMIT ?3")?;
-        let items=statement.query_map(params![s(c,"project_id"),s(c,"after"),limit],|r|Ok(json!({"operation_id":r.get::<_,String>(0)?,"kind":r.get::<_,String>(1)?,"state":r.get::<_,String>(2)?,"asset_id":r.get::<_,String>(3)?,"version_id":r.get::<_,String>(4)?,"error":r.get::<_,Option<String>>(5)?})))?.collect::<std::result::Result<Vec<_>,_>>()?;
+        let mut statement=store.catalog.prepare("SELECT id,kind,state,asset_id,version_id,error,cancel_requested,phase FROM audio_operations WHERE project_id=?1 AND id>?2 ORDER BY id LIMIT ?3")?;
+        let items=statement.query_map(params![s(c,"project_id"),s(c,"after"),limit],|r|Ok(json!({"operation_id":r.get::<_,String>(0)?,"kind":r.get::<_,String>(1)?,"state":r.get::<_,String>(2)?,"asset_id":r.get::<_,String>(3)?,"version_id":r.get::<_,String>(4)?,"error":r.get::<_,Option<String>>(5)?,"cancel_requested":r.get::<_,bool>(6)?,"phase":r.get::<_,String>(7)?})))?.collect::<std::result::Result<Vec<_>,_>>()?;
         return Ok(
             json!({"next_after":if items.len()==limit as usize{items.last().map(|v|v["operation_id"].clone())}else{None},"items":items}),
         );
@@ -526,21 +571,33 @@ pub fn command(store: &mut Store, c: &Value) -> Result<Value> {
         }
     }
     store.catalog.execute("INSERT INTO audio_operations(id,project_id,kind,snapshot,input_hash,state,asset_id,version_id) VALUES(?1,?2,?3,?4,?5,'processing',?6,?7)",params![id,s(c,"project_id"),op,c.to_string(),s(&input,"sha256"),s(c,"asset_id"),s(c,"version_id")])?;
-    let result = if op == "audio.analyze" {
-        analyze(store, c, &input, &tools).and_then(|report| {
-            store.catalog.execute(
-                "UPDATE audio_operations SET state='succeeded',result=?2 WHERE id=?1",
-                params![id, report.to_string()],
-            )?;
-            operation(store, s(c, "project_id"), id)
-        })
-    } else {
-        edit(store, c, &input, &tools)
-    };
+    store.catalog.execute(
+        "UPDATE audio_operations SET phase='starting',tools_snapshot=?2 WHERE id=?1",
+        params![id, tools.to_string()],
+    )?;
+    let control = crate::audio_queue::Control::new(&store.root, id)?;
+    let result = run_registered(store, c, &input, &tools, &control);
     if let Err(error) = &result {
-        store.catalog.execute("UPDATE audio_operations SET state=CASE WHEN state='processing' THEN 'failed' ELSE state END,error=?2 WHERE id=?1 AND state IN ('processing','output_ready')",params![id,error.0])?;
+        crate::audio_queue::fail(store, id, error)?;
     }
     result
+}
+pub(crate) fn run_registered(
+    store: &mut Store,
+    c: &Value,
+    input: &Value,
+    tools: &Value,
+    control: &crate::audio_queue::Control,
+) -> Result<Value> {
+    let id = s(c, "operation_id");
+    control.check()?;
+    if c["op"] == "audio.analyze" {
+        let report = analyze(store, c, input, tools, control)?;
+        if store.catalog.execute("UPDATE audio_operations SET state='succeeded',phase='completed',result=?2 WHERE id=?1 AND state='processing' AND cancel_requested=0",params![id,report.to_string()])?==0{return Err(Error("audio_cancelled"));}
+        operation(store, s(c, "project_id"), id)
+    } else {
+        edit(store, c, input, tools, control)
+    }
 }
 
 #[cfg(test)]

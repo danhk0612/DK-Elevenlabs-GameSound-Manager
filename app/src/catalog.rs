@@ -243,6 +243,40 @@ pub const COMMANDS: &[Command] = &[
         read_only: false,
     },
     Command {
+        op: "audio.submit",
+        required: &[
+            "project_id",
+            "asset_id",
+            "version_id",
+            "operation_id",
+            "action",
+        ],
+        optional: &[
+            "parent_version_id",
+            "start_ms",
+            "end_ms",
+            "gain_db",
+            "fade_in_ms",
+            "fade_out_ms",
+            "output_format",
+            "sample_rate",
+            "channels",
+            "waveform_bins",
+            "silence_db",
+            "silence_min_ms",
+            "clip_level",
+            "loop_start_ms",
+            "loop_end_ms",
+        ],
+        read_only: false,
+    },
+    Command {
+        op: "audio.cancel",
+        required: &["project_id", "operation_id"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
         op: "audio.tools.set",
         required: &["ffmpeg_path", "ffprobe_path"],
         optional: &[],
@@ -314,6 +348,7 @@ pub fn find(op: &str) -> Option<&'static Command> {
 }
 pub fn field_schema(key: &str) -> Value {
     match key {
+        "action" => json!({"type":"string","enum":["edit","analyze"]}),
         "silence_min_ms" => json!({"type":"integer","minimum":1,"maximum":86400000}),
         "sample_rate" => {
             json!({"type":"integer","enum":[8000,16000,22050,24000,32000,44100,48000,96000]})
@@ -366,9 +401,20 @@ pub fn tools() -> Vec<Value> {
         if c.op=="job.submit" { properties.insert("output_format".into(),json!({"type":"string","enum":["mp3_44100_128"]})); }
         if c.op=="audio.edit" { properties.insert("output_format".into(),json!({"type":"string","enum":["wav_pcm_s16le","ogg_vorbis_q4","mp3_128k"]})); }
 
+        let mut schema=json!({"type":"object","properties":properties,"required":c.required,"additionalProperties":false});
+        if c.op=="audio.submit" {
+            let choices=[("edit","audio.edit"),("analyze","audio.analyze")].iter().map(|(action,op)|{
+                let definition=find(op).unwrap();let mut fields=serde_json::Map::new();
+                for key in definition.required.iter().chain(definition.optional){fields.insert((*key).to_string(),field_schema(key));}
+                if *action=="edit"{fields.insert("output_format".into(),json!({"type":"string","enum":["wav_pcm_s16le","ogg_vorbis_q4","mp3_128k"]}));}
+                fields.insert("action".into(),json!({"type":"string","const":action}));
+                let mut required=definition.required.to_vec();required.push("action");
+                json!({"type":"object","properties":fields,"required":required,"additionalProperties":false})
+            }).collect::<Vec<_>>();schema["oneOf"]=json!(choices);
+        }
         json!({"name":format!("sound_{}",c.op.replace('.',"_")),
             "description":format!("{}: Explicit project_id scopes project data. Mock operations are local. ElevenLabs operations require configured credentials and policy; generation creates candidates only. Never applies to game files.",c.op),
-            "inputSchema":{"type":"object","properties":properties,"required":c.required,"additionalProperties":false},
+            "inputSchema":schema,
             "annotations":{"readOnlyHint":c.read_only,"destructiveHint":false,"idempotentHint":!matches!(c.op,"job.cancel"),"openWorldHint":matches!(c.op,"account.refresh"|"voice.list"|"voice.get"|"voice.settings"|"model.list"|"job.submit")}})
     }).collect()
 }
@@ -383,6 +429,12 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
         .and_then(Value::as_str)
         .ok_or("invalid_request")?;
     let definition = find(op).ok_or("unsupported_operation")?;
+    if op == "audio.submit" {
+        return crate::audio_queue::canonical(command)
+            .map(|_| ())
+            .map_err(|e| e.0);
+    }
+
     for key in object.keys() {
         if key != "op"
             && key != "protocol_version"

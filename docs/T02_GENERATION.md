@@ -1,5 +1,7 @@
 # T02 — 계정 연결·한도·후보 생성 v0.3.0
 
+v0.5.0의 catalog schema 4·41개 명령/MCP 40개 도구, 비동기 제출/조회·취소는 [T04 보강 계약](T04_ASYNC_AUDIO.md)을 함께 따른다. 이 문서의 동기 명령은 유지한다.
+
 이 문서는 v0.3.0의 생성 계약이다. v0.4.0 catalog schema 3·총 39개 명령/MCP 38개 도구와 로컬 편집/분석은 [T03 계약](T03_AUDIO.md)을 함께 따른다.
 
 AI 자동화용 공통 명령을 먼저 제공한다. Windows engine/CLI/stdio MCP가 같은 정책·큐를 사용한다. T01 기능은 유지하며 총 32개 명령, shutdown을 제외한 MCP 31개 도구다. `dk-sound-cli schema`가 정확한 필수/선택 필드와 형식의 기준이다. GUI는 기존 목록/재생에 Key·한도 설정/연결 해제만 추가했다.

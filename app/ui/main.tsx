@@ -29,6 +29,7 @@ function App() {
   const [credits, setCredits] = useState('');
   const [comparison, setComparison] = useState<{source: string; label: string} | null>(null);
   const [operation, setOperation] = useState('');
+  const [task, setTask] = useState<{project: string; id: string; state: string; phase: string; cancelling: boolean} | null>(null);
   const [waveform, setWaveform] = useState<number[][]>([]);
   const [measurement, setMeasurement] = useState('');
 
@@ -120,7 +121,19 @@ function App() {
       {audio && <audio key={`${project}/${asset}/${version}`} controls src={audio} onError={() => setMessage('재생할 수 없는 형식이거나 파일입니다. 해당 코덱의 WebView2 지원을 확인하세요.')} />}
       {audio && <button disabled={busy} onClick={() => setComparison({source: audio, label: `${project} / ${asset} / ${version}`})}>비교용으로 보관</button>}
       {comparison && <div><p>비교 버전: {comparison.label}</p><audio controls src={comparison.source} /><button disabled={busy} onClick={() => setComparison(null)}>비교 닫기</button></div>}
-      <div className="line"><label>검사 작업 ID <input disabled={busy} value={operation} onChange={e => setOperation(e.target.value)} /></label>
+      <div className="line"><label>작업 ID <input disabled={busy} value={operation} onChange={e => { setOperation(e.target.value); setTask(null); }} /></label>
+        <button disabled={busy || !operation || !project} onClick={() => run(async () => {
+          const record = await query('audio.get', { project_id: project, operation_id: operation }) as {state: string; phase: string; cancel_requested: boolean};
+          setTask({project, id: operation, state: record.state, phase: record.phase, cancelling: record.cancel_requested});
+          setDetails(JSON.stringify(record, null, 2)); setMessage(`작업 ${record.state} · ${record.phase}${record.cancel_requested ? ' · 취소 요청됨' : ''}`);
+        })}>작업 상태</button>
+        <button disabled={busy || !task || task.project !== project || task.id !== operation || task.cancelling || !['queued','processing','interrupted'].includes(task.state)} onClick={() => run(async () => {
+          const reply = await invoke<Reply>('cancel_audio', { projectId: project, operationId: operation });
+          if (!reply.ok) throw new Error(reply.error?.code ?? '취소 요청 실패');
+          const record = reply.data as {state: string; phase: string; cancel_requested: boolean};
+          setTask({project, id: operation, state: record.state, phase: record.phase, cancelling: record.cancel_requested});
+          setMessage(record.state === 'cancelled' ? '작업을 취소했습니다.' : '취소를 요청했습니다. 작업 상태에서 완료 여부를 확인하세요.');
+        })}>취소 요청</button>
         <button disabled={busy || !operation || !project || !asset || !version} onClick={() => run(async () => {
           setWaveform([]); setMeasurement('');
           const record = await query('audio.get', { project_id: project, operation_id: operation }) as {state: string; request: {asset_id: string; version_id: string}; result?: {metadata?: {sample_rate: number; channels: number}; metrics?: {duration_ms: number; sample_peak_dbfs: number | null; rms_dbfs: number | null; waveform: number[][]}}};

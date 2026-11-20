@@ -18,6 +18,11 @@ async fn local_query(command: Value) -> Value {
 }
 
 #[tauri::command]
+async fn cancel_audio(project_id: String, operation_id: String) -> Value {
+    dk_gamesound::request(json!({"protocol_version":1,"op":"audio.cancel","project_id":project_id,"operation_id":operation_id})).await
+}
+
+#[tauri::command]
 async fn audio_source(
     project_id: String,
     asset_id: String,
@@ -105,6 +110,7 @@ fn main() {
             sound_status,
             local_query,
             audio_source,
+            cancel_audio,
             save_connection,
             disconnect_connection
         ])

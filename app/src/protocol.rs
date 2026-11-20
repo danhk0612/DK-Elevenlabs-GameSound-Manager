@@ -53,6 +53,8 @@ pub struct State {
     pub running: usize,
     pub generation_queued: usize,
     pub generation_running: usize,
+    pub audio_queued: usize,
+    pub audio_running: usize,
     pub stopping: bool,
     pub shutdown_flushed: bool,
     pub last_empty: Instant,
@@ -66,6 +68,8 @@ impl Default for State {
             running: 0,
             generation_queued: 0,
             generation_running: 0,
+            audio_queued: 0,
+            audio_running: 0,
             stopping: false,
             shutdown_flushed: false,
             last_empty: Instant::now(),
@@ -89,6 +93,8 @@ impl State {
             || self.running != 0
             || self.generation_queued != 0
             || self.generation_running != 0
+            || self.audio_queued != 0
+            || self.audio_running != 0
     }
     pub fn idle_expired(&self, now: Instant) -> bool {
         self.clients == 0 && !self.busy() && now.duration_since(self.last_empty) >= IDLE_TIMEOUT
@@ -110,11 +116,11 @@ impl State {
                 let mut data = json!({"name":"DK-Elevenlabs-GameSound-Manager",
                     "version":env!("CARGO_PKG_VERSION"),"engine_pid":std::process::id(),
                     "capabilities":crate::catalog::COMMANDS.iter().map(|c|c.op).collect::<Vec<_>>(),
-                    "stage":"T03","sound_features_available":true,"remote_generation_available":true,"remote_generation_requires":"local_credentials_and_explicit_limits"});
+                    "stage":"T04","sound_features_available":true,"remote_generation_available":true,"remote_generation_requires":"local_credentials_and_explicit_limits"});
                 if op == "status" {
                     data["state"] = json!("ready");
                     data["connected_clients"] = json!(self.clients);
-                    data["jobs"] = json!({"available":true,"scope":"serialized_local_and_generation","generation_queued":self.generation_queued,"generation_running":self.generation_running,"queued":self.queued+self.generation_queued,"running":self.running+self.generation_running});
+                    data["jobs"] = json!({"available":true,"scope":"serialized_local_and_generation","generation_queued":self.generation_queued,"generation_running":self.generation_running,"audio_queued":self.audio_queued,"audio_running":self.audio_running,"queued":self.queued+self.generation_queued+self.audio_queued,"running":self.running+self.generation_running+self.audio_running});
                     data["idle_timeout_ms"] = json!(IDLE_TIMEOUT.as_millis());
                     data["transport"] = json!("windows_named_pipe_owner_sid_local_only");
                 }
@@ -156,6 +162,22 @@ mod tests {
         state.disconnect(start + IDLE_TIMEOUT * 2);
         assert!(!state.idle_expired(start + IDLE_TIMEOUT * 2 + Duration::from_secs(299)));
         assert!(state.idle_expired(start + IDLE_TIMEOUT * 3));
+    }
+    #[test]
+    fn audio_queue_and_execution_prevent_shutdown_and_idle() {
+        for running in [false, true] {
+            let mut state = State::default();
+            if running {
+                state.audio_running = 1;
+            } else {
+                state.audio_queued = 1;
+            }
+            assert!(!state.idle_expired(state.last_empty + IDLE_TIMEOUT));
+            assert_eq!(
+                state.execute(&json!({"protocol_version":1,"op":"shutdown"}))["error"]["code"],
+                "engine_busy"
+            );
+        }
     }
     #[test]
     fn shutdown_needs_response_and_rejects_further_commands() {

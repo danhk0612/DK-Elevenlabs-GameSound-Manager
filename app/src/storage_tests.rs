@@ -778,3 +778,381 @@ fn audio_real_bad_input_conflicts_changed_tools_and_restart_do_not_overwrite() {
         "audio_operation_id_conflict"
     );
 }
+
+fn queued_request(mut c: Value) -> Value {
+    c["action"] = json!(if c.get("parent_version_id").is_some() {
+        "edit"
+    } else {
+        "analyze"
+    });
+    c
+}
+fn queue_fixture(f: &mut Fixture) {
+    f.signal();
+    // No executable is run in queue policy tests. Execution must reject these paths.
+    f.store.catalog.execute("INSERT INTO audio_tools VALUES(1,?1)",[json!({"ffmpeg":{"path":"/not-installed","sha256":"fixture","version":"fixture"},"ffprobe":{"path":"/not-installed","sha256":"fixture","version":"fixture"}}).to_string()]).unwrap();
+}
+fn audio_fast(root: &std::path::Path, op: &str, mut c: Value) -> Value {
+    c["op"] = json!(op);
+    c["protocol_version"] = json!(1);
+    match crate::audio_queue::fast(root, &c) {
+        Ok((data, _)) => crate::protocol::success(data),
+        Err(e) => crate::protocol::error(e.0),
+    }
+}
+#[test]
+fn audio_queue_submission_idempotency_cancel_and_project_isolation() {
+    let mut f = Fixture::new();
+    queue_fixture(&mut f);
+    f.project("two");
+    let root = f.root.join("settings");
+    let c = queued_request(edit_request("edit", "take-1"));
+    let result = audio_fast(&root, "audio.submit", c.clone());
+    assert_eq!(result["data"]["state"], "queued", "{result}");
+    assert_eq!(crate::audio_queue::pending_at(&root).unwrap(), 1);
+    f.store
+        .catalog
+        .execute("DELETE FROM audio_tools", [])
+        .unwrap();
+    assert_eq!(audio_fast(&root, "audio.submit", c), result);
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"two","operation_id":"edit"})
+        )["error"]["code"],
+        "audio_operation_not_found"
+    );
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.cancel",
+            json!({"project_id":"two","operation_id":"edit"})
+        )["error"]["code"],
+        "audio_operation_not_found"
+    );
+    let cancelled = audio_fast(
+        &root,
+        "audio.cancel",
+        json!({"project_id":"one","operation_id":"edit"}),
+    );
+    assert_eq!(cancelled["data"]["state"], "cancelled");
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.cancel",
+            json!({"project_id":"one","operation_id":"edit"})
+        ),
+        cancelled
+    );
+    assert!(!crate::audio_queue::tick(&mut f.store).unwrap());
+    assert_eq!(
+        f.run(
+            "asset.versions",
+            json!({"project_id":"one","asset_id":"hit"})
+        )["data"]["items"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+#[test]
+fn audio_queue_bound_and_restart_do_not_replay_work() {
+    let mut f = Fixture::new();
+    queue_fixture(&mut f);
+    let base = json!({"project_id":"one","asset_id":"hit","version_id":"original","action":"analyze","waveform_bins":16,"silence_db":-60,"silence_min_ms":1,"clip_level":1});
+    for i in 0..32 {
+        let mut c = base.clone();
+        c["operation_id"] = json!(format!("check-{i}"));
+        assert_eq!(f.run("audio.submit", c)["ok"], true);
+    }
+    let mut c = base.clone();
+    c["operation_id"] = json!("overflow");
+    assert_eq!(
+        f.run("audio.submit", c)["error"]["code"],
+        "audio_queue_full"
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='processing',cancel_requested=1 WHERE id='check-0'",
+            [],
+        )
+        .unwrap();
+    let root = f.root.join("settings");
+    let old = std::mem::replace(&mut f.store, Store::open(&root).unwrap());
+    drop(old);
+    assert_eq!(crate::audio_queue::pending(&f.store), 0);
+    assert!(!crate::audio_queue::tick(&mut f.store).unwrap());
+    assert_eq!(
+        f.run(
+            "audio.get",
+            json!({"project_id":"one","operation_id":"check-0"})
+        )["data"]["state"],
+        "cancelled"
+    );
+    assert_eq!(
+        f.run(
+            "audio.get",
+            json!({"project_id":"one","operation_id":"check-1"})
+        )["data"]["state"],
+        "interrupted"
+    );
+}
+#[test]
+fn concurrent_audio_submissions_reserve_a_target_once() {
+    let mut f = Fixture::new();
+    queue_fixture(&mut f);
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let mut threads = Vec::new();
+    for id in ["first", "second"] {
+        let root = f.root.join("settings");
+        let barrier = barrier.clone();
+        let c = queued_request(edit_request(id, "take-1"));
+        threads.push(std::thread::spawn(move || {
+            barrier.wait();
+            audio_fast(&root, "audio.submit", c)
+        }));
+    }
+    let results = threads
+        .into_iter()
+        .map(|t| t.join().unwrap())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        results.iter().filter(|r| r["ok"] == true).count(),
+        1,
+        "{results:?}"
+    );
+    assert!(results
+        .iter()
+        .any(|r| r["error"]["code"] == "audio_target_reserved"));
+}
+#[test]
+fn audio_cancellation_commit_boundary_and_control_stop_publication() {
+    let mut f = Fixture::new();
+    queue_fixture(&mut f);
+    f.run(
+        "audio.submit",
+        queued_request(edit_request("edit", "take-1")),
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='processing',phase='encoding' WHERE id='edit'",
+            [],
+        )
+        .unwrap();
+    let root = f.root.join("settings");
+    let cancel = audio_fast(
+        &root,
+        "audio.cancel",
+        json!({"project_id":"one","operation_id":"edit"}),
+    );
+    assert_eq!(cancel["data"]["state"], "processing");
+    assert_eq!(cancel["data"]["cancel_requested"], true);
+    let control = crate::audio_queue::Control::new(&root, "edit").unwrap();
+    assert_eq!(control.check().unwrap_err().0, "audio_cancelled");
+    assert_eq!(
+        crate::audio_queue::publish_output(&f.store, "edit", "wav", "fixture", &json!({}))
+            .unwrap_err()
+            .0,
+        "audio_cancelled"
+    );
+    crate::audio_queue::fail(&f.store, "edit", &crate::storage::Error("audio_cancelled")).unwrap();
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"one","operation_id":"edit"})
+        )["data"]["state"],
+        "cancelled"
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='processing',cancel_requested=0 WHERE id='edit'",
+            [],
+        )
+        .unwrap();
+    crate::audio_queue::publish_output(&f.store, "edit", "wav", "fixture", &json!({})).unwrap();
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.cancel",
+            json!({"project_id":"one","operation_id":"edit"})
+        )["error"]["code"],
+        "audio_not_cancellable"
+    );
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_async_execution_pins_tools_and_creates_candidate_then_analysis() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let root = f.root.join("settings");
+    let request = queued_request(edit_request("edit", "take-1"));
+    assert_eq!(
+        audio_fast(&root, "audio.submit", request.clone())["data"]["state"],
+        "queued"
+    );
+    f.store
+        .catalog
+        .execute("DELETE FROM audio_tools", [])
+        .unwrap();
+    assert!(crate::audio_queue::tick(&mut f.store).unwrap());
+    let result = audio_fast(
+        &root,
+        "audio.get",
+        json!({"project_id":"one","operation_id":"edit"}),
+    );
+    assert_eq!(result["data"]["state"], "succeeded", "{result}");
+    assert_eq!(result["data"]["result"]["candidate"]["role"], "candidate");
+    assert_eq!(audio_fast(&root, "audio.submit", request), result);
+    f.audio_tools();
+    let inspect = json!({"project_id":"one","asset_id":"hit","version_id":"take-1","operation_id":"check","action":"analyze","waveform_bins":32,"silence_db":-60,"silence_min_ms":1,"clip_level":0.99});
+    assert_eq!(
+        audio_fast(&root, "audio.submit", inspect)["data"]["state"],
+        "queued"
+    );
+    crate::audio_queue::tick(&mut f.store).unwrap();
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"one","operation_id":"check"})
+        )["data"]["result"]["metrics"]["duration_ms"],
+        500.0
+    );
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_async_active_work_can_be_observed_and_cancelled_from_another_connection() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let root = f.root.join("settings");
+    audio_fast(
+        &root,
+        "audio.submit",
+        queued_request(edit_request("edit", "take-1")),
+    );
+    let worker_root = root.clone();
+    let worker = std::thread::spawn(move || {
+        let mut store = Store {
+            root: worker_root.clone(),
+            catalog: crate::storage::catalog_connection(&worker_root, true).unwrap(),
+        };
+        crate::audio_queue::tick(&mut store).unwrap()
+    });
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(10);
+    loop {
+        let current = audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"one","operation_id":"edit"}),
+        );
+        if current["data"]["state"] == "processing" {
+            break;
+        }
+        assert!(std::time::Instant::now() < deadline, "{current}");
+        std::thread::sleep(std::time::Duration::from_millis(1));
+    }
+    let second = audio_fast(
+        &root,
+        "audio.submit",
+        queued_request(edit_request("second", "take-2")),
+    );
+    assert_eq!(second["data"]["state"], "queued", "{second}");
+    let cancel = audio_fast(
+        &root,
+        "audio.cancel",
+        json!({"project_id":"one","operation_id":"edit"}),
+    );
+    assert_eq!(cancel["data"]["cancel_requested"], true);
+    assert!(worker.join().unwrap());
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"one","operation_id":"second"})
+        )["data"]["state"],
+        "queued"
+    );
+    assert_eq!(
+        audio_fast(
+            &root,
+            "audio.get",
+            json!({"project_id":"one","operation_id":"edit"})
+        )["data"]["state"],
+        "cancelled"
+    );
+    assert_eq!(
+        f.run(
+            "asset.versions",
+            json!({"project_id":"one","asset_id":"hit"})
+        )["data"]["items"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[test]
+fn audio_and_generation_share_atomic_target_reservations() {
+    let mut f = Fixture::new();
+    queue_fixture(&mut f);
+    f.run(
+        "account.create",
+        json!({"account_id":"demo","provider":"mock"}),
+    );
+    f.run(
+        "budget.set",
+        json!({"account_id":"demo","request_limit":2,"credit_limit":100}),
+    );
+    let root = f.root.join("settings");
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let audio_root = root.clone();
+    let audio_barrier = barrier.clone();
+    let local = std::thread::spawn(move || {
+        audio_barrier.wait();
+        audio_fast(
+            &audio_root,
+            "audio.submit",
+            queued_request(edit_request("local", "take-1")),
+        )
+    });
+    let remote = std::thread::spawn(move || {
+        let mut store = Store {
+            root: root.clone(),
+            catalog: crate::storage::catalog_connection(&root, true).unwrap(),
+        };
+        let mut c = generation_request("remote");
+        c["asset_id"] = json!("hit");
+        c["version_id"] = json!("take-1");
+        c["name"] = json!("효과음");
+        c["parent_version_id"] = json!("original");
+        c["op"] = json!("job.submit");
+        c["protocol_version"] = json!(1);
+        barrier.wait();
+        store.execute(&c)
+    });
+    let results = [local.join().unwrap(), remote.join().unwrap()];
+    assert_eq!(
+        results.iter().filter(|r| r["ok"] == true).count(),
+        1,
+        "{results:?}"
+    );
+    let count: i64 = f
+        .store
+        .catalog
+        .query_row(
+            "SELECT (SELECT count(*) FROM audio_operations)+(SELECT count(*) FROM generation_jobs)",
+            [],
+            |r| r.get(0),
+        )
+        .unwrap();
+    assert_eq!(count, 1);
+}

@@ -1,5 +1,6 @@
 pub mod audio;
 mod audio_process;
+mod audio_queue;
 pub mod catalog;
 pub mod generation;
 pub mod mcp;

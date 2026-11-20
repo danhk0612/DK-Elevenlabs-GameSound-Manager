@@ -19,6 +19,17 @@ pub(crate) fn run(
     limit: usize,
     timeout: Duration,
 ) -> Result<Vec<u8>> {
+    run_controlled(exe, args, output, limit, timeout, &|| Ok(()))
+}
+pub(crate) fn run_controlled(
+    exe: &Path,
+    args: &[String],
+    output: Option<File>,
+    limit: usize,
+    timeout: Duration,
+    check: &dyn Fn() -> Result<()>,
+) -> Result<Vec<u8>> {
+    check()?;
     let mut command = Command::new(exe);
     command
         .args(args)
@@ -64,6 +75,12 @@ pub(crate) fn run(
     });
     let deadline = Instant::now() + timeout;
     let status = loop {
+        if let Err(error) = check() {
+            let _ = child.kill();
+            let _ = child.wait();
+            let _ = reader.join();
+            return Err(error);
+        }
         if overflow.load(Ordering::Acquire) || Instant::now() >= deadline {
             let _ = child.kill();
             let _ = child.wait();
@@ -115,6 +132,38 @@ mod tests {
                 .0,
             "audio_tool_timeout"
         );
+        assert!(start.elapsed() < Duration::from_secs(2));
+    }
+}
+
+#[cfg(all(test, unix))]
+mod cancellation_tests {
+    use super::*;
+    #[test]
+    fn cancellation_kills_and_waits_for_a_running_child() {
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let trigger = cancelled.clone();
+        let thread = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(50));
+            trigger.store(true, Ordering::Release);
+        });
+        let start = Instant::now();
+        let result = run_controlled(
+            Path::new("/bin/sh"),
+            &["-c".into(), "exec sleep 10".into()],
+            None,
+            1024,
+            Duration::from_secs(20),
+            &|| {
+                if cancelled.load(Ordering::Acquire) {
+                    Err(Error("audio_cancelled"))
+                } else {
+                    Ok(())
+                }
+            },
+        );
+        thread.join().unwrap();
+        assert_eq!(result.unwrap_err().0, "audio_cancelled");
         assert!(start.elapsed() < Duration::from_secs(2));
     }
 }
