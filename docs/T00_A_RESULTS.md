@@ -82,3 +82,7 @@ Windows에서 엔진이 부모의 상속 가능한 stdio 핸들을 붙잡아 MCP
 4. [D01~D06 및 조건부 T00-B 계약](T00_A_DECISIONS.md)을 사용자와 검토한다. T00-A 실기·설계 게이트와 사용자 결정 전 T00-B 금지.
 
 artifact 보존 기간은 14일이다. 합성 fixture·EXE·스크립트·SHA/도구 정보·hash만 포함하며 FFmpeg 바이너리·임시 DB·endpoint token·실제 음원·Key는 포함하지 않는다. 배포/라이선스는 미확정이다.
+
+## 자동 증거 대조 도구 추가
+
+[읽기 전용 CLI](../spikes/t00-a/tools/README.md)를 추가했다. Linux Python 3.14에서 12개 회귀와 정확한 기존 ZIP artifact 14618906066의 manifest 24개·CI 33개·별도 ACL 대조를 통과했다. 사용자 JSON은 미수령이므로 실제 결과는 exit 2/pending이다. 이 검사는 기존 CI 런타임을 재실행한 것이 아니며 Windows 11 사용자 실기/청감을 대신하지 않는다. 제품 코드·GUI·collector·Windows 워크플로 변경은 없다. 도구의 Windows 직접 실행은 미검증이다.

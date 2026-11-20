@@ -17,6 +17,12 @@
 
 API Key·크레딧·원격 생성, 실제 게임·음원 수정, 제품 라이선스·배포 확정, 직접 병합·Release/tag는 수행하지 않았다.
 
-이번 후속 변경은 문서와 선택한 CI 증거만 보존했다. Rust/UI/검사 스크립트/lockfile/워크플로를 바꾸지 않았고 Windows EXE를 Linux에서 실행하지 않았다. 문서 HEAD를 위 실행 SHA의 바이너리 검증으로 둔갑시키지 않는다. 제품 기능을 추가하거나 현재 게임을 변경하지 않았다.
+앞선 D01~D06 위임 반영 커밋은 문서와 선택한 CI 증거만 보존했다. Rust/UI/검사 스크립트/lockfile/워크플로를 바꾸지 않았고 Windows EXE를 Linux에서 실행하지 않았다. 문서 HEAD를 위 실행 SHA의 바이너리 검증으로 둔갑시키지 않는다. 제품 기능을 추가하거나 현재 게임을 변경하지 않았다.
 
 위임 채택 요약: Tauri 2/React/TS + Rust/SQLite/FFmpeg/stdio MCP, Windows 11 x64 우선, 초기 포터블 ZIP·외부 런타임, LOCALAPPDATA 설정 + 사용자 선택 로컬 작업공간/원본 복사, Credential Manager(T02), SID별 local named pipe 엔진·최초 자동 기동·GUI 종료 후 작업 유지·busy 종료 거절·클라이언트/작업 0 상태 5분 idle 종료. 실제 Windows 사용자 화면·청감은 여전히 미수령이므로 T00-A를 완료로 닫지 않는다.
+
+## AI 자동화 우선 후속 변경
+
+사용자의 “ai가 자동화 가능한 작업을 위한 개발에 집중해. 실제 화면(UI)는 최소한도로” 지시를 PROJECT/REQUIREMENTS/ARCHITECTURE/TASKS에 반영했다. 각 기능에서 CLI·MCP 구조화 계약과 무인 회귀를 함께 만들고 T04는 연결 완성/호환 검증을 담당한다. 상태·실패·후보 재생/비교·설정·사람 승인에 필요한 최소 GUI만 우선한다.
+
+T00-A 범위에 [증거 검사 CLI](spikes/t00-a/tools/README.md)를 구현했다. ZIP digest/CRC/manifest·report source SHA/33개 자동 검사·별도 ACL과 사용자 JSON source SHA/파일 hash/필수 결과를 읽기 전용 대조한다. 누락·불일치·후속 사람 검토 항목을 JSON과 종료 코드로 보고한다. Linux Python 3.14에서 회귀 12개 통과. 보관된 artifact 14618906066 ZIP으로 manifest 24개·CI 33개·별도 ACL 통과 및 사용자 두 JSON 미수령 → exit 2/pending을 확인했다. 전용 tools/와 문서/ignore만 변경했고 기존 Windows Rust/UI/collector/scripts/lockfile/워크플로는 바꾸지 않았다. 기존 Windows 실행 source SHA 828e745와 새 도구 커밋 SHA를 구분한다. 새 Python 도구의 Windows 실행은 미검증이다. 이 도구는 GitHub 조회·실행 주체/실제 청감 인증·D01~D06 채택·Task 완료·병합·T00-B 착수를 자동화하지 않는다.

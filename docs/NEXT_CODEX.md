@@ -50,3 +50,9 @@ docs/T00_A_RESULTS.md, docs/T00_A_WINDOWS_CHECK.md, docs/T00_A_DECISIONS.md를 �
 ## 2026-11-20 재개용 증거 갱신
 
 위 지시문 전체를 유지한다. 새 [artifact 내부 검증](t00-a-evidence/refresh-20261120/artifact-inspection.json)을 완료했고, [정확한 실기 ZIP·명령](T00_A_WINDOWS_CHECK.md)을 제공했다. 검증 source SHA는 `828e74540ae0aa0013d6ec3425389cb0631b0b1a`다. 후속 문서 HEAD와 실행 SHA를 구분한다. 사용자 JSON/청감은 미수령이다. 후속 사용자가 기술 선택을 위임해 D01~D06을 채택했으며 [구조화 결정 기록](t00-a-evidence/refresh-20261120/delegated-decisions.json)을 먼저 읽는다. 위 원문 지시 중 사용자 결정 확인은 이 위임 기록으로 대조하고 실기 게이트는 그대로 유지한다. 다음 실행은 PR/사용자 메시지의 새 결과부터 다시 확인하고, 없다면 이 게이트를 닫거나 T00-B에 착수하지 않는다.
+
+## 후속 사용자 우선순위: 자동화 우선·최소 UI
+
+최신 사용자 지시에 따라 각 제품 기능에서 CLI·MCP 계약/무인 회귀를 함께 만들고 GUI는 필수 확인/재생/승인 중심으로 최소화한다. T04는 연결 완성과 호환 검증이다. 이 우선순위 변경은 위 T00-A 완료 게이트와 T00-B 미착수 지시를 취소하지 않는다.
+
+T00-A 증거 판독에는 [tools/audit_evidence.py](../spikes/t00-a/tools/README.md)를 사용한다. GitHub와 대조한 신뢰 영수증 및 정확한 ZIP, 수령한 사용자 JSON을 입력한다. 누락은 exit 2/pending, 불일치는 exit 1/invalid, 자동 대조 완료도 exit 0/manual_review_required다. 사용자 실기 원문/청감·OS·실행자·제출/닫기 시점과 D01~D06은 별도로 검토하고 도구 출력을 완료 승인으로 간주하지 않는다. 기존 artifact 런타임 SHA는 828e745이며 새 도구의 HEAD와 다르다.

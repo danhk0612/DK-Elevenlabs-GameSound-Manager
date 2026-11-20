@@ -41,3 +41,7 @@ PR #1 Conversation에 결과를 전달한다. 검토자는 run head → ZIP dige
 CI는 Windows Server 2022 x64에서 실제 GUI 버튼·닫기·재연결·WAV ended를 자동 검사했다. Windows 11 사용자 성공은 Windows 10 지원 증거가 아니며, MP3/OGG·실제 음원 청감과도 구분한다. 별도 native pipe ACL과 계정 삭제는 CI에서 통과했지만 사용자 수집에 계정 생성/pipe 검사는 포함하지 않는다. 제품 엔진 IPC 통합·원격 차단은 미검증이다.
 
 D01~D06은 후속 사용자가 기술 선택을 명시적으로 위임해 [현재 결정](T00_A_DECISIONS.md)에 반영했다. 이번 실기의 우선 대상은 Windows 11 x64다. 판단 위임이나 이 절차의 실행 자체를 화면/청감 통과로 해석하지 않는다. T00-A 완료 조건이 충족되기 전 T00-B·병합·Release/tag·제품 배포를 하지 않는다.
+
+## 결과 수령 후 AI가 수행하는 대조
+
+[증거 검사 CLI](../spikes/t00-a/tools/README.md)로 위 정확한 ZIP과 신뢰 영수증을 대조하고 수령한 두 사용자 JSON을 옵션으로 입력한다. 기존 collector는 수정하지 않았다. 관찰 값은 직접 확인 후 passed/failed/unverified로 작성할 수 있으며, 자유 서술/한국어 결과를 기계가 임의 합격으로 해석하지 않는다. 원문은 보존하고 pending 항목을 사람이 대조한다. CLI가 사용자 JSON의 원시 SHA256도 계산하지만 이는 실제 실행/청감의 인증이 아니다. 모든 항목이 있어도 manual_review_required만 반환하며 T00-A를 자동 완료하지 않는다.

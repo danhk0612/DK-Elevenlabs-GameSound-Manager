@@ -44,3 +44,5 @@ spikes/t00-a/user-*.json
 spikes/t00-a/icons/
 spikes/t00-a/gen/
 spikes/t00-a/scripts/__pycache__/
+spikes/t00-a/tools/**/__pycache__/
+spikes/t00-a/tools/__pycache__/
