@@ -28,15 +28,17 @@ main `4c3537c55084b71feb5c42eb2340005bf922f197`, v0.7 상태 문서 head `10f379
 - 해당 [개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44751508856/artifacts/14635831632), ZIP SHA-256 `72397ae32d9335ead240ad4b184b7f64792e21ba9fb5755f41e813577c728810`. 이는 새 v0.8 실행 증거가 아니다.
 - v0.8 Linux에서 Python **18개**(단일 9+batch 9) 통과. 실제 native CLI offline batch preflight/뒤 항목 core 입력 오류·선택 항목/전역 ID 충돌·엔진 미기동을 확인했다. batch의 입력 한도/중복 key/NaN·canonical manifest hash·공유 원본·프로젝트/작업/검토 충돌·선택/상태/진행 식별자·fail-stop/keep-going·불확실 결과 중단·Ctrl+C/클라이언트 정리를 검사한다.
 - core 변경은 없고 기존 기본 Rust 회귀는 Linux 32개 통과/외부 FFmpeg 7개 ignore다. 기존 합성 음원·실제 FFmpeg/ffprobe 7.0.2 통합 7개 포함 39개 결과와 도구 출처/hash는 T03/각 계약에 남긴다. Linux 자식 취소·Windows 실제 FFmpeg 동작을 혼동하지 않는다.
-- native engine/CLI/MCP build·Windows x64 타입 검사·Node 24 TypeScript/Vite 최소 GUI build·fmt/JSON/문서 링크/diff를 확인한다. Windows 타입 검사는 외부 SQLite link 선언/no-default-features이며 기본 bundled native 링크 증거와 다르다.
-- 새 Windows CI에는 단일 recipe에 더해 실제 engine batch의 shared source·선택 실행·CLI/MCP parity/JSONL·철회 항목의 중단/keep-going·원본 보존을 추가했다. 해당 새 head 실행 결과는 별도 확인한다. FFmpeg를 설치하지 않는 CI다.
+- native engine/CLI/MCP build·Windows x64 타입 검사·Node 24 TypeScript/Vite 최소 GUI build·fmt/JSON/문서 링크/diff가 통과했다. Windows 타입 검사는 외부 SQLite link 선언/no-default-features이며 기본 bundled native 링크 증거와 다르다.
+- 새 Windows CI에는 단일 recipe에 더해 실제 engine batch의 shared source·선택 실행·CLI/MCP parity/JSONL·철회 항목의 중단/keep-going·원본 보존을 추가했다. 새 코드 6af11ecf00b59554a4ef98b725e5e48bd3a528a2의 [Windows run 44830379629](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44830379629)에서 **전체 성공**했다. Windows Server 2022/Rust 1.100.0/Python 3.12.10에서 Rust 29개/외부 FFmpeg 7개 ignore·Python 18개, 단일 실제 engine CLI/MCP 재기동/재연결과 새 batch 전체, engine/CLI/MCP/GUI build·패키징·업로드가 통과했다. FFmpeg를 설치하지 않는 CI다.
 
 Rust는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools의 Zig CC/AR·CFLAGS=-fno-sanitize=all·rust-lld wrapper로 bundled SQLite를 빌드한다. Python은 /tmp/msv-groups-tools/python3, 개발 FFmpeg는 /tmp/dk-audio-tools다. 도구/실행 파일/합성 음원은 Git에 넣지 않는다. 개발 artifact에는 명령 문서·BATCH.md·automation 소스/예제·source SHA/재귀 SHA256SUMS를 포함한다.
 
 ## 남은 범위
 
-T04 전체 수용을 완료로 닫지 않는다. 자체 stdio 클라이언트·Windows CI 성공은 실제 지원 AI 제품 연결이나 사용자 Windows 11 화면/청감 성공이 아니다. 다음은 새 batch CI 결과 확인·지원 AI 제품 클라이언트 호환과 필요한 사운드/작업 이력 자동화 보강이다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
+T04 전체 수용을 완료로 닫지 않는다. 자체 stdio 클라이언트·Windows CI 성공은 실제 지원 AI 제품 연결이나 사용자 Windows 11 화면/청감 성공이 아니다. 다건 Windows CI도 통과했다. 다음은 지원 AI 제품 클라이언트 호환과 필요한 사운드/작업 이력 자동화 보강이다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
 
 Windows 실제 FFmpeg 실행 중 취소/파일 핸들·실제 Key/요금제/과금, 원격 preview 재생, 한도 증액/초기화·다른 PC 공유·불확실 비용 정산은 후속이다. D08 기본값·loop tag·LUFS/true peak·전문 편집 화면도 없다. 미확인을 개발 대기 조건으로 쓰지 않는다.
 
 T00-A 과거 Windows 33개/ACL·ZIP 증거와 미수령 사용자 실기는 docs/T00_A_RESULTS.md에 보존한다. 게임 개발은 일시 정지이며 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md를 유지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧·사용자 음원/게임 소스/DB/사이트 빌드·배포는 수행하지 않았다.
+
+v0.8 [개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44830379629/artifacts/14676096474): source SHA `6af11ecf00b59554a4ef98b725e5e48bd3a528a2`, ZIP SHA-256 `55b6d848cce69c0cff03524d4320ad3150b27a962ebb7b0ebb677ab1a967f723`. BATCH.md/automation 소스·예제와 재귀 manifest를 포함한다. 이후 상태 문서 커밋과 코드 실행 SHA를 구분하며 Release/공개 배포는 아니다.
