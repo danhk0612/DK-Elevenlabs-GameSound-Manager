@@ -1,0 +1,118 @@
+{
+  "checked_at_kst": "2026-11-20T18:57:59.317821+09:00",
+  "source_sha": "828e74540ae0aa0013d6ec3425389cb0631b0b1a",
+  "run_id": 44713166683,
+  "artifact_id": 14618906066,
+  "artifact_expires_at": "2026-12-04T09:49:13Z",
+  "zip_sha256": "368d9d873265edade0fa7203d947353e032795144d26e0bac2c313cc98b8a631",
+  "zip_bytes": 4271017,
+  "zip_crc": "passed",
+  "manifest_hashes_match": true,
+  "manifest_files_checked": 24,
+  "all_zip_files_covered_except_manifest": true,
+  "manifest": {
+    "Collect-UserResult.ps1": "7a00aa490d86f5d0c6edb2084d5f88489a2b2bf5008372699d96ddb12012468d",
+    "ffmpeg-buildconf.txt": "0b9441cbf547e684d55595b3396070f8442390c511eaf9145c6caa727a417e95",
+    "gui-playback.png": "15fa6b33247eca0d7344339bb93c431b3144d5409e23b334ba4c64322fc17855",
+    "gui-status.png": "2fe4d4b22d9a070edbe545f231228d9a943ac2d5bc5ac92fa93ad85d1d30ecfe",
+    "README.md": "4859a3249d63ebef20e4e088b20b4ff05e9df90bbef50b09b086d6fbaa294097",
+    "source-sha.txt": "a7a70397c578a7df74c74a128b3206ababbb489822728c3b1e55bc102a8610f0",
+    "spike-cli.exe": "859965e94b176bf64fd661b68ef13eb79e14478f7415c2cc3ee51f1f8cb91f88",
+    "spike-engine.exe": "54e41c5262ca5aa88c3f900e95731ed8a41ba3477593b04394c178c1c7616bd8",
+    "spike-gui.exe": "f3aa7c3f8278fa9b09b3cc3524f63e07894563ee64120f9c72f499af050996c5",
+    "spike-mcp.exe": "36e69a4b1850c75b348d1188300bcdc57d21ceb6a1d9ef2e233a967d57d1bfb9",
+    "toolchain.txt": "574178168c85eff01ea00097df2c690e27be43823ac88acd7a52c1d29aca6607",
+    "webdriver-tools.json": "af5ecebfe6331f91e75a6dbca26a4f13265bd3e811920257d01d808e4b6467bf",
+    "windows-automatic.json": "b35af2c04c8b67d8033b08383710cd863fa3d57b7c5608e301c5d13c733deedd",
+    "windows-automatic.wav": "1b48733d50d0bf100a5b18ddfb6df10904121fec17d4e5c6c112d2ba07bb1a81",
+    "windows-gui.json": "0a846f6a4a68a2e97c52b6073f9483e46571fc542d9efa3f89f5bfca14cba9f0",
+    "windows-lifecycle.json": "09e998f33616d1dfbef5b0f9742c3da2d0485fcfebaa67262e884b536964b1c6",
+    "windows-pipe-acl.json": "36dcf96b72ecfabb5d7ff7c79087c1da8ce58dfa391b356d445327866c4fc7c6",
+    "scripts/credentials.ps1": "b06a688f63b850b4baf1cc4535a279835490e30b3bb90668ba6c347245906151",
+    "scripts/gui-webdriver.py": "f4fddfa43f3da32324f348ffcd24d5f1b344ffeec15ea0d0fcf745abaaa011c5",
+    "scripts/Invoke-Spike.ps1": "c5501e05ea022cc1b2bc206ced36339c89c75c089457287bbf16fb581744b0b4",
+    "scripts/lifecycle.py": "a481ad774b986b69932b00680f60a99147b94e675bca631db9c9468a6e6392e5",
+    "scripts/pipe-acl.ps1": "3ad6a9d597c912a37731536ad58d40605722b9d2d97b2081f1cc6408807e44d6",
+    "scripts/verify.py": "402fea05535f9bc63f830581005048bbd69503f9eff0619ea594a391ad69b37b",
+    "scripts/webdriver-setup.ps1": "c4bb2e1fc2141edab5c3fdd26261762765a2daf70e945905b8ec52a93e9ed86c"
+  },
+  "report_receipts": {
+    "windows-automatic.json": {
+      "sha256": "b35af2c04c8b67d8033b08383710cd863fa3d57b7c5608e301c5d13c733deedd",
+      "source_sha": "828e74540ae0aa0013d6ec3425389cb0631b0b1a",
+      "automated_checks": 16,
+      "result": "passed_automated_only"
+    },
+    "windows-lifecycle.json": {
+      "sha256": "09e998f33616d1dfbef5b0f9742c3da2d0485fcfebaa67262e884b536964b1c6",
+      "source_sha": "828e74540ae0aa0013d6ec3425389cb0631b0b1a",
+      "automated_checks": 11,
+      "result": "passed_automated_only"
+    },
+    "windows-gui.json": {
+      "sha256": "0a846f6a4a68a2e97c52b6073f9483e46571fc542d9efa3f89f5bfca14cba9f0",
+      "source_sha": "828e74540ae0aa0013d6ec3425389cb0631b0b1a",
+      "automated_checks": 6,
+      "result": "passed_automated_only"
+    },
+    "windows-pipe-acl.json": {
+      "sha256": "36dcf96b72ecfabb5d7ff7c79087c1da8ce58dfa391b356d445327866c4fc7c6",
+      "source_sha": "828e74540ae0aa0013d6ec3425389cb0631b0b1a",
+      "automated_checks": null,
+      "result": "passed_automated_only"
+    }
+  },
+  "automated_checks_passed": 33,
+  "pipe_acl": "passed automated standalone DACL only; engine integration and remote rejection remain unverified",
+  "executables_x64": {
+    "spike-cli.exe": {
+      "bytes": 391168,
+      "machine": "AMD64",
+      "sha256": "859965e94b176bf64fd661b68ef13eb79e14478f7415c2cc3ee51f1f8cb91f88"
+    },
+    "spike-engine.exe": {
+      "bytes": 1975296,
+      "machine": "AMD64",
+      "sha256": "54e41c5262ca5aa88c3f900e95731ed8a41ba3477593b04394c178c1c7616bd8"
+    },
+    "spike-mcp.exe": {
+      "bytes": 427008,
+      "machine": "AMD64",
+      "sha256": "36e69a4b1850c75b348d1188300bcdc57d21ceb6a1d9ef2e233a967d57d1bfb9"
+    },
+    "spike-gui.exe": {
+      "bytes": 8674816,
+      "machine": "AMD64",
+      "sha256": "f3aa7c3f8278fa9b09b3cc3524f63e07894563ee64120f9c72f499af050996c5"
+    }
+  },
+  "packaged_source_comparison": {
+    "Collect-UserResult.ps1": "matches after UTF-8 BOM/CRLF normalization",
+    "README.md": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/credentials.ps1": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/gui-webdriver.py": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/Invoke-Spike.ps1": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/lifecycle.py": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/pipe-acl.ps1": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/verify.py": "matches after UTF-8 BOM/CRLF normalization",
+    "scripts/webdriver-setup.ps1": "matches after UTF-8 BOM/CRLF normalization"
+  },
+  "human_result": "not_received",
+  "user_automatic_json": "not_received",
+  "user_observation_json": "not_received",
+  "D01_D06_user_decisions": "adopted under later explicit user delegation; see delegated-decisions.json; no interactive result received",
+  "inspector_environment": "Linux Python 3.14 static archive inspection; Windows executables not run locally",
+  "runtime_and_workflow_vs_f8aa463": "git diff: only packaged README text changed; Rust/UI/scripts/lockfiles/workflow unchanged",
+  "limits": [
+    "Windows Server CI is not user Windows 10/11 proof.",
+    "Media ended is not human listening.",
+    "No Keys, credits, real sound files or game changes."
+  ],
+  "gui_screenshots_reviewed": true,
+  "documentation_validation": {
+    "json_parsing": "passed",
+    "local_markdown_links": "passed",
+    "whitespace": "git -c core.whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol diff --cached --check; raw Windows report CRLF preserved",
+    "windows_rerun": "not repeated; executable source/scripts/workflow unchanged; current verified artifact unexpired"
+  }
+}

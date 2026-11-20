@@ -1,18 +1,18 @@
-# 아키텍처 검토안
+# 아키텍처와 채택 경계
 
 ## 채택 상태
 
-확정된 것은 Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계다. **구체 기술·프로세스·경로는 권고안이며 제품에 최종 채택되지 않았다.** T00-A의 실측과 D01~D06 결정 후 본 문서를 채택 구조로 갱신한다. 제품 실행 코드는 없다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.
+Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계가 요구사항이다. **2026-11-20 사용자의 기술 선택 위임에 따라 D01~D06을 채택했다.** 구체 선택과 미검증은 [현재 결정](docs/T00_A_DECISIONS.md)의 위임 결정 절을 따른다. 사용자 Windows 화면/청감이 없어 T00-A는 진행 중이며 T00-B에 착수하지 않았다. 제품 실행 코드는 없다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.
 
-## 기술 비교
+## 기술 비교와 선택
 
 | 후보 | 장점 | 비용·위험 | 판단 |
 | --- | --- | --- | --- |
-| Tauri 2 + React/TypeScript + Rust | GUI와 독립 CLI가 Rust 작업 계층을 재사용하기 좋고 웹 UI 개발 가능 | Rust·MSVC·WebView2, 오디오 재생/파형 연결, IPC·MCP 라이브러리 검증 필요 | 우선 검증 권고 |
+| Tauri 2 + React/TypeScript + Rust | GUI와 독립 CLI가 Rust 작업 계층을 재사용하기 좋고 웹 UI 개발 가능 | Rust·MSVC·WebView2, 오디오 재생/파형 연결, IPC·MCP 라이브러리 검증 필요 | 위임 채택. 사용자 실기/제품 검증은 별도 |
 | Electron + React/TypeScript + Node | UI·CLI 언어 통일, 웹 생태계 사용 | 런타임 배포 크기, DB·오디오/자격증명 네이티브 의존성 및 패키징 검증 | 비교 대안 |
 | .NET + Windows GUI | Windows 파일·인증정보·배포 환경과 통합하기 좋음 | UI 기술 선택, CLI·MCP 재사용과 오디오 처리 경험 검증 필요 | Tauri 실패/부적합 시 비교 |
 
-현재 환경의 Rust 부재는 제품 기술 부적합의 증거가 아니다. Windows에서 동작·배포 증거를 얻기 전 선택을 바꾸거나 확정하지 않는다. 데이터는 SQLite, 편집·분석은 FFmpeg/ffprobe 외부 프로세스를 우선 검토한다. 생성용 모델은 서비스 요청 설정이며 제품 내부 AI 모델을 만들지 않는다.
+격리 Windows 자동 실행 증거를 근거로 Tauri/Rust 후보를 선택했다. 사용자 데스크톱과 제품 배포 검증은 자동 실행과 별도다. 데이터는 SQLite, 편집·분석은 FFmpeg/ffprobe 외부 프로세스를 우선 검토한다. 생성용 모델은 서비스 요청 설정이며 제품 내부 AI 모델을 만들지 않는다.
 
 ## 권장 구성과 책임
 
@@ -32,15 +32,15 @@
 
 후보 A는 GUI·CLI·MCP가 각각 공통 라이브러리와 DB를 여는 구조다. 프로세스 수는 적지만 작업 소유권·한도 예약·DB와 파일 변경을 모든 진입점에서 조정해야 한다.
 
-후보 B는 사용자별 단일 로컬 엔진이 큐·DB·파일 쓰기를 소유하고 GUI·CLI·MCP가 연결하는 구조다. GUI를 닫아도 장시간 작업을 유지하기 쉽고 쓰기 규칙을 모으지만, 기동 경쟁·인증된 로컬 IPC·종료·재연결 검증 비용이 있다. **후보 B를 우선 검증한다.** 항상 실행되는 Windows 서비스는 요구하지 않는다.
+후보 B는 사용자별 단일 로컬 엔진이 큐·DB·파일 쓰기를 소유하고 GUI·CLI·MCP가 연결하는 구조다. GUI를 닫아도 장시간 작업을 유지하기 쉽고 쓰기 규칙을 모으지만, 기동 경쟁·인증된 로컬 IPC·종료·재연결 검증 비용이 있다. **사용자 SID별 후보 B를 위임 채택했다.** 항상 실행되는 Windows 서비스는 요구하지 않는다.
 
-Windows named pipe와 현재 사용자 접근 제한을 IPC 후보로 검토한다. 원격 HTTP 서버는 초기 요구가 아니다. 엔진 자동 기동, 중복 기동 방지, idle 종료와 명시 종료의 작업 처리 정책은 T00-A에서 비교한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
+제품 IPC는 Windows local named pipe와 현재 사용자 SID 접근 제한으로 채택한다. 별도 DACL 실험과 제품 IPC 통합/원격 차단 검증은 구분한다. 원격 HTTP 서버는 초기 요구가 아니다. 최초 GUI/CLI/MCP 요청에서 자동 기동하고 SID별 중복 기동을 막는다. GUI 종료는 작업 취소가 아니다. 정상 busy 종료는 거절하며 연결된 클라이언트·대기/실행 작업이 모두 없는 상태가 5분 지속되면 idle 종료한다. 이 5분은 위임 설계값이며 기존 fixture 수치와 다르다. 제품 검증은 T00-B 선행 게이트 충족 후 수행한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
 
 SQLite WAL은 읽기/쓰기 동시성에 도움을 주지만 동시 writer는 하나다. WAL만으로 작업·파일의 안전성을 보장하지 않는다. 프로젝트 DB는 로컬 디스크를 우선 검증하며 네트워크 공유의 DB를 지원한다고 가정하지 않는다. DB 트랜잭션을 원격 생성이나 FFmpeg 실행 동안 유지하지 않는다.
 
 ## 저장·데이터 계약 권고
 
-앱 설정·계정 참조·프로젝트 인덱스와 사용자 사운드 작업공간을 분리한다. 절대 경로 기본값은 미결정이다. 제안 논리 구조는 프로젝트별 메타데이터 DB와 originals/, candidates/, exports/, recovery/다. 실행 파일 폴더를 사용자 자료 저장소로 삼지 않는다.
+앱 설정·계정 참조·프로젝트 인덱스와 사용자 사운드 작업공간을 분리한다. 앱 설정·엔진 발견 루트는 `%LOCALAPPDATA%\DK-Elevenlabs-GameSound-Manager`, 작업공간은 사용자가 지정한 로컬 디렉터리다. 세부 스키마·프로젝트 하위 경로는 T01 계약에서 확정한다. 제안 논리 구조는 프로젝트별 메타데이터 DB와 originals/, candidates/, exports/, recovery/다. 실행 파일 폴더를 사용자 자료 저장소로 삼지 않는다.
 
 | 개체 | 최소 관계·속성 |
 | --- | --- |
@@ -81,7 +81,7 @@ CLI·MCP와 GUI가 같은 공통 정책을 통과해야 한다. 자동 호출에
 
 ## API·비밀정보·오디오
 
-연결 모듈만 API Key를 읽고 프런트엔드, 프로젝트 DB, 인자, 로그, 내보내기에 Key를 노출하지 않는 구조를 검증한다. Windows Credential Manager와 DPAPI를 비교하며 구체 저장 방식은 D05다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
+연결 모듈만 API Key를 읽고 프런트엔드, 프로젝트 DB, 인자, 로그, 내보내기에 Key를 노출하지 않는 구조를 검증한다. D05 위임 결정으로 Windows Credential Manager 현재 사용자 범위를 사용한다. silent DPAPI fallback은 넣지 않고 실제 Key·수명 검증은 T02다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
 
 FFmpeg/ffprobe 호출은 셸 문자열 대신 인자 배열을 사용하고 원본과 다른 출력 경로를 쓴다. 재생 지원 형식과 변환 지원 형식은 다를 수 있으므로 WebView2 재생을 실제 파일로 검사한다. 기본 형식·음량/무음 임계값·루프 단위는 D08이며 임의 상수로 확정하지 않는다.
 
@@ -90,3 +90,5 @@ FFmpeg/ffprobe 호출은 셸 문자열 대신 인자 배열을 사용하고 원�
 T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라이언트 경쟁, 강제 종료·재기동, 한글/공백 경로, 자격증명 보안, 실제 FFmpeg 파일 처리, 정확한 SHA의 Windows artifact·실행 결과를 확보한다. 미확보면 기술 채택을 보류한다.
 
 공식 근거(2026-10-15 열람): [Tauri process model](https://tauri.app/concept/process-model/), [Windows prerequisites](https://tauri.app/start/prerequisites/), [SQLite WAL](https://www.sqlite.org/wal.html), [MCP stdio](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/stdio), [FFmpeg 배포 조건](https://www.ffmpeg.org/legal.html). 문서 지원 사실과 이 프로젝트의 실측을 구분한다.
+
+초기 패키징은 포터블 ZIP을 선택했다. WebView2는 외부 준비, FFmpeg/ffprobe는 사용자 지정 경로/PATH로 사용하고 자동 설치/동봉하지 않는다. 설치/업데이트/고지·공개 배포 허용은 T06 및 D11의 별도 게이트다.

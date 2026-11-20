@@ -1,0 +1,62 @@
+{
+  "recorded_at_kst": "2026-11-20T19:04:59.773954+09:00",
+  "authorization": {
+    "source": "Current user message",
+    "text": "네가 직접 적절하게 결정해서 작업해",
+    "scope": "Delegate D01-D06 technical choices; preserve original T00-A real-world validation gate and no merge / no T00-B instructions."
+  },
+  "decisions": {
+    "D01": {
+      "status": "adopted_under_user_delegation",
+      "choice": "Tauri 2 + React + TypeScript GUI; Rust engine/common commands; SQLite local storage; FFmpeg/ffprobe subprocess; stdio MCP with tested 2025-11-25 baseline",
+      "basis": "Exact Windows CI SHA 828e745 core/lifecycle/GUI 33 checks; no demonstrated reason to replace stack. Electron/.NET not benchmarked.",
+      "validation_remaining": "User Windows 11 x64 GUI and audible synthetic WAV; supported MCP client interoperability later T04."
+    },
+    "D02": {
+      "status": "adopted_under_user_delegation",
+      "choice": "Initial product/validation target Windows 11 x64. Windows 10, ARM64 and x86 are outside initial support claim.",
+      "basis": "Narrow first supported target and validate before expansion. Current Server 2022 x64 CI is not Windows 11 user proof.",
+      "validation_remaining": "Windows 11 non-admin interactive run, exact OS build, WebView2 prerequisite; T06 packaging acceptance."
+    },
+    "D03": {
+      "status": "adopted_under_user_delegation",
+      "choice": "Initial portable ZIP. WebView2 prerequisite external; FFmpeg/ffprobe user-configured location or PATH, no bundled or automatic installation.",
+      "basis": "Keeps runtime redistribution/licensing outside unverified assumptions and fits existing executable spike. Spike ZIP is not a product release.",
+      "validation_remaining": "T06 packaging/update/data-preservation and notices; installer/signing/public distribution not authorized."
+    },
+    "D04": {
+      "status": "adopted_under_user_delegation",
+      "choice": "App configuration/engine discovery under %LOCALAPPDATA%\\DK-Elevenlabs-GameSound-Manager. User explicitly selects local workspace directory. Originals copied into managed storage; source and approved versions immutable.",
+      "basis": "Tested separation, Unicode/space paths and synthetic original hash preservation. No program-folder data storage.",
+      "validation_remaining": "T01 schema/import/reconciliation and actual paths; network/sync storage not initially supported."
+    },
+    "D05": {
+      "status": "adopted_under_user_delegation",
+      "choice": "Windows Credential Manager, current user. No silent DPAPI fallback; credential failure leaves offline features usable and remote generation disabled. Product credential implementation at T02.",
+      "basis": "Dummy write/read/delete passed; reduces application-owned ciphertext file lifecycle. No actual key validated.",
+      "validation_remaining": "T02 actual authorized key, lifecycle/export/log boundaries; no keys or credits now."
+    },
+    "D06": {
+      "status": "adopted_under_user_delegation",
+      "choice": {
+        "ownership": "One engine per Windows user SID across project workspaces; user-scoped discovery/startup lock, single writer.",
+        "ipc": "Local Windows named pipe with owner SID DACL and remote-client rejection. No product loopback TCP/token or workspace-local engine default.",
+        "startup": "GUI/CLI/MCP auto-start on first use; no Windows service or login-start requirement.",
+        "gui_close": "Disconnect only; queued/running work continues and reconnects.",
+        "normal_shutdown": "Reject while queued/running work exists; do not silently cancel. No forced-stop product API in T00-B.",
+        "idle_shutdown": "Exit after 300000ms continuously with zero connected clients AND no queued/running work. New client resets timer; busy engine never idles out.",
+        "recovery": "Do not automatically replay interrupted or uncertain work. Account-wide budget ownership belongs to T02; file/DB reconciliation later tasks."
+      },
+      "basis": "Single writer/lifetime spike and standalone distinct-user pipe DACL support the architecture; 5-minute product idle is a delegated design choice, not measured optimum or reused 3-second fixture.",
+      "validation_remaining": "Product named-pipe integration, remote rejection, SID-level startup races/multiple workspaces, client lifecycle and idle policy at T00-B after current gate; account budget T02."
+    }
+  },
+  "t00_a_status": "in_progress_user_interactive_and_audible_results_not_received",
+  "t00_b_status": "not_started",
+  "prohibitions_retained": [
+    "No merge/release/tag/public deployment",
+    "No actual API key/credits",
+    "No real game or sound changes",
+    "Do not call CI media events human listening"
+  ]
+}

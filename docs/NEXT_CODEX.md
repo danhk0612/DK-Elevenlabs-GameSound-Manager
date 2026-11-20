@@ -46,3 +46,7 @@ docs/T00_A_RESULTS.md, docs/T00_A_WINDOWS_CHECK.md, docs/T00_A_DECISIONS.md를 �
 | D06 | 사용자별 단일 엔진, 제품 IPC, 자동 기동, GUI 종료 후 작업 유지, busy/idle 종료 기준 |
 
 권고는 결정으로 간주하지 않는다. 기술 판단은 고성능 Codex에서 마무리하고, 채택 범위가 명확해진 T00-B 구현은 별도 저성능 Codex에서 진행한다.
+
+## 2026-11-20 재개용 증거 갱신
+
+위 지시문 전체를 유지한다. 새 [artifact 내부 검증](t00-a-evidence/refresh-20261120/artifact-inspection.json)을 완료했고, [정확한 실기 ZIP·명령](T00_A_WINDOWS_CHECK.md)을 제공했다. 검증 source SHA는 `828e74540ae0aa0013d6ec3425389cb0631b0b1a`다. 후속 문서 HEAD와 실행 SHA를 구분한다. 사용자 JSON/청감은 미수령이다. 후속 사용자가 기술 선택을 위임해 D01~D06을 채택했으며 [구조화 결정 기록](t00-a-evidence/refresh-20261120/delegated-decisions.json)을 먼저 읽는다. 위 원문 지시 중 사용자 결정 확인은 이 위임 기록으로 대조하고 실기 게이트는 그대로 유지한다. 다음 실행은 PR/사용자 메시지의 새 결과부터 다시 확인하고, 없다면 이 게이트를 닫거나 T00-B에 착수하지 않는다.

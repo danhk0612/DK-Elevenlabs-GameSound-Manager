@@ -1,10 +1,29 @@
 # T00-A 검증 기록
 
-**진행 중. Windows 실제 프로세스·GUI 자동 실행 통과. 별도 타 계정 pipe ACL 검사도 통과. 사람의 화면/청감, 제품 IPC 통합과 D01~D06 결정은 미완료.**
+**진행 중. Windows 실제 프로세스·GUI 자동 실행 통과. 별도 타 계정 pipe ACL 검사도 통과. 사람의 화면/청감, 제품 IPC 통합은 미완료. D01~D06은 2026-11-20 사용자 위임으로 채택했으며 사용자 실기 게이트는 유지한다.**
 
 main `4c3537c55084b71feb5c42eb2340005bf922f197`, 브랜치 `task/t00-a-technical-spike`, [draft PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1). 아래 결과는 정확한 코드 SHA에 귀속한다. 문서 커밋의 최신 HEAD CI는 PR에서 별도로 식별하며 다른 SHA의 바이너리 동일성을 가정하지 않는다.
 
-## 최신 Windows 증거 — 2026-10-16 KST
+## 현재 실기용 ZIP 검증 — 2026-11-20 KST
+
+[run 44713166683](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44713166683)의 head와 source SHA는 **`828e74540ae0aa0013d6ec3425389cb0631b0b1a`**다. [artifact 14618906066](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44713166683/artifacts/14618906066)는 4,271,017바이트, ZIP SHA256 `368d9d873265edade0fa7203d947353e032795144d26e0bac2c313cc98b8a631`, 만료 예정은 **2026-12-04 18:49:13 KST**다. GitHub 메타데이터 digest와 실제 다운로드 해시를 대조했다.
+
+| 대조 | 확인 결과 / 증거 |
+| --- | --- |
+| ZIP 내용 | CRC 통과, 경로 이탈/중복 없음, `source-sha.txt`와 run head/이름 일치 |
+| manifest | 24개 hash 모두 일치. manifest 자체를 제외한 ZIP 파일 전체 포함 |
+| core/lifecycle/GUI | 원시 JSON의 source SHA가 모두 위 SHA. 16+11+6=33개 자동 검사 성공. [core](t00-a-evidence/refresh-20261120/windows-automatic.json), [lifecycle](t00-a-evidence/refresh-20261120/windows-lifecycle.json), [GUI](t00-a-evidence/refresh-20261120/windows-gui.json) |
+| 별도 pipe ACL | owner 연결=0, 다른 SID 허용 대조군=0, owner 전용 거절=5, 원래 SID 복귀·임시 계정 삭제 성공. [원시 보고서](t00-a-evidence/refresh-20261120/windows-pipe-acl.json). 제품 엔진 IPC/원격 차단 성공 아님 |
+| 실행 파일 | CLI·엔진·MCP·GUI 4개 PE AMD64. 각 hash와 크기는 [영수증](t00-a-evidence/refresh-20261120/artifact-inspection.json) |
+| 포장된 소스 | 스크립트 7개·수집 PS1·README, 총 9개를 해당 Git SHA의 원문과 UTF-8 BOM/CRLF 정규화 후 대조 |
+| GUI 캡처 | [상태](t00-a-evidence/refresh-20261120/gui-status.png), [재생 종료](t00-a-evidence/refresh-20261120/gui-playback.png)를 검토. 1초 WAV ended는 사람의 청감 아님 |
+| 사용자 실기·결정 | PR Conversation/리뷰와 현재 사용자 메시지에 사용자 실기 결과 없음. 사용자 JSON 두 개의 source SHA/파일 hash는 **미수령**. 기술 선택은 후속 사용자 위임으로 별도 기록 |
+
+검사 환경은 Linux Python 3.14의 정적 ZIP 검사다. Windows EXE를 새로 실행한 것이 아니며 실행 결과는 위 정확한 SHA의 Windows Server 2022 CI에 귀속한다. `f8aa463..828e745` 비교에서 실행 Rust/UI/검사 스크립트/lockfile/워크플로 변경은 없고 포장 README 설명만 달랐다. 과거 EXE/ZIP hash를 새 파일에 재사용하지 않았다. 유효한 성공 artifact와 변경 없는 실행 코드가 있으므로 이 문서·증거 보존을 이유로 CI를 반복하지 않는다.
+
+수령할 사용자 증거는 [Windows 절차](T00_A_WINDOWS_CHECK.md)의 ZIP/run head, source-sha, manifest, `user-automatic.json`, 직접 작성한 `user-observation.json`이다. 각 JSON의 source SHA와 파일 SHA256을 함께 기록하고 빈 관찰은 미검증으로 남긴다. D01~D06은 후속 사용자의 판단 위임으로 채택했고 [결정 기록](t00-a-evidence/refresh-20261120/delegated-decisions.json)에 보존했다. 이는 사용자 실기 증거가 아니다. T00-A 완료·T00-B·병합·배포는 하지 않았다.
+
+## 과거 Windows 기준선 — 2026-10-16 KST
 
 검증 코드 SHA **`f8aa463bfd02fa84a10c39f32b353cf83d2c7872`**. [성공 run 38809024678](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/38809024678), [artifact 12007313423](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/38809024678/artifacts/12007313423).
 ZIP SHA256 `e7895dc45ebea7c7271e64e6dd4a10061a0fb443b871135aa70c1c80416b45a3`.
