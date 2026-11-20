@@ -82,54 +82,8 @@
 - 금지: 승인 없는 공개 배포·Release/tag, 사용자 데이터 제거, 후속 Music/Voice 기능 혼입.
 - 환경: 고성능 Work 통합 판단, 반복 패키징·검증 저성능 Work. 배포 실행은 별도 사용자 지시.
 
-## 다음 Work에 입력할 지시문
+## 다음 Codex에 입력할 지시문
 
-core 16·lifecycle 11·실제 GUI 6 자동 검사와 별도 타 계정 pipe ACL 검사는 코드 `f8aa463bfd02fa84a10c39f32b353cf83d2c7872`에서 통과했다. pipe 결과는 현재 사용자 연결, 실제 다른 표준 로컬 계정의 허용 대조군 연결·보호 pipe 거절, 신원 복귀와 임시 계정 삭제까지 확인했다. 엔진 IPC 통합·원격 차단은 미검증이며 사람의 Windows 10/11 화면·청감과 D01~D06 결정은 미확보다.
-
-기존 [PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1)과 작업 브랜치를 유지한다. docs/T00_A_RESULTS.md 및 docs/T00_A_WINDOWS_CHECK.md를 먼저 읽고 정확한 최신 코드 SHA의 미확보 결과를 수집한다. 이미 통과한 Linux 검사를 Windows 실기 증거로 대체하지 않는다. T00-B 계약은 조건부 초안이며 지금 착수하지 않는다.
-
-
-```text
-https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager 의 T00-A만 수행해.
-
-최신 기본 브랜치·정확한 HEAD, 현재 브랜치·열린 PR을 확인하고
-AGENTS.md, PROJECT.md, REQUIREMENTS.md, ARCHITECTURE.md,
-CURRENT_STATE.md, TASKS.md, AI_WORKFLOW.md, API_RESEARCH.md를 먼저 읽어.
-기존 작업이 있으면 보존하고 이 지시와 최신 Task 계약을 대조해.
-
-PR #1과 기존 브랜치를 유지해. docs/T00_A_RESULTS.md의 정확한 SHA별
-33개 Windows 자동 실행 증거를 확인하고, 소스 변경/실패가 없으면 반복하지 마.
-사람의 Windows 10/11 화면·청감은 Collect-UserResult.ps1의 ExpectedSha와
-artifact manifest를 확인한 결과로 수집해. 빈 관찰값은 미검증이야.
-별도 pipe 후보의 타 계정 허용 대조군/보호 pipe/계정 정리 결과도 확인해.
-통과한 별도 pipe 실험을 엔진 통합·원격 차단까지 검증한 것으로 확대하지 마.
-소스 변경/실패가 없으면 이 검사를 반복하거나 실제 사용자 PC에 테스트 계정을 만들지 마.
-사용자 전체 엔진/계정 예산 소유권과 파일/DB 대조 복구 제안은 결정 문서를 따르며,
-사용자 결정 전 제품 계약으로 채택하거나 구현하지 마.
-
-
-task/t00-a-technical-spike에서 Windows x64 실행 환경 또는
-정확한 수정 SHA의 사용자 실기 결과 수집 경로를 먼저 확보해.
-Tauri 2·React·TypeScript / Rust / SQLite / FFmpeg / stdio MCP는
-최종 채택이 아닌 우선 검증 후보야.
-
-격리된 최소 GUI·독립 CLI·stdio MCP가 같은 공통 명령을 사용하는지,
-GUI 종료 후 작업 실행·재연결, 엔진 중복 기동·동시 요청,
-강제 종료 후 복구, 한글/공백 경로, stdout 프로토콜,
-자격증명 저장 후보와 ffprobe/FFmpeg·GUI 오디오 재생을 검증해.
-실험에 필요한 임시 설정과 제품 기본값을 구분해.
-
-정확한 코드 SHA의 Windows CI·artifact와 실제 실행 증거를 기록하고
-문서 확인·모의 검사·실측·미검증·차단을 구분해.
-Windows 실기를 확보하지 못하면 완료로 표시하지 말고 재개 조건을 남겨.
-D01~D06의 근거·권고·사용자 결정 항목을 정리하고
-T00-B의 최소 구현 범위·수용 조건·다음 지시문을 저장소에 남겨.
-최종 기술 선택은 실측 후 사용자 확인을 거쳐야 해.
-
-사용자 API Key·크레딧 사용, 원격 사운드 생성, 실제 게임/음원 수정,
-라이선스·배포 방식 확정은 하지 마.
-브랜치 push·PR 제출과 해당 검증용 Windows CI·artifact 생성은 허용한다.
-직접 병합·Release/tag·공개 제품 배포·T00-B 착수는 하지 마.
-```
-
-권장 환경: 고성능 Work. 검증 후 스택 선택 검토는 고성능 Chat, 확정된 T00-B 구현은 저성능 Work.
+[새 Codex 인수인계](docs/NEXT_CODEX.md)의 지시문을 사용한다.
+현재 남은 우선 작업은 사용자 Windows 화면·청감 증거, D01~D06 검토 및 T00-A 완료 조건 대조다.
+자동 검사와 사용자 실기를 구분하며, 이 단계에서는 T00-B에 착수하지 않는다.

@@ -1,6 +1,6 @@
 # 현재 상태
 
-기준일: 2026-10-16 KST. **T00-A 진행 중: Windows 33개 자동 검사·별도 타 계정 pipe ACL 검사 통과. 사용자 실기·제품 IPC 통합·설계 결정 미완료.**
+기준일: 2026-11-20 KST. **T00-A 진행 중: Windows 33개 자동 검사·별도 타 계정 pipe ACL 검사 통과. 사용자 실기·제품 IPC 통합·설계 결정 미완료.**
 
 - main: `4c3537c55084b71feb5c42eb2340005bf922f197`. 브랜치 `task/t00-a-technical-spike`, [draft PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1).
 - `spikes/t00-a/`의 Rust 공통 명령·엔진·독립 CLI·stdio MCP·Tauri/React/TS GUI·SQLite·합성 음원만 검증했다. 제품 스택·경로·수명 기본값은 채택하지 않았다. 제품 사운드 관리·API 연결·게임 적용 기능은 없다.
@@ -13,6 +13,6 @@
 
 [정확한 SHA·명령·결과·재개 조건](docs/T00_A_RESULTS.md), [D01~D06 권고와 조건부 T00-B 계약](docs/T00_A_DECISIONS.md), [사용자 Windows 수집 절차](docs/T00_A_WINDOWS_CHECK.md).
 
-다음 작업은 정확한 SHA의 사용자 화면·청감 결과를 수집하고 D01~D06을 검토하는 것이다. 사용자 범위 엔진·계정 예산 원장·파일/DB 대조 복구의 제안과 후속 Task 경계는 결정 문서에 추가했다. 이 제안은 미채택이며 제품 구현이 아니다. D01~D06은 모두 사용자 미결정이다. T00-A를 완료로 닫지 않으며 **T00-B 미착수**다.
+11월 20일 확인: 기존 검증 ZIP은 artifact 목록에서 만료되어 다운로드에 사용할 수 없다. 원시 검사 기록은 보존되어 있다. 다음 작업은 만료되지 않은 ZIP의 정확한 SHA로 사용자 화면·청감 결과를 수집하고 D01~D06을 검토하는 것이다. [새 Codex 지시문](docs/NEXT_CODEX.md)을 따른다. 사용자 범위 엔진·계정 예산 원장·파일/DB 대조 복구의 제안과 후속 Task 경계는 결정 문서에 추가했다. 이 제안은 미채택이며 제품 구현이 아니다. D01~D06은 모두 사용자 미결정이다. T00-A를 완료로 닫지 않으며 **T00-B 미착수**다.
 
 API Key·크레딧·원격 생성, 실제 게임·음원 수정, 제품 라이선스·배포 확정, 직접 병합·Release/tag는 수행하지 않았다.
