@@ -121,3 +121,5 @@ v0.9 로컬 검증 source SHA: `e2e92a6c67864ceec6ce5f5a30b769a6ebd6bd9d`. [Wind
 ### v0.10 T02/T04 Linux 인증 세션·실제 전송 코드
 
 사용자의 후속 진행 지시에 따라 명시적인 account/key/TTL/한도를 pipe stdin으로 engine에 전달하는 메모리 세션, 만료·재시작 차단, 선택형 숨김 입력/private FD 런처와 fixed-origin reqwest/rustls HTTPS를 구현했다. 일반 CLI/MCP key/예산 변경 명령과 GUI는 늘리지 않는다. [계약](docs/T02_LINUX_PROVIDER.md). 로컬 합성 인증서/가짜 키의 TLS transport와 실제 engine metadata-only session smoke를 통과했고 Rust 43개(실제 FFmpeg 7개 포함)·Python 18개가 통과했다. Windows x64 타입 검사/UI build 및 최신 SHA CI는 CURRENT_STATE.md를 따른다. 실제 키/허용 비용 없이 라이브 검증하지 않으며 T04 전체·T05·게임 적용은 완료/착수하지 않는다. 이후 실제 Key·quota/허용 생성 범위가 안전한 세션으로 준비되면 제한된 실제 생성 검증이 필요하다. 준비 전에는 기존 자동화 경로와 재사용할 검증/사용 안내를 보강한다.
+
+v0.10 구현 source `3a5c52ca1a525785a6cc96ffd4e761a04a7cbfff`, 초과 key pipe 입력 거절 보강 source `54d2fbf2fa5809b251857aac23527743be7afff8`. [최신 Windows/Linux run 44839231602](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44839231602) Windows·Linux 전체 성공. Linux Rust 43개·Python 18개/실제 세션·TLS/FFmpeg·Windows native/GUI/CLI/MCP·패키징을 확인했다. 실제 키/크레딧 요청은 없다.

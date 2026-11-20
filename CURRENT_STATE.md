@@ -30,7 +30,7 @@ v0.10 로컬 Linux x86_64 musl/Rust 1.100.0/Python 3.11+·FFmpeg/ffprobe 7.0.2:
 - `ci_linux_smoke.py --bin-dir app/target/debug --ffmpeg /tmp/dk-audio-tools/ffmpeg --ffprobe /tmp/dk-audio-tools/ffprobe`: private root/endpoint 보존·8개 동시 singleton·중복 기동 거절·stale/crash 재기동·mock 예산/ID·실제 CLI/MCP FFmpeg async 편집/검사·검토/원본 보존을 확인한다. 최종 v0.10 native bins에서 전부 통과했다.
 - native bins build, Windows x64 no-default-features 타입 검사, Node 24 TypeScript/Vite build, fmt/diff 통과. Windows 타입 검사는 native 링크/Windows 실행 증거가 아니다.
 
-Rust 환경은 /tmp/dk-cargo·/tmp/dk-rustup·Zig CC/AR/rust-lld wrapper(CFLAGS=-fno-sanitize=all), Python /tmp/msv-groups-tools/python3, FFmpeg /tmp/dk-audio-tools다. 도구/합성 인증서·음원·key는 Git에 넣지 않는다. CI Linux job에 실제 credential-session smoke와 로컬 TLS 회귀를 연결했고 Windows job은 기존 native/GUI/CLI·MCP·배치/패키징을 유지한다. 새 v0.10 코드 SHA/CI 결과는 push 후 기록하며 아직 성공으로 표시하지 않는다.
+Rust 환경은 /tmp/dk-cargo·/tmp/dk-rustup·Zig CC/AR/rust-lld wrapper(CFLAGS=-fno-sanitize=all), Python /tmp/msv-groups-tools/python3, FFmpeg /tmp/dk-audio-tools다. 도구/합성 인증서·음원·key는 Git에 넣지 않는다. CI Linux job에 실제 credential-session smoke와 로컬 TLS 회귀를 연결했고 Windows job은 기존 native/GUI/CLI·MCP·배치/패키징을 유지한다. v0.10 최초 코드 source `3a5c52ca1a525785a6cc96ffd4e761a04a7cbfff`의 [run 44839019647](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44839019647)에서 Windows·Linux 두 job 모두 성공했다. 최종 source `54d2fbf2fa5809b251857aac23527743be7afff8`는 private key FD의 허용 prefix 뒤 초과 바이트도 거절하도록 보강하고 실제 metadata-only session smoke를 재통과했다. [run 44839231602](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44839231602)의 Windows·Linux 두 job도 모두 성공했다. Linux Rust 43개·Python 18개·실제 CLI/MCP/배치/FFmpeg/인증 세션, Windows native/GUI·실제 CLI/MCP/배치·개발 패키징 회귀를 확인했다. 이 CI도 실제 ElevenLabs key/서비스 요청은 사용하지 않았다. 이후 상태 문서 커밋과 실행 source SHA를 구분한다.
 
 ## 남은 범위
 
@@ -39,3 +39,5 @@ Linux 실제 API 키·서비스 권한/quota·허용 생성 범위/비용이 안
 T04 전체·제품 완성/T05 착수는 선언하지 않는다. 지원 AI 제품 MCP 등록, 원격 preview 재생·한도 증액/초기화·다른 PC 공유/불확실 비용 정산, Windows 실제 FFmpeg/취소·사용자 Windows 11 화면/청감은 별도다. D08 loop tag/LUFS/true peak·D07 승인/게임 적용은 후속 범위다.
 
 사이트/게임 개발은 계속 일시 정지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧 사용·사용자 음원/게임/사이트/운영 DB·사이트 빌드/배포는 수행하지 않았다. 게임 수정 목록은 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md를 유지한다.
+
+최종 source 54d2fbf2fa5809b251857aac23527743be7afff8의 [Windows 개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44839231602/artifacts/14679409749)는 LINUX_PROVIDER.md/인증 세션 런처·smoke를 포함한다. GitHub metadata reported SHA-256: `720bffa7b937eeddd461c7271f488fb5a8244e6777e29cb93d83ab5fb52df8f2`. 이 기록은 artifact 다운로드 후 독립 해시 대조와 구분하며 Release/공개 배포가 아니다.
