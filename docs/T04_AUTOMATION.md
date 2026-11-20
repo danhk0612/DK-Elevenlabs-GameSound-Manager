@@ -42,7 +42,7 @@ audio.tools.set은 PC의 공유 도구 설정을 지정한 경로/hash/version�
 
 ## 중단과 재실행
 
---wait-seconds 기본 300(1~86400), --poll-seconds 기본 0.5(0.1~60)는 클라이언트 대기 설정이다. 작업 완료를 기다리는 제한과 별개로 단일 전송의 timeout은 300초이며 실행 중 core 명령의 한도도 적용된다. timeout·EOF·프로토콜 오류가 발생한 요청을 자동 반복하지 않는다. 프로그램/전송 종료는 서버 작업 취소가 아니다. 실패한 단계의 결과를 audio.get/asset.versions/review.get으로 대조한다.
+--wait-seconds 기본 300(1~86400), --poll-seconds 기본 0.5(0.1~60)는 클라이언트 대기 설정이다. 작업 완료를 기다리는 제한과 별개로 단일 전송의 timeout은 --request-seconds 기본 300초(1~300)이며 실행 중 core 명령의 한도도 적용된다. timeout·EOF·프로토콜 오류가 발생한 요청을 자동 반복하지 않는다. 프로그램/전송 종료는 서버 작업 취소가 아니다. 실패한 단계의 결과를 audio.get/asset.versions/review.get으로 대조한다.
 
 같은 JSON/같은 ID로 다시 실행하면 project/import/audio/review의 기존 idempotency 계약에 따라 기록을 대조한다. 중간 단계부터 건너뛰는 로컬 checkpoint는 사용하지 않는다. 원본 경로의 내용 변경, ID/입력 충돌, 프로젝트 경계 위반은 core가 거절한다. 같은 ID의 작업이 failed/cancelled/interrupted/output_ready이면 멈추고 attention 오류를 반환한다. 새 ID로 자동 재생성하거나 audio.recover를 자동 호출하지 않는다. 복구 가능한 받은 파일은 기존 명시적 복구 계약을 따른다.
 
@@ -59,3 +59,5 @@ Linux에서 Python 클라이언트 회귀 8개, native CLI offline validate/pref
 새 CI에는 Python 회귀와 `ci_transport_smoke.py`를 추가했다. 후자는 격리된 Windows Actions에서만 실제 엔진을 기동하여 합성 WAV 원본/외부 후보 등록→검토 제출, CLI/MCP 재호출의 동일 기록, 클라이언트 종료 후 재연결, 원본 해시 보존과 변경 원본 재등록 거절을 검사한다. FFmpeg를 설치하지 않으므로 이 CI가 편집/분석을 실제 수행한 것은 아니다. 같은 스크립트의 --offline 모드는 엔진 없는 CLI preflight/MCP 계약만 확인한다.
 
 실제 지원 AI 제품의 MCP 클라이언트 연결, 사용자 Windows 화면/청감·실제 Key/과금은 여전히 미확인이다. 이 선택형 자체 클라이언트를 ChatGPT 등 제품 연결 성공으로 보고하지 않는다. T04 전체 수용·T05/D07·병합/공개 배포는 별도다.
+
+초기 v0.7 `97d13df9c402e602d888af6f888519e8992aa8d5`의 Windows run 44749313675는 native/UI build·Rust 29개 통과/외부 7개 ignore·Python 8개 통과 후 첫 실제 엔진 recipe에서 60초 timeout으로 실패했다. 실행 단계 진단을 위해 요청별 대기 제한과 실패 시 진행 로그를 추가했다. 이 실행을 실제 IPC 성공으로 기록하지 않는다.

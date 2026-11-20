@@ -43,9 +43,11 @@ def main():
         recipe_file = root / '작업 정의.json'
         def run_recipe(extra=(), expect=True):
             recipe_file.write_text(json.dumps(recipe, ensure_ascii=False), encoding='utf-8')
-            result = subprocess.run([sys.executable, str(runner), str(recipe_file), '--cli', str(cli), *extra],
+            result = subprocess.run([sys.executable, str(runner), str(recipe_file), '--cli', str(cli), '--request-seconds', '15', *extra],
                                     env=env, capture_output=True, timeout=60)
             data = json.loads(result.stdout)
+            if data['ok'] is not expect:
+                print(result.stderr.decode('utf-8', errors='replace'), file=sys.stderr)
             assert data['ok'] is expect, data
             assert result.returncode == (0 if expect else 1), result.returncode
             return data

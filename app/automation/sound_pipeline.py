@@ -313,12 +313,13 @@ def main():
     parser.add_argument('--cli', required=True, type=Path)
     parser.add_argument('--mcp', type=Path, help='Use MCP transport after CLI offline preflight')
     parser.add_argument('--validate-only', action='store_true')
+    parser.add_argument('--request-seconds', type=float, default=300)
     parser.add_argument('--wait-seconds', type=float, default=300)
     parser.add_argument('--poll-seconds', type=float, default=.5)
     args = parser.parse_args()
     context, client = {'stage': 'preflight'}, None
     try:
-        for value, low, high in [(args.wait_seconds, 1, 86400), (args.poll_seconds, .1, 60)]:
+        for value, low, high in [(args.request_seconds, 1, 300), (args.wait_seconds, 1, 86400), (args.poll_seconds, .1, 60)]:
             if not math.isfinite(value) or not low <= value <= high:
                 raise Failure('invalid_client_timing')
         with args.recipe.open('rb') as stream:
@@ -329,7 +330,7 @@ def main():
         plan, validations = compile_recipe(recipe)
         context.update(project_id=recipe['project']['project_id'], review_id=recipe['review']['review_id'])
         absolute_file(str(args.cli))
-        client = Client(args.cli)
+        client = Client(args.cli, timeout=args.request_seconds)
         for command in validations:
             client.validate(command)
         if args.validate_only:
@@ -337,7 +338,7 @@ def main():
         else:
             if args.mcp:
                 absolute_file(str(args.mcp))
-                client = Client(args.cli, args.mcp)
+                client = Client(args.cli, args.mcp, timeout=args.request_seconds)
                 client.discover({command['op'] for command in validations})
             result = execute(client, plan, args.wait_seconds, args.poll_seconds, context)
         print(json.dumps({'ok': True, 'data': result}, ensure_ascii=True, allow_nan=False))

@@ -48,3 +48,5 @@ Windows 실제 IPC/GUI·실행 중 FFmpeg 취소/파일 핸들·사용자 청감
 T00-A의 [과거 Windows 33개/별도 ACL·ZIP 증거](docs/T00_A_RESULTS.md)와 미수령 사용자 실기를 보존한다. 과거 [증거 CLI](spikes/t00-a/tools/README.md)는 현재 개발 승인 판정기가 아니다.
 
 게임 개발은 일시 정지다. 요구는 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md에 보관했다. 병합·Release/tag·공개 배포·실제 Key/크레딧·사용자 음원/게임 소스/DB/사이트 빌드·배포 변경은 수행하지 않았다.
+
+추가 CI 증거: v0.7 초기 `97d13df9c402e602d888af6f888519e8992aa8d5`의 [run 44749313675](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44749313675)는 Windows Rust 29개/외부 7개 ignore·Python 8개·native/GUI build 통과 후 실제 엔진 recipe 첫 실행 timeout으로 실패했다. 요청별 제한/단계 로그를 보강해 진단하며 실제 IPC 성공으로 처리하지 않는다.
