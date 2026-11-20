@@ -32,7 +32,7 @@ root 환경 변수가 없거나 상대 경로면 거절한다. 루트가 없으�
 
 Linux에서 CLI/MCP 파일 등록, 로컬 FFmpeg 편집/분석, async queue, 후보 해시·검토 제출·이력, 단일/다건 recipe를 실행할 수 있다. 모의 provider는 명시한 요청/credit 한도로 합성 WAV만 만들며 실제 게임용 생성 음원이 아니다.
 
-**Linux ElevenLabs HTTP/인증정보 경로는 아직 없다.** Windows의 Credential Manager/WinHTTP는 유지한다. Linux에서 실제 계정 인증은 `credential_manager_unavailable`로 차단한다. key를 환경 변수/CLI 인자/평문 파일로 조용히 우회하는 fallback은 추가하지 않았다. 실제 key·비용 한도·허용 생성 범위가 준비되기 전 라이브 요청을 하지 않는다. D08/D09의 기본 수치는 계속 미결정이다. Linux 루트 간 실제 계정 예산을 공유한다고 주장하지 않는다.
+v0.10에서 [Linux stdin 인증 세션/HTTPS](T02_LINUX_PROVIDER.md)를 추가했다. Windows Credential Manager/WinHTTP는 유지한다. Linux 일반 자동 기동에는 키가 없고, 별도 `--session` 시작 입력으로 account/허용 여부/한도/TTL을 제공해야 한다. secret은 메모리에만 보관한다. 실제 key·허용 생성 범위·비용 한도 없이 라이브 요청을 하지 않았다. D08/D09 기본 수치는 미결정이며 서로 다른 root/기기의 예산 공유를 보장하지 않는다.
 
 이번 증거는 Codex가 쉘 도구로 native CLI와 자체 MCP stdio 클라이언트를 실행한 결과다. Codex 앱 MCP 서버 등록이나 다른 AI 제품의 연결 수용 결과는 아니다. 검토 pending/기술 검사 통과는 승인/게임 적용이 아니다. T04 전체/T05를 완료 처리하지 않는다.
 

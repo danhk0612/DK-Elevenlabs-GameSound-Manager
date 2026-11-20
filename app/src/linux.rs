@@ -187,6 +187,7 @@ pub async fn run_engine() -> Result<(), &'static str> {
                 }
             },
             _ = tick.tick() => {
+                crate::linux_provider::clear_expired();
                 let state = shared.lock().unwrap();
                 if state.shutdown_flushed || state.idle_expired(Instant::now()) { break; }
             }

@@ -6,9 +6,11 @@
 - 후속 “실기, 점검 무시하고 진행해”. 이전 T00-A 실기/점검 대기·T00-B 미착수 지시를 해제했다. 실기 자료를 다시 요청하며 멈추지 않는다. 미확인을 성공으로 기록하지 않는다.
 - D01~D06 위임 채택은 유지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧 사용·현재 게임/실제 음원 변경은 별도다.
 
-## 최신 후속 우선순위 — 현재 AI 환경에서 실제 사용
+## 최신 후속 우선순위 — Linux 생성 코드 구현 이후
 
-사용자는 “네가 사용 가능한 수준”을 물은 뒤 Linux 실행 경로 연결에 “진행해”라고 지시했다. v0.9 Linux headless 경로를 추가했고 [계약](T04_LINUX_HEADLESS.md)을 먼저 읽는다. Windows 선택을 폐기하거나 원격 공개 서버를 만드는 지시가 아니다. 현재 Linux native CLI/MCP/단일·다건과 실제 FFmpeg async 편집·검사·검토는 실행 가능하다. **다음 우선순위는 Linux 실제 ElevenLabs 인증/HTTP 경로**다. secret 입력/보관/수명·로그 차단과 명시적 한도·remote POST 1회·불확실 상태를 설계/구현하고 mock/offline로 검증한다. 실제 Key/허용 비용 없이 라이브 요청을 하지 않는다. 추가 batch/UI 기능만 늘려 “AI가 실제 제작 가능”이라고 보고하지 않는다. 코드 e2e92a6의 run 44833857881은 Windows·Linux 전체 성공했다. 후속 signal group 분리 코드 32828ea59e73d8b12c525acc7210f73ffbab3114의 run 44834877114을 먼저 대조한다. 로컬 Rust 39개·Python 18개와 실제 Linux 엔진/FFmpeg가 통과했으며 정확한 CI 결과는 CURRENT_STATE.md를 확인한다. 기존 아래 v0.8 지시문보다 이 우선순위가 앞선다.
+v0.9 code 32828ea/run 44834877114의 Windows·Linux CI는 모두 성공했다. 사용자의 후속 “진행해”로 v0.10 [Linux 인증 세션/HTTPS](T02_LINUX_PROVIDER.md)를 구현했다. engine --session 전용 private stdin·메모리 account/key/TTL/허용·한도와 숨김 입력/private key FD 런처, fixed-origin reqwest/rustls 전송이 공통 큐에 연결된다. 일반 CLI/MCP에는 key·live 정책 변경 명령을 추가하지 않는다. default autostart는 키 없이 유지한다. 원본/후보/예산·단일 POST/불확실 상태·T05 경계를 유지한다.
+
+CURRENT_STATE.md에서 정확한 최신 코드 SHA/CI를 대조하고 실패가 있으면 먼저 수정한다. Rust 43개(실제 FFmpeg 포함)·Python 18개와 실제 Linux metadata-only 인증 세션/재시작/무저장·로컬 TLS 회귀를 확인했다. 실제 ElevenLabs 요청/생성·요금제/비용·청감은 미검증이다. 사용자의 Key·서비스 quota·허용 범위가 안전한 세션으로 준비되기 전에는 라이브 요청을 하지 않는다. 키를 채팅/인자/환경 변수/평문 JSON 파일로 요구하지 않는다. 준비 전에도 무인 실행 경로와 기존 한도/전송/중단 회귀를 개발할 수 있다. 실제 키 없이 또 다른 wrapper/UI만 늘려 실제 생성 완료라고 보고하지 않는다. 아래 v0.8 지시문은 과거 기반이며 이 우선순위가 앞선다.
 
 ## 재개 지시문
 

@@ -6,6 +6,10 @@ v0.5.0의 catalog schema 4·41개 명령/MCP 40개 도구, 비동기 제출/조�
 
 AI 자동화용 공통 명령을 먼저 제공한다. Windows engine/CLI/stdio MCP가 같은 정책·큐를 사용한다. T01 기능은 유지하며 총 32개 명령, shutdown을 제외한 MCP 31개 도구다. `dk-sound-cli schema`가 정확한 필수/선택 필드와 형식의 기준이다. GUI는 기존 목록/재생에 Key·한도 설정/연결 해제만 추가했다.
 
+## v0.10 Linux 실행 확장
+
+[Linux 인증 세션/HTTPS](T02_LINUX_PROVIDER.md)는 엔진 시작 시 private pipe의 명시적 key/계정/허용/한도/TTL을 받는다. Windows GUI/Credential Manager는 유지한다. 아래 GUI 설정 필수 문장은 Windows의 계약이며 Linux는 저장 없는 세션 설정을 사용한다. 공통 CLI/MCP에 key/실제 예산 설정 명령을 추가하지 않는다. Linux에서도 기존 생성 큐·workspace ledger·POST 단일 시도·후보/복구를 재사용한다. 실제 ElevenLabs 키·과금은 미검증이다.
+
 ## 연결과 비밀정보
 
 GUI의 계정 ID는 lowercase stable ID다. API Key를 password 입력으로 받아 Windows Credential Manager 현재 사용자 Generic credential에 보관한다. 저장 시 입력을 지운다. Key 조회·CLI/MCP 전달·환경변수·평문 설정/DB fallback은 없다. 연결 해제는 credential과 생성 허용 설정을 삭제한다. 계정 메타데이터·기존 작업/음원/누적 한도 기록은 남는다. 해제는 이미 전송된 요청을 취소하지 않는다.

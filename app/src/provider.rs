@@ -51,7 +51,11 @@ pub fn call(
     {
         native::http(&connection.key, method, path, body)
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux_provider::http(&connection.key, method, path, body)
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         let _ = (connection, method, path, body);
         Err(Error("unsupported_platform"))
@@ -65,7 +69,11 @@ pub fn credentials(account: &str) -> Result<Connection> {
     {
         native::read(account)
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        crate::linux_provider::read(account)
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         Err(Error("credential_manager_unavailable"))
     }

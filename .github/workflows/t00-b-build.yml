@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', '.github/workflows/t00-b-build.yml']
+    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -67,6 +67,7 @@ jobs:
           Copy-Item ../docs/T04_AUTOMATION.md artifact/AUTOMATION.md
           Copy-Item ../docs/T04_BATCH.md artifact/BATCH.md
           Copy-Item ../docs/T04_LINUX_HEADLESS.md artifact/LINUX_HEADLESS.md
+          Copy-Item ../docs/T02_LINUX_PROVIDER.md artifact/LINUX_PROVIDER.md
           New-Item -ItemType Directory -Force artifact/automation | Out-Null
           Copy-Item -Path automation/*.py,automation/*.json -Destination artifact/automation
           $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
@@ -112,3 +113,4 @@ jobs:
           python automation/ci_transport_smoke.py --bin-dir target/debug --local-linux
           python automation/ci_batch_smoke.py --bin-dir target/debug --local-linux
           python automation/ci_linux_smoke.py --bin-dir target/debug --ffmpeg /usr/bin/ffmpeg --ffprobe /usr/bin/ffprobe
+          python automation/ci_linux_session_smoke.py --bin-dir target/debug

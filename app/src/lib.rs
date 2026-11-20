@@ -7,6 +7,8 @@ mod engine;
 pub mod generation;
 #[cfg(target_os = "linux")]
 mod linux;
+#[cfg(target_os = "linux")]
+mod linux_provider;
 pub mod mcp;
 pub mod protocol;
 pub mod provider;
@@ -58,6 +60,18 @@ pub async fn run_engine() -> Result<(), &'static str> {
         linux::run_engine().await
     }
     #[cfg(not(any(windows, target_os = "linux")))]
+    {
+        Err("unsupported_platform")
+    }
+}
+
+/// Linux secret-session bootstrap is an engine-only startup path, never an IPC command.
+pub fn prepare_engine_session() -> Result<(), &'static str> {
+    #[cfg(target_os = "linux")]
+    {
+        linux_provider::bootstrap().map_err(|e| e.0)
+    }
+    #[cfg(not(target_os = "linux"))]
     {
         Err("unsupported_platform")
     }

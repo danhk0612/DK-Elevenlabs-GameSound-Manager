@@ -132,3 +132,7 @@ v0.8 [batch 계약](docs/T04_BATCH.md)은 기존 단일 recipe를 클라이언�
 ## T04 Linux headless 실행 확장 (v0.9)
 
 현재 Codex Linux 환경의 native 호출을 위해 [local Unix socket/전용 private root 계약](docs/T04_LINUX_HEADLESS.md)을 추가했다. Windows GUI·SID/named pipe·Credential Manager 선택은 유지한다. storage worker/dispatch/serve를 공통 engine 모듈로 추출해 Linux도 같은 큐·취소·검토·무재생 정책을 사용한다. Linux는 명시한 DK_SOUND_ROOT별 flock/0700 root/0600 socket 및 peer UID 대조를 사용한다. 원격 서버·Linux GUI·실제 provider 인증/HTTP fallback은 추가하지 않았다.
+
+## T02 Linux 인증/HTTP (v0.10)
+
+[T02 Linux 계약](docs/T02_LINUX_PROVIDER.md)에 따라 engine 전용 stdin 세션(메모리/단일 계정/명시 TTL·한도)과 고정 ElevenLabs HTTPS·retry/redirect/proxy 차단을 추가한다. Windows D05/D06·공통 명령/큐/schema는 유지한다. key는 CLI/MCP/일반 IPC에 넣지 않고 default autostart는 인증 없이 유지한다. Linux의 metadata 전용 session smoke와 런타임 생성 인증서의 로컬 TLS 검사로 실제 유료 서비스와 분리해 검증한다.

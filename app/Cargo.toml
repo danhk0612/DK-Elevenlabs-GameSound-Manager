@@ -1,6 +1,6 @@
 [package]
 name = "dk-gamesound"
-version = "0.9.0"
+version = "0.10.0"
 edition = "2021"
 build = "build.rs"
 
@@ -21,6 +21,9 @@ tauri = { version = "2", optional = true }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Credentials", "Win32_Networking_WinHttp", "Win32_System_Threading", "Win32_System_Memory", "Win32_Storage_FileSystem"] }
@@ -44,3 +47,6 @@ path = "src/bin/engine.rs"
 [[bin]]
 name = "dk-sound-mcp"
 path = "src/bin/mcp.rs"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }

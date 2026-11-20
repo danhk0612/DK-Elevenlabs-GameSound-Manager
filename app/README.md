@@ -1,4 +1,4 @@
-# DK GameSound — 사운드 관리·생성·편집/분석 v0.9.0
+# DK GameSound — 사운드 관리·생성·편집/분석 v0.10.0
 
 AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 목록과 재생에 필요한 최소 화면을 제공한다. T02 ElevenLabs 계정·한도·TTS/SFX 후보 생성 경로와 Key 없는 mock을 제공한다. T03 로컬 편집·변환·파형/기술 수치 검사와 T04 비동기 큐/조회·취소와 검토 제출/후보 이력을 제공한다. 주관 품질 평가·사람 승인/게임 적용은 아직 제공하지 않는다.
 
@@ -25,7 +25,7 @@ CLI stdout은 JSON 한 개이며 성공 exit 0/오류 exit 1이다. schema는 �
 
 ## Linux headless 자동화
 
-[Linux 실행 계약](../docs/T04_LINUX_HEADLESS.md)에 따라 `DK_SOUND_ROOT`를 현재 UID의 private 0700 절대 경로로 명시하면 같은 native CLI/MCP/단일·다건 recipe를 사용할 수 있다. local Unix socket/lock과 공통 엔진으로 파일 관리·FFmpeg 편집/분석·후보 검토를 실행한다. Linux 실제 ElevenLabs 인증/HTTP와 GUI는 아직 지원하지 않는다. mock 합성은 실제 제작 음원이 아니다. Windows 경로/보안/인증은 유지한다.
+[Linux 실행 계약](../docs/T04_LINUX_HEADLESS.md)에 따라 `DK_SOUND_ROOT`를 현재 UID의 private 0700 절대 경로로 명시하면 같은 native CLI/MCP/단일·다건 recipe를 사용할 수 있다. local Unix socket/lock과 공통 엔진으로 파일 관리·FFmpeg 편집/분석·후보 검토를 실행한다. [Linux 인증 세션/HTTPS](../docs/T02_LINUX_PROVIDER.md)를 구현했다. `automation/linux_session.py`는 숨김 입력 또는 private key FD로 foreground 엔진 세션을 시작하며 키를 저장하지 않는다. 실제 Key/과금 검증과 Linux GUI는 미확인/미지원이다. mock 합성은 실제 제작 음원이 아니다. Windows 경로/보안/인증은 유지한다.
 
 ## 편집·분석 자동화
 
