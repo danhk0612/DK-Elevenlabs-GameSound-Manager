@@ -48,9 +48,11 @@ pub async fn write_frame<W: AsyncWrite + Unpin>(stream: &mut W, value: &Value) -
 
 pub struct State {
     pub clients: usize,
-    // Internal integration points; T00-B exposes no job submission or fake work.
+    // Local commands and persistent remote jobs both prevent idle shutdown.
     pub queued: usize,
     pub running: usize,
+    pub generation_queued: usize,
+    pub generation_running: usize,
     pub stopping: bool,
     pub shutdown_flushed: bool,
     pub last_empty: Instant,
@@ -62,6 +64,8 @@ impl Default for State {
             clients: 0,
             queued: 0,
             running: 0,
+            generation_queued: 0,
+            generation_running: 0,
             stopping: false,
             shutdown_flushed: false,
             last_empty: Instant::now(),
@@ -81,7 +85,10 @@ impl State {
         }
     }
     pub fn busy(&self) -> bool {
-        self.queued != 0 || self.running != 0
+        self.queued != 0
+            || self.running != 0
+            || self.generation_queued != 0
+            || self.generation_running != 0
     }
     pub fn idle_expired(&self, now: Instant) -> bool {
         self.clients == 0 && !self.busy() && now.duration_since(self.last_empty) >= IDLE_TIMEOUT
@@ -103,11 +110,11 @@ impl State {
                 let mut data = json!({"name":"DK-Elevenlabs-GameSound-Manager",
                     "version":env!("CARGO_PKG_VERSION"),"engine_pid":std::process::id(),
                     "capabilities":crate::catalog::COMMANDS.iter().map(|c|c.op).collect::<Vec<_>>(),
-                    "stage":"T01","sound_features_available":true,"remote_generation_available":false});
+                    "stage":"T02","sound_features_available":true,"remote_generation_available":true,"remote_generation_requires":"local_credentials_and_explicit_limits"});
                 if op == "status" {
                     data["state"] = json!("ready");
                     data["connected_clients"] = json!(self.clients);
-                    data["jobs"] = json!({"available":true,"scope":"serialized_local_commands","queued":self.queued,"running":self.running});
+                    data["jobs"] = json!({"available":true,"scope":"serialized_local_and_generation","generation_queued":self.generation_queued,"generation_running":self.generation_running,"queued":self.queued+self.generation_queued,"running":self.running+self.generation_running});
                     data["idle_timeout_ms"] = json!(IDLE_TIMEOUT.as_millis());
                     data["transport"] = json!("windows_named_pipe_owner_sid_local_only");
                 }

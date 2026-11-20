@@ -69,12 +69,44 @@ async fn audio_source(
     .map_err(|_| "audio_read_failed".to_string())?
 }
 
+#[tauri::command]
+async fn save_connection(
+    account_id: String,
+    key: String,
+    enabled: bool,
+    request_limit: i64,
+    credit_limit: i64,
+) -> Value {
+    let created=dk_gamesound::request(json!({"protocol_version":1,"op":"account.create","account_id":account_id,"provider":"elevenlabs"})).await;
+    if created["ok"] != true {
+        return created;
+    }
+    tauri::async_runtime::spawn_blocking(move || {
+        match dk_gamesound::provider::save(&account_id, key, enabled, request_limit, credit_limit) {
+            Ok(()) => dk_gamesound::protocol::success(json!({"saved":true})),
+            Err(error) => dk_gamesound::protocol::error(error.0),
+        }
+    })
+    .await
+    .unwrap_or_else(|_| dk_gamesound::protocol::error("credential_write_failed"))
+}
+
+#[tauri::command]
+async fn disconnect_connection(account_id: String) -> Value {
+    match dk_gamesound::provider::disconnect(&account_id) {
+        Ok(()) => dk_gamesound::protocol::success(json!({"disconnected":true})),
+        Err(error) => dk_gamesound::protocol::error(error.0),
+    }
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             sound_status,
             local_query,
-            audio_source
+            audio_source,
+            save_connection,
+            disconnect_connection
         ])
         .run(tauri::generate_context!())
         .expect("minimal GUI failed");

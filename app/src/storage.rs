@@ -50,7 +50,7 @@ fn linked(metadata: &fs::Metadata) -> bool {
         metadata.file_type().is_symlink()
     }
 }
-fn no_link(path: &Path) -> Result<()> {
+pub(crate) fn no_link(path: &Path) -> Result<()> {
     match fs::symlink_metadata(path) {
         Ok(meta) if linked(&meta) => Err(Error("managed_path_is_link")),
         Ok(_) => Ok(()),
@@ -58,7 +58,7 @@ fn no_link(path: &Path) -> Result<()> {
         Err(e) => Err(e.into()),
     }
 }
-fn directory(path: &Path) -> Result<()> {
+pub(crate) fn directory(path: &Path) -> Result<()> {
     no_link(path)?;
     if !path.exists() {
         fs::create_dir(path)?;
@@ -94,7 +94,7 @@ fn local_directory(path: &Path) -> Result<PathBuf> {
     Ok(canonical)
 }
 
-fn database(path: &Path, schema: &str, create: bool) -> Result<Connection> {
+fn database(path: &Path, schema: &str, create: bool, max_version: i64) -> Result<Connection> {
     no_link(path)?;
     for suffix in ["-wal", "-shm", "-journal"] {
         no_link(&PathBuf::from(format!(
@@ -126,7 +126,7 @@ fn database(path: &Path, schema: &str, create: bool) -> Result<Connection> {
         tx.pragma_update(None, "application_id", APP_ID)?;
         tx.pragma_update(None, "user_version", 1)?;
         tx.commit()?;
-    } else if version != 1 || app != APP_ID {
+    } else if !(1..=max_version).contains(&version) || app != APP_ID {
         return Err(Error("unsupported_schema"));
     }
     db.pragma_update(None, "foreign_keys", true)?;
@@ -136,8 +136,8 @@ fn database(path: &Path, schema: &str, create: bool) -> Result<Connection> {
 }
 
 pub struct Store {
-    root: PathBuf,
-    catalog: Connection,
+    pub(crate) root: PathBuf,
+    pub(crate) catalog: Connection,
 }
 impl Store {
     pub fn open(root: &Path) -> Result<Self> {
@@ -148,7 +148,8 @@ impl Store {
         no_link(root)?;
         fs::create_dir_all(root)?;
         let root = local_directory(root)?;
-        let catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true)?;
+        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,2)?;
+        crate::generation::migrate(&mut catalog)?;
         Ok(Self { root, catalog })
     }
     pub fn default_root() -> Result<PathBuf> {
@@ -172,7 +173,7 @@ impl Store {
             Err(e) => crate::protocol::error(e.0),
         }
     }
-    fn project(&self, id: &str) -> Result<(PathBuf, Connection)> {
+    pub(crate) fn project(&self, id: &str) -> Result<(PathBuf, Connection)> {
         let root: String = self
             .catalog
             .query_row("SELECT root FROM projects WHERE id=?1", [id], |r| r.get(0))
@@ -192,7 +193,7 @@ impl Store {
         if marker["project_id"] != id {
             return Err(Error("invalid_project_marker"));
         }
-        let db = database(&root.join("project.sqlite3"), SCHEMA, false)?;
+        let db = database(&root.join("project.sqlite3"), SCHEMA, false, 1)?;
         Ok((root, db))
     }
     fn create(&mut self, c: &Value) -> Result<Value> {
@@ -239,7 +240,7 @@ impl Store {
         for name in ["originals", "candidates", "imports"] {
             directory(&root.join(name))?;
         }
-        let db = database(&root.join("project.sqlite3"), SCHEMA, true)?;
+        let db = database(&root.join("project.sqlite3"), SCHEMA, true, 1)?;
         db.execute(
             "INSERT INTO events(op,entity_id) VALUES('project.create',?1)",
             [id],
@@ -257,6 +258,12 @@ impl Store {
     }
     fn dispatch(&mut self, c: &Value) -> Result<Value> {
         let op = text(c, "op");
+        if ["account.", "budget.", "voice.", "model.", "job."]
+            .iter()
+            .any(|prefix| op.starts_with(prefix))
+        {
+            return crate::generation::command(self, c);
+        }
         if op == "project.create" {
             return self.create(c);
         }
@@ -269,7 +276,10 @@ impl Store {
                 let name:String=self.catalog.query_row("SELECT name FROM projects WHERE id=?1",[text(c,"project_id")],|r|r.get(0))?;
                 Ok(json!({"project_id":c["project_id"],"name":name,"schema_version":1}))
             },
-            "asset.import"=>import(&root,&mut db,c),
+            "asset.import"=>{
+                if self.catalog.query_row("SELECT EXISTS(SELECT 1 FROM generation_jobs WHERE project_id=?1 AND asset_id=?2 AND version_id=?3)",params![text(c,"project_id"),text(c,"asset_id"),text(c,"version_id")],|r|r.get::<_,bool>(0))?{return Err(Error("generation_target_reserved"));}
+                import(&root,&mut db,c)
+            },
             "asset.list"=>list(&db,"SELECT id,name,kind FROM assets WHERE id>?1 AND instr(lower(name),lower(?2))>0 AND (?4='' OR kind=?4) ORDER BY id LIMIT ?3",c,&[text(c,"kind")],&["asset_id","name","kind"]),
             "asset.versions"=>list(&db,"SELECT id,parent_id,role,state,sha256,bytes,extension,source_note FROM versions WHERE id>?1 AND ?2='' AND asset_id=?4 ORDER BY id LIMIT ?3",c,&[text(c,"asset_id")],&["version_id","parent_version_id","role","state","sha256","bytes","extension","source_note"]),
             "asset.file"=>file_info(&root,&db,text(c,"asset_id"),text(c,"version_id")),
@@ -404,7 +414,7 @@ fn put(db: &mut Connection, c: &Value) -> Result<Value> {
     Ok(json!({"id":id,"saved":true}))
 }
 
-fn hash_file(path: &Path) -> Result<(String, u64)> {
+pub(crate) fn hash_file(path: &Path) -> Result<(String, u64)> {
     let mut file = File::open(path)?;
     if !file.metadata()?.is_file() {
         return Err(Error("source_not_regular_file"));
@@ -476,6 +486,12 @@ fn version_paths(
 }
 
 fn import(root: &Path, db: &mut Connection, c: &Value) -> Result<Value> {
+    import_role(root, db, c, false)
+}
+pub(crate) fn import_generated(root: &Path, db: &mut Connection, c: &Value) -> Result<Value> {
+    import_role(root, db, c, true)
+}
+fn import_role(root: &Path, db: &mut Connection, c: &Value, generated: bool) -> Result<Value> {
     let asset = text(c, "asset_id");
     let version = text(c, "version_id");
     let source = Path::new(text(c, "source_path"));
@@ -554,7 +570,7 @@ fn import(root: &Path, db: &mut Connection, c: &Value) -> Result<Value> {
                 "INSERT INTO assets VALUES(?1,?2,?3)",
                 params![asset, text(c, "name"), text(c, "kind")],
             )?;
-            role = "original".to_string();
+            role = if generated { "candidate" } else { "original" }.to_string();
         }
         tx.execute(
             "INSERT INTO versions VALUES(?1,?2,?3,?4,'copying',?5,?6,?7,?8,?9)",

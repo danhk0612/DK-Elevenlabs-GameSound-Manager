@@ -137,6 +137,111 @@ pub const COMMANDS: &[Command] = &[
         optional: &["after", "limit", "search", "character_id"],
         read_only: true,
     },
+    Command {
+        op: "account.create",
+        required: &["account_id", "provider"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
+        op: "account.get",
+        required: &["account_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "account.refresh",
+        required: &["account_id"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
+        op: "budget.set",
+        required: &["account_id", "request_limit", "credit_limit"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
+        op: "budget.get",
+        required: &["account_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "voice.list",
+        required: &["account_id"],
+        optional: &["page_token"],
+        read_only: true,
+    },
+    Command {
+        op: "voice.get",
+        required: &["account_id", "voice_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "voice.settings",
+        required: &["account_id", "voice_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "model.list",
+        required: &["account_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "job.submit",
+        required: &[
+            "project_id",
+            "account_id",
+            "job_id",
+            "asset_id",
+            "version_id",
+            "name",
+            "generation_kind",
+            "text",
+            "model_id",
+            "output_format",
+            "reserve_credits",
+        ],
+        optional: &[
+            "voice_id",
+            "language",
+            "voice_settings",
+            "duration_ms",
+            "loop",
+            "prompt_influence",
+            "parent_version_id",
+            "dialogue_id",
+        ],
+        read_only: false,
+    },
+    Command {
+        op: "job.get",
+        required: &["project_id", "job_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "job.list",
+        required: &["project_id"],
+        optional: &["after", "limit"],
+        read_only: true,
+    },
+    Command {
+        op: "job.cancel",
+        required: &["project_id", "job_id"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
+        op: "job.recover",
+        required: &["project_id", "job_id"],
+        optional: &[],
+        read_only: false,
+    },
 ];
 
 pub fn find(op: &str) -> Option<&'static Command> {
@@ -144,6 +249,19 @@ pub fn find(op: &str) -> Option<&'static Command> {
 }
 pub fn field_schema(key: &str) -> Value {
     match key {
+        "request_limit" => json!({"type":"integer","minimum":1,"maximum":1000000}),
+        "credit_limit" | "reserve_credits" => {
+            json!({"type":"integer","minimum":1,"maximum":1000000000})
+        }
+        "duration_ms" => json!({"type":"integer","minimum":500,"maximum":30000}),
+        "loop" => json!({"type":"boolean"}),
+        "prompt_influence" => json!({"type":"number","minimum":0,"maximum":1}),
+        "voice_settings" => {
+            json!({"type":"object","properties":{"stability":{"type":"number","minimum":0,"maximum":1},"similarity_boost":{"type":"number","minimum":0,"maximum":1},"style":{"type":"number","minimum":0,"maximum":1},"speed":{"type":"number","minimum":0.7,"maximum":1.2},"use_speaker_boost":{"type":"boolean"}},"additionalProperties":false})
+        }
+        "provider" => json!({"type":"string","enum":["mock","elevenlabs"]}),
+        "generation_kind" => json!({"type":"string","enum":["tts","sfx"]}),
+        "output_format" => json!({"type":"string","enum":["mp3_44100_128"]}),
         "limit" => json!({"type":"integer","minimum":1,"maximum":10}),
         "kind" => json!({"type":"string","enum":["bgm","sfx","voice"]}),
         "after" => {
@@ -155,7 +273,7 @@ pub fn field_schema(key: &str) -> Value {
         "source_path" => {
             json!({"type":"string","maxLength":4096,"description":"Absolute existing audio file. Copied, never moved or modified; maximum 512 MiB."})
         }
-        key if key.ends_with("_id") && key != "voice_id" => {
+        key if key.ends_with("_id") && !matches!(key, "voice_id" | "model_id") => {
             json!({"type":"string","maxLength":64,"pattern":"^[a-z0-9_-]+$","description":"Stable lowercase identifier. Windows reserved device names are rejected. project_id always scopes this request."})
         }
         _ => json!({"type":"string","maxLength":4096}),
@@ -166,9 +284,9 @@ pub fn tools() -> Vec<Value> {
         let mut properties = serde_json::Map::new();
         for key in c.required.iter().chain(c.optional) { properties.insert((*key).to_owned(),field_schema(key)); }
         json!({"name":format!("sound_{}",c.op.replace('.',"_")),
-            "description":format!("Local {}. Explicit project_id scopes project data. Never generates remotely or applies to game files.",c.op),
+            "description":format!("{}: Explicit project_id scopes project data. Mock operations are local. ElevenLabs operations require configured credentials and policy; generation creates candidates only. Never applies to game files.",c.op),
             "inputSchema":{"type":"object","properties":properties,"required":c.required,"additionalProperties":false},
-            "annotations":{"readOnlyHint":c.read_only,"destructiveHint":false,"idempotentHint":true,"openWorldHint":false}})
+            "annotations":{"readOnlyHint":c.read_only,"destructiveHint":false,"idempotentHint":!matches!(c.op,"job.cancel"),"openWorldHint":matches!(c.op,"account.refresh"|"voice.list"|"voice.get"|"voice.settings"|"model.list"|"job.submit")}})
     }).collect()
 }
 
@@ -206,6 +324,57 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
             }
             continue;
         }
+        if [
+            "request_limit",
+            "credit_limit",
+            "reserve_credits",
+            "duration_ms",
+        ]
+        .contains(key)
+        {
+            let n = value.as_i64().ok_or("invalid_numeric_field")?;
+            let (min, max) = match *key {
+                "request_limit" => (1, 1000000),
+                "duration_ms" => (500, 30000),
+                _ => (1, 1000000000),
+            };
+            if n < min || n > max {
+                return Err("numeric_field_out_of_range");
+            }
+            continue;
+        }
+        if *key == "loop" {
+            if !value.is_boolean() {
+                return Err("invalid_boolean");
+            }
+            continue;
+        }
+        if *key == "prompt_influence" {
+            if !value.as_f64().is_some_and(|n| (0.0..=1.0).contains(&n)) {
+                return Err("invalid_prompt_influence");
+            }
+            continue;
+        }
+        if *key == "voice_settings" {
+            let fields = value.as_object().ok_or("invalid_voice_settings")?;
+            for (name, v) in fields {
+                if name == "use_speaker_boost" {
+                    if !v.is_boolean() {
+                        return Err("invalid_voice_settings");
+                    }
+                } else {
+                    let range = match name.as_str() {
+                        "stability" | "similarity_boost" | "style" => (0.0, 1.0),
+                        "speed" => (0.7, 1.2),
+                        _ => return Err("invalid_voice_settings"),
+                    };
+                    if !v.as_f64().is_some_and(|n| n >= range.0 && n <= range.1) {
+                        return Err("invalid_voice_settings");
+                    }
+                }
+            }
+            continue;
+        }
         let text = value.as_str().ok_or("invalid_field_type")?;
         let max = match *key {
             "description" | "text" => 2048,
@@ -216,7 +385,9 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
         if text.len() > max || text.contains('\0') {
             return Err("invalid_field_length");
         }
-        if (*key == "project_id" || key.ends_with("_id") && *key != "voice_id" || *key == "after")
+        if (*key == "project_id"
+            || key.ends_with("_id") && !matches!(*key, "voice_id" | "model_id")
+            || *key == "after")
             && !text.is_empty()
         {
             let parts: Vec<_> = if *key == "after" && op == "project.recover" {
@@ -236,6 +407,33 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
         }
         if *key == "kind" && !["bgm", "sfx", "voice"].contains(&text) {
             return Err("invalid_kind");
+        }
+    }
+    if op == "account.create"
+        && !["mock", "elevenlabs"].contains(&command["provider"].as_str().unwrap_or(""))
+    {
+        return Err("invalid_provider");
+    }
+    if op == "job.submit" {
+        let kind = command["generation_kind"].as_str().unwrap_or("");
+        if !["tts", "sfx"].contains(&kind) || command["output_format"] != "mp3_44100_128" {
+            return Err("unsupported_generation_format_or_kind");
+        }
+        if kind == "tts"
+            && (command["voice_id"].as_str().unwrap_or("").is_empty()
+                || command.get("duration_ms").is_some()
+                || command.get("loop").is_some()
+                || command.get("prompt_influence").is_some())
+        {
+            return Err("invalid_tts_parameters");
+        }
+        if kind == "sfx"
+            && (command.get("duration_ms").is_none()
+                || ["voice_id", "voice_settings", "dialogue_id", "language"]
+                    .iter()
+                    .any(|k| command.get(*k).is_some()))
+        {
+            return Err("invalid_sfx_parameters");
         }
     }
     Ok(())

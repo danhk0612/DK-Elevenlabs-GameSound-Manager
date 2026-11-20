@@ -22,6 +22,11 @@ function App() {
   const [version, setVersion] = useState('');
   const [audio, setAudio] = useState('');
   const [details, setDetails] = useState('');
+  const [account, setAccount] = useState('');
+  const [key, setKey] = useState('');
+  const [enabled, setEnabled] = useState(false);
+  const [calls, setCalls] = useState('');
+  const [credits, setCredits] = useState('');
 
   async function run(action: () => Promise<void>) {
     if (lock.current) return;
@@ -64,6 +69,28 @@ function App() {
       setMessage(reply.ok ? '엔진에 연결했습니다.' : reply.error?.code ?? '연결 실패');
     })}>엔진 상태</button></header>
     <p className="note">오프라인 목록 · 원본/후보 확인 · 재생</p>
+    <section aria-label="ElevenLabs 연결">
+      <h2>ElevenLabs 연결</h2>
+      <label>계정 ID <input disabled={busy} value={account} onChange={e => setAccount(e.target.value)} autoComplete="off" /></label>
+      <label>API Key <input disabled={busy} type="password" value={key} onChange={e => setKey(e.target.value)} autoComplete="off" /></label>
+      <label>생성 요청 총한도 <input disabled={busy} type="number" min="0" max="1000000" value={calls} onChange={e => setCalls(e.target.value)} /></label>
+      <label>예약 크레딧 총한도 <input disabled={busy} type="number" min="0" max="1000000000" value={credits} onChange={e => setCredits(e.target.value)} /></label>
+      <label><input disabled={busy} type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} /> 유료 생성 허용</label>
+      <p>한도는 이 PC의 동일 workspace 누적 기록에 적용되며 자동 초기화되지 않습니다. 실제 청구액 상한은 보장하지 않습니다. 서비스 측 Key 한도도 설정하세요.</p>
+      <button disabled={busy || !account || !key || (enabled && (!calls || !credits))} onClick={() => run(async () => {
+        try {
+          const reply = await invoke<Reply>('save_connection', { accountId: account, key, enabled, requestLimit: Number(calls || 0), creditLimit: Number(credits || 0) });
+          if (!reply.ok) throw new Error(reply.error?.code ?? '저장 실패');
+          setMessage('Windows Credential Manager에 저장했습니다. 생성 작업은 CLI/MCP에서 제출하세요.');
+        } finally { setKey(''); }
+      })}>연결 설정 저장</button>
+      <button disabled={busy || !account} onClick={() => run(async () => {
+        setKey('');
+        const reply = await invoke<Reply>('disconnect_connection', { accountId: account });
+        if (!reply.ok) throw new Error(reply.error?.code ?? '해제 실패');
+        setMessage('저장된 Key와 생성 허용 설정을 삭제했습니다.');
+      })}>연결 해제</button>
+    </section>
     <section aria-label="프로젝트">
       <div className="line"><button disabled={busy} onClick={() => loadProjects()}>프로젝트 목록</button>
         <button disabled={busy || !projects.next_after} onClick={() => loadProjects(projects.next_after!)}>다음 10개</button></div>

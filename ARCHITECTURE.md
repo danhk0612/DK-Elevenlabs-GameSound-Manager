@@ -83,7 +83,7 @@ CLI·MCP와 GUI가 같은 공통 정책을 통과해야 한다. 자동 호출에
 
 ## API·비밀정보·오디오
 
-연결 모듈만 API Key를 읽고 프런트엔드, 프로젝트 DB, 인자, 로그, 내보내기에 Key를 노출하지 않는 구조를 검증한다. D05 위임 결정으로 Windows Credential Manager 현재 사용자 범위를 사용한다. silent DPAPI fallback은 넣지 않고 실제 Key·수명 검증은 T02다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
+연결 모듈만 API Key를 읽고 GUI password 입력 이외의 조회·프로젝트 DB·인자·로그·내보내기에 Key를 노출하지 않는 구조를 검증한다. D05 위임 결정으로 Windows Credential Manager 현재 사용자 범위를 사용한다. silent DPAPI fallback은 넣지 않고 실제 Key·수명 검증은 T02다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
 
 FFmpeg/ffprobe 호출은 셸 문자열 대신 인자 배열을 사용하고 원본과 다른 출력 경로를 쓴다. 재생 지원 형식과 변환 지원 형식은 다를 수 있으므로 WebView2 재생을 실제 파일로 검사한다. 기본 형식·음량/무음 임계값·루프 단위는 D08이며 임의 상수로 확정하지 않는다.
 
@@ -98,3 +98,9 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 ## T01 실제 저장·명령 계약
 
 [로컬 라이브러리 계약](docs/T01_LOCAL_LIBRARY.md)을 현재 구현 기준으로 사용한다. LOCALAPPDATA catalog와 사용자 선택 workspace의 프로젝트별 schema 1 SQLite/불변 버전 파일을 분리하고 모든 자료 명령에 project_id를 요구한다. 엔진의 단일 writer 스레드가 로컬 명령을 순차 처리하며 queued/running 중 정상 종료를 거절한다. import는 예상 SHA journal → 별도 복사/hash/sync → no-replace hard link 게시 → ready 기록 순서다. 중단 대조는 copying 버전에 한정하며 임의 파일/전원 장애 전체 복구를 보장하지 않는다. CLI schema와 MCP 17개 도구는 같은 명령 카탈로그·검증을 사용한다. 상세 필드/byte 제한/페이지/preview/오류 경계는 위 계약을 따른다. 계정 예산·원격 작업 큐와 별개다.
+
+## T02 실제 계정·큐 계약
+
+[생성 계약](docs/T02_GENERATION.md)을 현재 구현 기준으로 사용한다. catalog schema 2에 계정/workspace identity·공유 한도·불변 요청 snapshot과 attempted 상태를 저장한다. 프로젝트 DB는 schema 1이다. Windows Credential Manager만 실제 Key와 유료 허용/한도 정책을 보관하고 CLI/MCP는 credential 입력을 받지 않는다. D09 숫자 미설정은 거절이며 실제 청구액 상한을 보장하지 않는다.
+
+단일 writer의 timeout tick으로 persistent 큐를 실행하고 status/job.get/list를 원격 요청과 분리한다. POST 직전 attempted를 기록하며 원격 자동 재시도가 없다. output_ready spool을 T01 journal로 후보 등록하고 재기동 시 미완료 요청을 자동 재전송하지 않는다. 상세 한도 유지·취소/복구·오류·32개 명령/31개 MCP 도구는 T02 계약을 따른다. 과거 T01의 원격 큐 미포함/17개 도구 표기는 v0.2.0 기반 설명이다.

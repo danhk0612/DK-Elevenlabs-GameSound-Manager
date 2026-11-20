@@ -243,3 +243,271 @@ fn managed_symlinks_are_not_followed() {
     );
     assert_eq!(result["error"]["code"], "managed_path_is_link");
 }
+
+fn generation_request(id: &str) -> Value {
+    json!({"project_id":"one","account_id":"demo","job_id":id,"asset_id":id,"version_id":"take-1","name":"mock sound","generation_kind":"sfx","text":"A short click","model_id":"mock-sfx","output_format":"mp3_44100_128","reserve_credits":20,"duration_ms":500})
+}
+fn generation_setup(f: &mut Fixture, calls: i64, credits: i64) {
+    f.project("one");
+    assert_eq!(
+        f.run(
+            "account.create",
+            json!({"account_id":"demo","provider":"mock"})
+        )["ok"],
+        true
+    );
+    assert_eq!(
+        f.run(
+            "budget.set",
+            json!({"account_id":"demo","request_limit":calls,"credit_limit":credits})
+        )["ok"],
+        true
+    );
+}
+#[test]
+fn generation_requires_policy_reuses_ids_and_registers_only_candidates() {
+    let mut f = Fixture::new();
+    f.project("one");
+    f.run(
+        "account.create",
+        json!({"account_id":"demo","provider":"mock"}),
+    );
+    assert_eq!(
+        f.run("job.submit", generation_request("first"))["error"]["code"],
+        "budget_not_configured"
+    );
+    f.run(
+        "budget.set",
+        json!({"account_id":"demo","request_limit":2,"credit_limit":40}),
+    );
+    assert_eq!(
+        f.run("job.submit", generation_request("first"))["data"]["state"],
+        "queued"
+    );
+    assert_eq!(
+        f.run("job.submit", generation_request("first"))["data"]["state"],
+        "queued"
+    );
+    let mut conflict = generation_request("first");
+    conflict["text"] = json!("changed");
+    assert_eq!(
+        f.run("job.submit", conflict)["error"]["code"],
+        "job_id_conflict"
+    );
+    assert!(crate::generation::tick(&mut f.store).unwrap());
+    let job = f.run("job.get", json!({"project_id":"one","job_id":"first"}));
+    assert_eq!(job["data"]["state"], "succeeded", "{job}");
+    let versions = f.run(
+        "asset.versions",
+        json!({"project_id":"one","asset_id":"first"}),
+    );
+    assert_eq!(versions["data"]["items"][0]["role"], "candidate");
+    assert_eq!(versions["data"]["items"][0]["extension"], "wav");
+    assert!(!crate::generation::tick(&mut f.store).unwrap());
+    assert_eq!(
+        f.run("budget.get", json!({"account_id":"demo"}))["data"]["requests_held"],
+        1
+    );
+}
+#[test]
+fn workspace_budget_is_shared_across_projects_and_account_aliases() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 1, 20);
+    f.project("two");
+    f.run(
+        "account.create",
+        json!({"account_id":"alias","provider":"mock"}),
+    );
+    assert_eq!(f.run("job.submit", generation_request("first"))["ok"], true);
+    let mut other = generation_request("second");
+    other["account_id"] = json!("alias");
+    other["project_id"] = json!("two");
+    assert_eq!(
+        f.run("job.submit", other.clone())["error"]["code"],
+        "budget_exceeded"
+    );
+    assert_eq!(
+        f.run("job.get", json!({"project_id":"two","job_id":"first"}))["error"]["code"],
+        "job_not_found"
+    );
+    assert_eq!(
+        f.run("job.cancel", json!({"project_id":"one","job_id":"first"}))["data"]["state"],
+        "cancelled"
+    );
+    assert_eq!(f.run("job.submit", other)["ok"], true);
+}
+#[test]
+fn interrupted_requests_are_never_replayed_and_unknown_usage_remains_held() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 3, 60);
+    f.run("job.submit", generation_request("queued"));
+    f.run("job.submit", generation_request("attempted"));
+    f.store
+        .catalog
+        .execute(
+            "UPDATE generation_jobs SET attempted=1,state='running' WHERE id='attempted'",
+            [],
+        )
+        .unwrap();
+    let root = f.root.join("settings");
+    let old = std::mem::replace(&mut f.store, Store::open(&root).unwrap());
+    drop(old);
+    assert_eq!(crate::generation::pending(&f.store), 0);
+    assert!(!crate::generation::tick(&mut f.store).unwrap());
+    assert_eq!(
+        f.run("job.get", json!({"project_id":"one","job_id":"queued"}))["data"]["state"],
+        "interrupted"
+    );
+    assert_eq!(
+        f.run("job.get", json!({"project_id":"one","job_id":"attempted"}))["data"]["state"],
+        "outcome_unknown"
+    );
+    assert_eq!(
+        f.run(
+            "job.cancel",
+            json!({"project_id":"one","job_id":"attempted"})
+        )["error"]["code"],
+        "job_not_cancellable"
+    );
+    assert_eq!(
+        f.run("budget.get", json!({"account_id":"demo"}))["data"]["requests_held"],
+        2
+    );
+}
+#[test]
+fn received_output_can_be_attached_again_without_generation_or_overwriting() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 1, 20);
+    f.run("job.submit", generation_request("first"));
+    crate::generation::tick(&mut f.store).unwrap();
+    let before = f.run(
+        "asset.file",
+        json!({"project_id":"one","asset_id":"first","version_id":"take-1"}),
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE generation_jobs SET state='output_ready',result=NULL WHERE id='first'",
+            [],
+        )
+        .unwrap();
+    let recovered = f.run("job.recover", json!({"project_id":"one","job_id":"first"}));
+    assert_eq!(recovered["data"]["state"], "succeeded", "{recovered}");
+    assert_eq!(
+        before,
+        f.run(
+            "asset.file",
+            json!({"project_id":"one","asset_id":"first","version_id":"take-1"})
+        )
+    );
+    assert_eq!(
+        f.run("budget.get", json!({"account_id":"demo"}))["data"]["requests_held"],
+        1
+    );
+}
+#[test]
+fn changed_cost_or_tighter_budget_blocks_dispatch_and_secrets_are_not_commands() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 3, 60);
+    f.run("job.submit", generation_request("first"));
+    f.run("job.submit", generation_request("second"));
+    f.store
+        .catalog
+        .execute(
+            "UPDATE generation_jobs SET state='failed',attempted=1,confirmed=100 WHERE id='first'",
+            [],
+        )
+        .unwrap();
+    crate::generation::tick(&mut f.store).unwrap();
+    let second = f.run("job.get", json!({"project_id":"one","job_id":"second"}));
+    assert_eq!(second["data"]["state"], "failed_preflight");
+    assert_eq!(second["data"]["request_attempted"], false);
+    let mut c = generation_request("third");
+    c["key"] = json!("never-send-this");
+    assert_eq!(f.run("job.submit", c)["ok"], false);
+    let mut c = generation_request("third");
+    c["duration_ms"] = json!("500");
+    assert_eq!(f.run("job.submit", c)["ok"], false);
+    f.run(
+        "account.create",
+        json!({"account_id":"live","provider":"elevenlabs"}),
+    );
+    assert_eq!(
+        f.run(
+            "budget.set",
+            json!({"account_id":"live","request_limit":1,"credit_limit":1})
+        )["error"]["code"],
+        "live_policy_requires_gui"
+    );
+}
+
+#[test]
+fn generation_network_failure_or_rate_limit_is_attempted_once_and_not_replayed() {
+    for (fault, expected) in [(1, "outcome_unknown"), (2, "failed")] {
+        crate::provider::mock_fault(fault);
+        let mut f = Fixture::new();
+        generation_setup(&mut f, 2, 40);
+        f.run("job.submit", generation_request("first"));
+        crate::generation::tick(&mut f.store).unwrap();
+        assert_eq!(
+            f.run("job.get", json!({"project_id":"one","job_id":"first"}))["data"]["state"],
+            expected
+        );
+        assert!(!crate::generation::tick(&mut f.store).unwrap());
+        assert_eq!(crate::provider::mock_posts(), 1);
+        assert_eq!(
+            f.run("job.submit", generation_request("first"))["data"]["state"],
+            expected
+        );
+        assert_eq!(crate::provider::mock_posts(), 1);
+        assert_eq!(
+            f.run("budget.get", json!({"account_id":"demo"}))["data"]["credits_held"],
+            20
+        );
+    }
+    crate::provider::mock_fault(0);
+}
+#[test]
+fn generation_preserves_existing_original_and_checks_dialogue_snapshot() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 2, 40);
+    assert_eq!(f.import("one")["ok"], true);
+    let original = f.run(
+        "asset.file",
+        json!({"project_id":"one","asset_id":"hit","version_id":"original"}),
+    );
+    let mut c = generation_request("new-take");
+    c["asset_id"] = json!("hit");
+    c["name"] = json!("효과음");
+    assert_eq!(
+        f.run("job.submit", c.clone())["error"]["code"],
+        "candidate_parent_required"
+    );
+    c["parent_version_id"] = json!("original");
+    assert_eq!(f.run("job.submit", c)["ok"], true);
+    crate::generation::tick(&mut f.store).unwrap();
+    assert_eq!(
+        original,
+        f.run(
+            "asset.file",
+            json!({"project_id":"one","asset_id":"hit","version_id":"original"})
+        )
+    );
+    let mut c = generation_request("speech");
+    c["generation_kind"] = json!("tts");
+    c.as_object_mut().unwrap().remove("duration_ms");
+    c["voice_id"] = json!("mock-voice");
+    c["model_id"] = json!("mock-model");
+    c["dialogue_id"] = json!("missing");
+    assert_eq!(
+        f.run("job.submit", c.clone())["error"]["code"],
+        "dialogue_snapshot_mismatch"
+    );
+    c.as_object_mut().unwrap().remove("dialogue_id");
+    assert_eq!(f.run("job.submit", c)["ok"], true);
+    crate::generation::tick(&mut f.store).unwrap();
+    assert_eq!(
+        f.run("job.get", json!({"project_id":"one","job_id":"speech"}))["data"]["state"],
+        "succeeded"
+    );
+}

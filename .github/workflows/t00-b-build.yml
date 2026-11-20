@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', '.github/workflows/t00-b-build.yml']
+    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,6 +36,8 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           npm run build
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test shared library and generation contracts
+        run: cargo test --locked --lib
       - name: Compile independent engine CLI MCP and minimal GUI
         run: |
           cargo build --locked --release --bins
@@ -48,6 +50,7 @@ jobs:
           Copy-Item target/release/dk-sound-*.exe artifact
           Copy-Item README.md artifact
           Copy-Item ../docs/T01_LOCAL_LIBRARY.md artifact/LOCAL_LIBRARY.md
+          Copy-Item ../docs/T02_GENERATION.md artifact/GENERATION.md
           $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
           rustc -Vv | Set-Content artifact/toolchain.txt
           Get-ChildItem artifact -File | ForEach-Object { $h=Get-FileHash $_.FullName -Algorithm SHA256; "$($h.Hash)  $($_.Name)" } | Set-Content artifact/SHA256SUMS.txt

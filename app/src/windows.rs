@@ -224,35 +224,64 @@ type Worker = std::sync::mpsc::SyncSender<Work>;
 fn storage_worker(shared: Shared) -> Worker {
     let (sender, receiver) = std::sync::mpsc::sync_channel::<Work>(32);
     std::thread::spawn(move || {
-        let mut store = None;
-        while let Ok((command, reply)) = receiver.recv() {
-            {
-                let mut state = shared.lock().unwrap();
-                state.queued -= 1;
-                state.running += 1;
-            }
-            let result = if let Some(store) = store.as_mut() {
-                crate::storage::Store::execute(store, &command)
-            } else {
-                match crate::storage::Store::default_root()
-                    .and_then(|p| crate::storage::Store::open(&p))
-                {
-                    Ok(mut opened) => {
-                        let result = opened.execute(&command);
-                        store = Some(opened);
-                        result
+        let mut store = crate::storage::Store::default_root()
+            .and_then(|p| crate::storage::Store::open(&p))
+            .ok();
+        loop {
+            match receiver.recv_timeout(Duration::from_millis(50)) {
+                Ok((command, reply)) => {
+                    {
+                        let mut state = shared.lock().unwrap();
+                        state.queued -= 1;
+                        state.running += 1;
                     }
-                    Err(e) => protocol::error(e.0),
+                    if store.is_none() {
+                        store = crate::storage::Store::default_root()
+                            .and_then(|p| crate::storage::Store::open(&p))
+                            .ok();
+                    }
+                    let result = store
+                        .as_mut()
+                        .map(|store| store.execute(&command))
+                        .unwrap_or_else(|| protocol::error("storage_unavailable"));
+                    {
+                        let mut state = shared.lock().unwrap();
+                        state.running -= 1;
+                        state.generation_queued =
+                            store.as_ref().map(crate::generation::pending).unwrap_or(0);
+                        if state.clients == 0 && !state.busy() {
+                            state.last_empty = Instant::now();
+                        }
+                    }
+                    let _ = reply.send(result);
                 }
-            };
-            {
-                let mut state = shared.lock().unwrap();
-                state.running -= 1;
-                if state.clients == 0 && !state.busy() {
-                    state.last_empty = Instant::now();
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    if let Some(store) = store.as_mut() {
+                        let pending = crate::generation::pending(store);
+                        if pending == 0 {
+                            continue;
+                        }
+                        {
+                            let mut state = shared.lock().unwrap();
+                            if state.stopping {
+                                continue;
+                            }
+                            state.generation_queued = pending - 1;
+                            state.generation_running = 1;
+                        }
+                        let _ = crate::generation::tick(store);
+                        {
+                            let mut state = shared.lock().unwrap();
+                            state.generation_running = 0;
+                            state.generation_queued = crate::generation::pending(store);
+                            if state.clients == 0 && !state.busy() {
+                                state.last_empty = Instant::now();
+                            }
+                        }
+                    }
                 }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
             }
-            let _ = reply.send(result);
         }
     });
     sender
@@ -264,6 +293,21 @@ async fn dispatch(command: Value, shared: &Shared, worker: &Worker) -> Value {
     }
     if !command["op"].as_str().unwrap().contains('.') {
         return shared.lock().unwrap().execute(&command);
+    }
+    if matches!(command["op"].as_str(), Some("job.get" | "job.list")) {
+        if shared.lock().unwrap().stopping {
+            return protocol::error("engine_stopping");
+        }
+        return tokio::task::spawn_blocking(move || {
+            match crate::storage::Store::default_root()
+                .and_then(|root| crate::generation::read_query(&root, &command))
+            {
+                Ok(data) => protocol::success(data),
+                Err(error) => protocol::error(error.0),
+            }
+        })
+        .await
+        .unwrap_or_else(|_| protocol::error("local_worker_lost"));
     }
     let (sender, receiver) = tokio::sync::oneshot::channel();
     {

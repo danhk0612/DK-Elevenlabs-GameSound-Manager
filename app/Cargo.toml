@@ -1,6 +1,6 @@
 [package]
 name = "dk-gamesound"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 build = "build.rs"
 
@@ -14,12 +14,13 @@ custom-protocol = ["tauri/custom-protocol"]
 rusqlite = "0.37"
 sha2 = "0.10"
 base64 = "0.22"
+zeroize = "1"
 serde_json = "1"
 tokio = { version = "1", features = ["rt", "net", "io-util", "time", "macros", "sync"] }
 tauri = { version = "2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_System_Memory", "Win32_Storage_FileSystem"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Credentials", "Win32_Networking_WinHttp", "Win32_System_Threading", "Win32_System_Memory", "Win32_Storage_FileSystem"] }
 
 [build-dependencies]
 tauri-build = { version = "2", optional = true }
