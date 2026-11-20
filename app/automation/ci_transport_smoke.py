@@ -43,8 +43,12 @@ def main():
         recipe_file = root / '작업 정의.json'
         def run_recipe(extra=(), expect=True):
             recipe_file.write_text(json.dumps(recipe, ensure_ascii=False), encoding='utf-8')
-            result = subprocess.run([sys.executable, str(runner), str(recipe_file), '--cli', str(cli), '--request-seconds', '15', *extra],
-                                    env=env, capture_output=True, timeout=60)
+            try:
+                result = subprocess.run([sys.executable, str(runner), str(recipe_file), '--cli', str(cli), '--request-seconds', '15', *extra],
+                                        env=env, capture_output=True, timeout=60)
+            except subprocess.TimeoutExpired as error:
+                print((error.stderr or b'').decode('utf-8', errors='replace'), file=sys.stderr)
+                raise
             data = json.loads(result.stdout)
             if data['ok'] is not expect:
                 print(result.stderr.decode('utf-8', errors='replace'), file=sys.stderr)
@@ -80,6 +84,10 @@ def main():
             return
         try:
             first = run_recipe()
+            stopped = subprocess.run([str(cli), 'shutdown'], env=env, capture_output=True, timeout=15)
+            assert json.loads(stopped.stdout)['ok'] is True
+            time.sleep(.5)
+            # MCP now independently autostarts the engine from the same catalog.
             second = run_recipe(['--mcp', str(mcp)])
             assert first['data']['review'] == second['data']['review'], 'transport changed review record'
             assert second['data']['check']['matches'] is True

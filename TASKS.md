@@ -83,7 +83,7 @@ T04 보강 상태: v0.5.0에서 audio.submit/cancel, 실행 중 별도 get/list,
 
 v0.6.0 보강: review.submit/get/list/withdraw/check와 asset.history, 불변 후보/검사 근거·철회·현재 일치 확인·최소 검토 UI를 구현했다. [계약](docs/T04_REVIEW.md). 총 47개 명령/MCP 46개 도구, 실제 FFmpeg 7개 포함 39개 회귀 통과. 승인 도구/게임 적용은 없으며 T04 실제 클라이언트 수용은 미완료다.
 
-v0.7.0 보강: CLI offline validate와 선택형 Python JSON 작업 정의 클라이언트(CLI/MCP), 입력 preflight·async polling·hash/검사 근거 연계·중단 ID 반환을 구현했다. [계약](docs/T04_AUTOMATION.md). 클라이언트 회귀 8개·native offline preflight/MCP를 Linux에서 확인했고, Windows 실제 engine CLI/MCP 무GUI 작업 정의 재호출/재연결 CI를 추가했다. 이 CI 결과와 실제 AI 제품 클라이언트 호환은 구분한다. 공통 47개/MCP 46개·schema 5·UI는 유지한다.
+v0.7.0 보강: CLI offline validate와 선택형 Python JSON 작업 정의 클라이언트(CLI/MCP), 입력 preflight·async polling·hash/검사 근거 연계·중단 ID 반환을 구현했다. [계약](docs/T04_AUTOMATION.md). 클라이언트 회귀 9개·native offline preflight/MCP를 Linux에서 확인했고, Windows 실제 engine CLI/MCP 무GUI 작업 정의 재호출/재연결 CI를 추가했다. 이 CI 결과와 실제 AI 제품 클라이언트 호환은 구분한다. 공통 47개/MCP 46개·schema 5·UI는 유지한다.
 
 ## T05 — 사람 승인·게임 적용·복구
 

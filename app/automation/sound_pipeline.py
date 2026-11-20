@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 from pathlib import Path
 import queue
 import subprocess
@@ -12,6 +13,19 @@ import time
 
 MAX_FRAME = 65536
 PROTOCOL = '2025-11-25'
+
+# Dedicated-reader handle, never a reused thread-pool thread. Cancellation is only
+# for this client's pipe read, not engine work or another process's I/O.
+if os.name == 'nt':
+    import ctypes
+    from ctypes import wintypes
+    _kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+    _kernel.OpenThread.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+    _kernel.OpenThread.restype = wintypes.HANDLE
+    _kernel.CancelSynchronousIo.argtypes = [wintypes.HANDLE]
+    _kernel.CancelSynchronousIo.restype = wintypes.BOOL
+    _kernel.CloseHandle.argtypes = [wintypes.HANDLE]
+    _kernel.CloseHandle.restype = wintypes.BOOL
 
 
 class Failure(Exception):
@@ -34,16 +48,25 @@ def decode(data):
 
 class Process:
     """Bounded newline reader with a deadline, including Windows anonymous pipes."""
-    def __init__(self, argv):
-        self.process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    def __init__(self, argv, single_response=False):
+        # Raw pipes avoid BufferedReader.close waiting on a reader-thread lock when
+        # a detached descendant keeps an inherited pipe handle alive.
+        self.single_response = single_response
+        self.process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, bufsize=0)
         self.messages = queue.Queue(maxsize=2)
         self.closed = threading.Event()
         self.write_done = threading.Event()
         self.write_done.set()
+        self.reader_handle = None
+        self.reader_ready = threading.Event()
         self.reader = threading.Thread(target=self._read, daemon=True)
         self.reader.start()
+        self.reader_ready.wait(timeout=2)
 
     def _read(self):
+        if os.name == 'nt':
+            self.reader_handle = _kernel.OpenThread(0x0001, False, threading.get_native_id())
+        self.reader_ready.set()
         try:
             while not self.closed.is_set():
                 data = self.process.stdout.readline(MAX_FRAME + 1)
@@ -59,13 +82,16 @@ class Process:
                         break
                     except queue.Full:
                         pass
-                if isinstance(item, Failure):
+                if self.single_response or isinstance(item, Failure):
                     return
         except (OSError, ValueError, Failure):
             try:
                 self.messages.put_nowait(Failure('transport_read_failed'))
             except queue.Full:
                 pass
+        finally:
+            # The reading thread owns close, avoiding a cross-thread stream/CRT lock.
+            self.process.stdout.close()
 
     def send(self, value, timeout=300):
         data = encode(value)
@@ -73,7 +99,12 @@ class Process:
         self.write_done.clear()
         def write():
             try:
-                self.process.stdin.write(data)
+                remaining = memoryview(data)
+                while remaining:
+                    count = self.process.stdin.write(remaining)
+                    if not count:
+                        raise OSError("short pipe write")
+                    remaining = remaining[count:]
                 self.process.stdin.flush()
                 result.put(None)
             except (OSError, ValueError):
@@ -115,8 +146,16 @@ class Process:
         except subprocess.TimeoutExpired:
             self.process.kill()
             self.process.wait()
-        self.reader.join(timeout=2)
-        self.process.stdout.close()
+        if os.name == 'nt' and self.reader_handle:
+            deadline = time.monotonic() + 2
+            while self.reader.is_alive() and time.monotonic() < deadline:
+                _kernel.CancelSynchronousIo(self.reader_handle)
+                self.reader.join(timeout=.05)
+        else:
+            self.reader.join(timeout=2)
+        if os.name == 'nt' and self.reader_handle:
+            _kernel.CloseHandle(self.reader_handle)
+            self.reader_handle = None
 
 
 def envelope(value):
@@ -159,7 +198,7 @@ class Client:
         return reply['result']
 
     def cli_call(self, mode, command):
-        process = Process([str(self.cli), mode])
+        process = Process([str(self.cli), mode], single_response=True)
         try:
             process.send(command, self.timeout)
             process.process.stdin.close()

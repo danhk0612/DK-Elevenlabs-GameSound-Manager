@@ -1,10 +1,12 @@
 import copy
 import io
+import os
 import threading
 import json
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -124,10 +126,29 @@ class Transport(unittest.TestCase):
             finally:
                 process.close()
 
+    def test_descendant_inheriting_stdout_does_not_block_single_response_cleanup(self):
+        code = "import subprocess,sys;subprocess.Popen([sys.executable,'-c','import time;time.sleep(4)']);print('{\"ok\":true}',flush=True)"
+        process = Process([sys.executable, '-u', '-c', code], single_response=True)
+        self.assertEqual(process.receive(3), {'ok': True})
+        start = time.monotonic()
+        process.close()
+        self.assertLess(time.monotonic() - start, 2)
+        # Continuous MCP-style reader also has a finite cleanup path. On Windows,
+        # synchronous read cancellation must release its inherited-pipe wait.
+        process = Process([sys.executable, '-u', '-c', code])
+        self.assertEqual(process.receive(3), {'ok': True})
+        start = time.monotonic()
+        process.close()
+        self.assertLess(time.monotonic() - start, 3)
+        if os.name == 'nt':
+            self.assertFalse(process.reader.is_alive())
+
     def test_unread_input_write_has_a_deadline(self):
         released = threading.Event()
         class Stream:
-            def write(self, _): released.wait(3)
+            def write(self, _):
+                released.wait(3)
+                return len(_)
             def flush(self): pass
             def close(self): pass
         class Child:

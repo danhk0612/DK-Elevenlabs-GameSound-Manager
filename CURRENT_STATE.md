@@ -35,7 +35,7 @@ main `4c3537c55084b71feb5c42eb2340005bf922f197`, v0.6 기반 `2c4faed4983dfb0e53
 - 기본 cargo test --lib는 Linux 32개 통과/외부 도구 7개 ignore다. Windows 기본 CI에서 이 7개까지 실제 실행한 것으로 확대하지 않는다. Linux 자식 프로세스 취소와 Windows 실제 IPC/핸들 수명은 구분한다.
 - native engine/CLI/MCP build·schema와 stdio initialize/list/call/EOF, action별 schema/공통 typed 오류·46개 도구·전송 크기를 확인했다. Windows x64 cargo check는 외부 SQLite link 선언 + no-default-features 타입 검사로 통과했다. Node 24 TypeScript/Vite 최소 GUI build 통과. fmt·JSON/문서 링크·whitespace도 통과했다.
 
-- v0.7 Python 클라이언트 회귀 8개와 native CLI validate/preflight·MCP handshake/discovery/불량 hash 거절을 Linux에서 확인했다. 새 Windows CI에는 GUI 없는 실제 엔진 CLI/MCP 작업 정의 동일 결과·재연결·원본 보존/변경 거절을 추가했으며 해당 head 실행 결과를 별도 확인한다. Python 선택형 자체 클라이언트는 실제 AI 제품 연결 성공을 뜻하지 않는다.
+- v0.7 Python 클라이언트 회귀 9개와 native CLI validate/preflight·MCP handshake/discovery/불량 hash 거절을 Linux에서 확인했다. 새 Windows CI에는 GUI 없는 실제 엔진 CLI/MCP 작업 정의 동일 결과·재연결·원본 보존/변경 거절을 추가했으며 해당 head 실행 결과를 별도 확인한다. Python 선택형 자체 클라이언트는 실제 AI 제품 연결 성공을 뜻하지 않는다.
 
 Rust 도구는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools를 사용한다. Zig CC/AR와 CFLAGS=-fno-sanitize=all·rust-lld wrapper로 bundled SQLite를 빌드했다. 도구/fixture/실행 파일/음원은 Git에 넣지 않는다. Windows CI artifact는 README·LOCAL_LIBRARY.md·GENERATION.md·AUDIO.md·ASYNC_AUDIO.md·REVIEW.md·AUTOMATION.md·선택형 automation 소스/예제·source SHA/manifest를 포함하며 해당 head 결과를 별도로 확인한다.
 
@@ -50,3 +50,5 @@ T00-A의 [과거 Windows 33개/별도 ACL·ZIP 증거](docs/T00_A_RESULTS.md)와
 게임 개발은 일시 정지다. 요구는 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md에 보관했다. 병합·Release/tag·공개 배포·실제 Key/크레딧·사용자 음원/게임 소스/DB/사이트 빌드·배포 변경은 수행하지 않았다.
 
 추가 CI 증거: v0.7 초기 `97d13df9c402e602d888af6f888519e8992aa8d5`의 [run 44749313675](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44749313675)는 Windows Rust 29개/외부 7개 ignore·Python 8개·native/GUI build 통과 후 실제 엔진 recipe 첫 실행 timeout으로 실패했다. 요청별 제한/단계 로그를 보강해 진단하며 실제 IPC 성공으로 처리하지 않는다.
+
+진단 후 수정: `8d6414b20dcf18e4d8d8531a25619ab5ff0931f9` run 44750187476도 첫 recipe timeout이었다. 후속 프로세스가 stdout을 상속하면 reader thread의 BufferedReader.close가 EOF까지 대기하는 조건을 Linux에서 4초 자식으로 재현했다. CLI reader를 단일 응답으로 끝내고 raw pipe/부분 쓰기 처리를 추가했다. 동일 조건 정리 회귀를 추가해 9개 통과를 확인하며, 새 Windows 실행으로 실제 효과를 대조한다.

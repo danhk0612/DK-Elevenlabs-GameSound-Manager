@@ -54,10 +54,14 @@ withdrawn 검토를 재호출해도 다시 열지 않으며 클라이언트는 r
 
 CLI는 request stdin/JSON stdout과 exit code를 대조한다. MCP는 stdio initialize(2025-11-25) → initialized → tools/list 필수 도구 확인 → tools/call을 사용하고 ID·공통 structuredContent/isError를 대조한다. 한 번에 한 요청만 보낸다. 프레임 64 KiB·유한 읽기/쓰기 timeout·EOF·자식 종료를 처리하며 shell을 사용하지 않는다. 종료 시 CLI/MCP 자식만 정리하고 서버 엔진은 임의로 종료하지 않는다.
 
-Linux에서 Python 클라이언트 회귀 8개, native CLI offline validate/preflight와 MCP handshake/discovery/불량 hash 거절을 확인했다. Rust 기존 39개 중 일반 32개/외부 도구 ignore 7개를 구분한다. Rust native build·Windows x64 타입 검사와 UI build는 별도 확인한다. v0.6 SHA `2c4faed4983dfb0e53e6e17f7953d3724cd792d5`의 Windows [run 44746167182](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44746167182)은 성공했다.
+Linux에서 Python 클라이언트 회귀 9개, native CLI offline validate/preflight와 MCP handshake/discovery/불량 hash 거절을 확인했다. Rust 기존 39개 중 일반 32개/외부 도구 ignore 7개를 구분한다. Rust native build·Windows x64 타입 검사와 UI build는 별도 확인한다. v0.6 SHA `2c4faed4983dfb0e53e6e17f7953d3724cd792d5`의 Windows [run 44746167182](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44746167182)은 성공했다.
 
 새 CI에는 Python 회귀와 `ci_transport_smoke.py`를 추가했다. 후자는 격리된 Windows Actions에서만 실제 엔진을 기동하여 합성 WAV 원본/외부 후보 등록→검토 제출, CLI/MCP 재호출의 동일 기록, 클라이언트 종료 후 재연결, 원본 해시 보존과 변경 원본 재등록 거절을 검사한다. FFmpeg를 설치하지 않으므로 이 CI가 편집/분석을 실제 수행한 것은 아니다. 같은 스크립트의 --offline 모드는 엔진 없는 CLI preflight/MCP 계약만 확인한다.
 
 실제 지원 AI 제품의 MCP 클라이언트 연결, 사용자 Windows 화면/청감·실제 Key/과금은 여전히 미확인이다. 이 선택형 자체 클라이언트를 ChatGPT 등 제품 연결 성공으로 보고하지 않는다. T04 전체 수용·T05/D07·병합/공개 배포는 별도다.
 
 초기 v0.7 `97d13df9c402e602d888af6f888519e8992aa8d5`의 Windows run 44749313675는 native/UI build·Rust 29개 통과/외부 7개 ignore·Python 8개 통과 후 첫 실제 엔진 recipe에서 60초 timeout으로 실패했다. 실행 단계 진단을 위해 요청별 대기 제한과 실패 시 진행 로그를 추가했다. 이 실행을 실제 IPC 성공으로 기록하지 않는다.
+
+정리 경계: 후속 프로세스가 상속한 stdout을 유지하는 경우를 별도 회귀로 추가했다. CLI는 한 응답 뒤 reader를 종료하며 raw pipe를 사용해 BufferedReader.close의 reader lock 대기를 피한다. 출력 EOF를 엔진 종료와 함께 기다리지 않는다. 요청별 대기만 줄여도 해결되지 않았던 초기 두 CI의 timeout과 이 수정의 실제 Windows 결과를 구분한다.
+
+Windows에서는 전용 reader thread의 handle로 [CancelSynchronousIo](https://learn.microsoft.com/en-us/windows/win32/api/ioapiset/nf-ioapiset-cancelsynchronousio)를 요청한 뒤 thread 종료를 기다린다. 이는 클라이언트 pipe 읽기만 해제하며 엔진 작업 취소가 아니다. 읽는 thread가 스트림 close를 소유한다. CI에서 CLI 종료/엔진 정상 종료 후 MCP가 독립적으로 다시 엔진을 기동하는 경로도 검사한다.
