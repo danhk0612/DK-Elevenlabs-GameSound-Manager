@@ -109,3 +109,7 @@ v0.8.0 보강: 선택형 Python batch manifest(최대 32개), 전체 preflight·
 
 [새 Codex 인수인계](docs/NEXT_CODEX.md)의 지시문을 사용한다.
 현재 T04 로컬 작업의 비동기 큐/조회·취소를 구현했다. 검토 제출·후보 이력은 v0.6에서 구현했다. 작업 정의 클라이언트·CI 무GUI 전송은 v0.7에서 추가했다. Windows 실제 엔진 CI도 통과했다. 다건 작업 정의는 v0.8에서 구현했다. 다건 Windows CI도 통과했다. 다음은 지원 AI 제품 클라이언트 호환·필요한 사운드/작업 이력 자동화 보강이다. 실제 Key/허용 비용이 없으면 모의 응답·오프라인 경로를 개발하고 라이브 생성은 하지 않는다. 실기·청감 결과를 추가로 요구하며 대기하지 않는다. 결과가 없으면 미확인으로 기록한다. 정확한 구현/빌드 상태는 CURRENT_STATE.md를 따른다.
+
+### T04 v0.9 Linux headless 실행 경로
+
+사용자가 현재 AI 환경에서 사용할 수 있게 진행하도록 지시해 Linux native engine/CLI/MCP를 연결했다. [계약](docs/T04_LINUX_HEADLESS.md). private root/UID·flock/socket/동시 기동·stale 복구와 공통 worker/queue를 사용한다. Linux에서 실제 단일·다건 CLI/MCP/합성 mock 한도·강제 종료 재연결, 실제 FFmpeg async 편집·검사·후보 검토를 확인했다. 전체 수용/실제 ElevenLabs 제작 완료는 아니다. 다음은 Linux 실제 provider를 위한 secret 전달/수명·명시 예산·HTTP/과금 불확실성 계약과 오프라인 회귀를 구현하는 것이다. 실제 Key/비용 범위 없이 라이브 생성하지 않는다. Linux GUI/T05/게임 변경은 범위 밖이다. 정확한 SHA/CI는 CURRENT_STATE.md를 따른다.

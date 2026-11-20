@@ -1,4 +1,4 @@
-# DK GameSound — 사운드 관리·생성·편집/분석 v0.8.0
+# DK GameSound — 사운드 관리·생성·편집/분석 v0.9.0
 
 AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 목록과 재생에 필요한 최소 화면을 제공한다. T02 ElevenLabs 계정·한도·TTS/SFX 후보 생성 경로와 Key 없는 mock을 제공한다. T03 로컬 편집·변환·파형/기술 수치 검사와 T04 비동기 큐/조회·취소와 검토 제출/후보 이력을 제공한다. 주관 품질 평가·사람 승인/게임 적용은 아직 제공하지 않는다.
 
@@ -22,6 +22,10 @@ AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐�
 CLI stdout은 JSON 한 개이며 성공 exit 0/오류 exit 1이다. schema는 엔진 없이 공통 MCP 도구 스키마를 출력한다. --help만 일반 텍스트다. 모든 프로젝트 자료 호출에 project_id를 넣고 안정된 lowercase ID를 사용한다. 파일 import는 읽기·복사이며 외부 원본 이동/수정이나 기존 ready 버전 덮어쓰기를 하지 않는다.
 
 오류/응답 유실 후 새 ID로 무조건 반복하지 않는다. asset.versions/file과 project.recover로 상태를 대조하고 같은 입력/같은 ID로 재개한다. 기존 이전 버전 엔진이 실행 중이면 이전 CLI의 shutdown 또는 5분 idle 종료 후 새 실행 파일 세트를 사용한다. 버전/경로가 다른 바이너리를 한 폴더에 섞지 않는다.
+
+## Linux headless 자동화
+
+[Linux 실행 계약](../docs/T04_LINUX_HEADLESS.md)에 따라 `DK_SOUND_ROOT`를 현재 UID의 private 0700 절대 경로로 명시하면 같은 native CLI/MCP/단일·다건 recipe를 사용할 수 있다. local Unix socket/lock과 공통 엔진으로 파일 관리·FFmpeg 편집/분석·후보 검토를 실행한다. Linux 실제 ElevenLabs 인증/HTTP와 GUI는 아직 지원하지 않는다. mock 합성은 실제 제작 음원이 아니다. Windows 경로/보안/인증은 유지한다.
 
 ## 편집·분석 자동화
 

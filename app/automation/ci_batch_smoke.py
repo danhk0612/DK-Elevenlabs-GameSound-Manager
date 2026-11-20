@@ -16,18 +16,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bin-dir', required=True, type=Path)
     parser.add_argument('--offline', action='store_true')
+    parser.add_argument('--local-linux', action='store_true', help='Run real engine in a new private temporary Linux root')
     args = parser.parse_args()
     suffix = '.exe' if os.name == 'nt' else ''
     cli = (args.bin_dir / ('dk-sound-cli' + suffix)).resolve()
     mcp = (args.bin_dir / ('dk-sound-mcp' + suffix)).resolve()
     script = Path(__file__).with_name('sound_batch.py').resolve()
-    if not args.offline and (os.name != 'nt' or os.environ.get('GITHUB_ACTIONS') != 'true'):
+    if not args.offline and not (args.local_linux and sys.platform == 'linux') and (os.name != 'nt' or os.environ.get('GITHUB_ACTIONS') != 'true'):
         raise RuntimeError('Native batch smoke is restricted to the isolated Windows Actions runner')
     with tempfile.TemporaryDirectory(prefix='DK batch 한글 공백 ', ignore_cleanup_errors=True) as directory:
         root = Path(directory)
         settings = root / 'localappdata'
-        settings.mkdir()
-        env = {**os.environ, 'LOCALAPPDATA': str(settings)}
+        settings.mkdir(mode=0o700)
+        env = {**os.environ, 'LOCALAPPDATA': str(settings), 'DK_SOUND_ROOT': str(settings)}
         source = root / '합성 원본.wav'
         with wave.open(str(source), 'wb') as audio:
             audio.setnchannels(1)
@@ -103,7 +104,7 @@ def main():
             assert continued[-1]['ok'] is False
             assert source.read_bytes() == original
             assert (root/'dk-gamesound-batch-ci/originals/hit/original/source.wav').read_bytes() == original
-            print('Windows real engine batch: shared source, selection, CLI/MCP parity, JSONL, fail-stop/keep-going, preservation: PASS')
+            print('Native real engine batch: shared source, selection, CLI/MCP parity, JSONL, fail-stop/keep-going, preservation: PASS')
         finally:
             subprocess.run([str(cli), 'shutdown'], env=env, capture_output=True, timeout=15)
             time.sleep(.5)

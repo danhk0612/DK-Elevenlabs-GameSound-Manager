@@ -5,7 +5,7 @@ use std::io::{self, Read};
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args == ["--help"] {
-        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\ndk-sound-cli schema\ndk-sound-cli validate < request.json (offline syntax/fields only)\nJSON stdout; exit 0 success, 1 request/runtime error. Windows only.");
+        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\ndk-sound-cli schema\ndk-sound-cli validate < request.json (offline syntax/fields only)\nJSON stdout; exit 0 success, 1 request/runtime error. Windows; Linux headless requires DK_SOUND_ROOT.");
         return;
     }
     if args == ["schema"] {

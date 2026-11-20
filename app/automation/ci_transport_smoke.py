@@ -17,18 +17,19 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--bin-dir', required=True, type=Path)
     parser.add_argument('--offline', action='store_true')
+    parser.add_argument('--local-linux', action='store_true', help='Run real engine in a new private temporary Linux root')
     args = parser.parse_args()
     suffix = '.exe' if os.name == 'nt' else ''
     cli = (args.bin_dir / ('dk-sound-cli' + suffix)).resolve()
     mcp = (args.bin_dir / ('dk-sound-mcp' + suffix)).resolve()
     runner = Path(__file__).with_name('sound_pipeline.py').resolve()
-    if not args.offline and (os.name != 'nt' or os.environ.get('GITHUB_ACTIONS') != 'true'):
+    if not args.offline and not (args.local_linux and sys.platform == 'linux') and (os.name != 'nt' or os.environ.get('GITHUB_ACTIONS') != 'true'):
         raise RuntimeError('Native engine smoke is restricted to the isolated Windows Actions runner')
     with tempfile.TemporaryDirectory(prefix='DK client 한글 공백 ', ignore_cleanup_errors=True) as directory:
         root = Path(directory)
         settings = root / 'localappdata'
-        settings.mkdir()
-        env = {**os.environ, 'LOCALAPPDATA': str(settings)}
+        settings.mkdir(mode=0o700)
+        env = {**os.environ, 'LOCALAPPDATA': str(settings), 'DK_SOUND_ROOT': str(settings)}
         source = root / '합성 원본.wav'
         with wave.open(str(source), 'wb') as audio:
             audio.setnchannels(1)
@@ -94,6 +95,8 @@ def main():
             assert source.read_bytes() == original
             assert first['data']['review']['snapshot']['candidate']['sha256'] == hashlib.sha256(original).hexdigest()
             # Closing the recipe's MCP client never removes records; a new client sees the same state.
+            old_linux_root = os.environ.get('DK_SOUND_ROOT')
+            os.environ['DK_SOUND_ROOT'] = str(settings)
             old_localappdata = os.environ.get('LOCALAPPDATA')
             os.environ['LOCALAPPDATA'] = str(settings)
             client = Client(cli, mcp)
@@ -103,6 +106,8 @@ def main():
                 assert record == first['data']['review']
             finally:
                 client.close()
+                if old_linux_root is None: os.environ.pop('DK_SOUND_ROOT', None)
+                else: os.environ['DK_SOUND_ROOT'] = old_linux_root
                 if old_localappdata is None: os.environ.pop('LOCALAPPDATA', None)
                 else: os.environ['LOCALAPPDATA'] = old_localappdata
             source.write_bytes(b'changed synthetic source')
@@ -110,7 +115,7 @@ def main():
             assert failure['context']['stage'] == 'source'
             managed = root / 'dk-gamesound-client-ci' / 'originals' / 'hit' / 'original' / 'source.wav'
             assert managed.read_bytes() == original
-            print('Windows real engine: CLI/MCP recipe parity, reconnect, hash preservation, changed-source refusal: PASS')
+            print('Native real engine: CLI/MCP recipe parity, reconnect, hash preservation, changed-source refusal: PASS')
         finally:
             subprocess.run([str(cli), 'shutdown'], env=env, capture_output=True, timeout=15)
             time.sleep(.5)

@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', '.github/workflows/t00-b-build.yml']
+    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -66,6 +66,7 @@ jobs:
           Copy-Item ../docs/T04_REVIEW.md artifact/REVIEW.md
           Copy-Item ../docs/T04_AUTOMATION.md artifact/AUTOMATION.md
           Copy-Item ../docs/T04_BATCH.md artifact/BATCH.md
+          Copy-Item ../docs/T04_LINUX_HEADLESS.md artifact/LINUX_HEADLESS.md
           New-Item -ItemType Directory -Force artifact/automation | Out-Null
           Copy-Item -Path automation/*.py,automation/*.json -Destination artifact/automation
           $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
@@ -77,3 +78,37 @@ jobs:
           name: gamesound-local-library-${{ github.sha }}
           path: app/artifact/
           retention-days: 14
+  linux-headless:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare headless tools
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal
+          rustup override set 1.100.0
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/target
+          key: product-linux-1.100-${{ hashFiles('app/Cargo.lock') }}
+      - name: Build and test shared engine
+        run: |
+          cargo build --locked --bins
+          DK_TEST_FFMPEG=/usr/bin/ffmpeg DK_TEST_FFPROBE=/usr/bin/ffprobe cargo test --locked --lib -- --include-ignored
+      - name: Exercise real Linux CLI MCP and batch
+        run: |
+          python -m unittest discover -s automation -p 'test_sound_*.py'
+          python automation/ci_transport_smoke.py --bin-dir target/debug --local-linux
+          python automation/ci_batch_smoke.py --bin-dir target/debug --local-linux
+          python automation/ci_linux_smoke.py --bin-dir target/debug --ffmpeg /usr/bin/ffmpeg --ffprobe /usr/bin/ffprobe

@@ -42,3 +42,20 @@ Windows 실제 FFmpeg 실행 중 취소/파일 핸들·실제 Key/요금제/과�
 T00-A 과거 Windows 33개/ACL·ZIP 증거와 미수령 사용자 실기는 docs/T00_A_RESULTS.md에 보존한다. 게임 개발은 일시 정지이며 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md를 유지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧·사용자 음원/게임 소스/DB/사이트 빌드·배포는 수행하지 않았다.
 
 v0.8 [개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44830379629/artifacts/14676096474): source SHA `6af11ecf00b59554a4ef98b725e5e48bd3a528a2`, ZIP SHA-256 `55b6d848cce69c0cff03524d4320ad3150b27a962ebb7b0ebb677ab1a967f723`. BATCH.md/automation 소스·예제와 재귀 manifest를 포함한다. 이후 상태 문서 커밋과 코드 실행 SHA를 구분하며 Release/공개 배포는 아니다.
+
+## v0.9 — 현재 AI Linux 환경의 실행 경로
+
+2026-11-20 UTC(한국 11-21), 사용자가 현재 AI 환경에서도 사용할 수 있게 진행하도록 지시했다. 기반 HEAD `7ef31330e5ff19cd7b272bce4c95411153dee2b3`에서 v0.9 Linux headless 경로를 추가했다. [계약/실행 명령](docs/T04_LINUX_HEADLESS.md). Windows GUI/IPC/인증 선택은 유지하고 storage worker/dispatch/serve만 공통으로 추출했다. 공통 47개·MCP 46개·schema 5/1은 유지한다.
+
+Linux에서는 명시한 private DK_SOUND_ROOT/UID/0700 root·flock/0600 socket·peer UID·기동 경쟁/잔여 socket 대조로 같은 엔진을 호출한다. CLI/MCP·단일/다건 정의로 파일 등록·실제 FFmpeg async 편집/분석·후보 검토/이력을 현재 Codex 쉘 도구에서 실행할 수 있다. mock은 합성 WAV만 만든다. Linux 라이브 ElevenLabs 인증/HTTP는 아직 없으며 credential_manager_unavailable로 차단된다. key 평문 fallback·라이브 과금·게임 적용을 추가하지 않았다.
+
+로컬 검증(Linux x86_64 musl/Rust 1.100/Python 3.11+·FFmpeg/ffprobe 7.0.2):
+
+- 기본 Rust 32개/외부 도구 7개 ignore. 명시 도구의 `cargo test --locked --lib -- --include-ignored`는 **39개 전체 통과**했다.
+- Python 회귀 **18개** 통과. 실제 native engine 단일 CLI/MCP 재기동·같은 검토 기록·변경 원본 거절 및 batch 선택/공유 원본/CLI·MCP/JSONL/fail-stop/keep-going/보존을 Linux에서 통과했다.
+- `ci_linux_smoke.py --bin-dir app/target/debug --ffmpeg /tmp/dk-audio-tools/ffmpeg --ffprobe /tmp/dk-audio-tools/ffprobe`: 루트 미설정/상대/공유/링크 거절, endpoint 일반 파일 보존, stale socket, 8개 동시 요청 동일 PID, 중복 기동 거절, mock 생성/한도/동일 ID, SIGKILL 후 기존 작업/파일 재조회, 실제 async FFmpeg 편집·검사·검토의 CLI/MCP 재호출과 원본 보존을 통과했다. 첫 fixture가 일시적 output_ready를 실패로 간주했던 검사를 수정해 완료를 기다리도록 했다. 실제 생성 결과와 mock을 혼동하지 않는다.
+- v0.9 native bins build·Windows x64 no-default-features 타입 검사·최소 UI TypeScript/Vite build·fmt/diff 통과. 이 Windows 타입 검사는 native 링크/Windows 실행 증거가 아니다.
+
+CI에 Linux headless/실제 FFmpeg job을 추가했다. **v0.9 새 SHA의 CI 결과는 아직 수신 전**이며 위 v0.8 Windows 성공을 새 공통 모듈의 증거로 확대하지 않는다. 새 코드 SHA와 CI는 후속 증거 기록으로 확정한다. 현재 코드 SHA는 Git/PR head 및 CI source SHA를 따른다.
+
+다음은 Linux에서 실제 provider를 호출할 인증정보 전달·수명/명시 예산·HTTP·과금 불확실성 계약과 오프라인 회귀다. 실제 Key/비용 허용 전 라이브 요청은 하지 않는다. Codex는 이 환경에서 native CLI를 직접 호출했으나 앱 MCP 등록/다른 AI 제품 수용을 확인한 것은 아니다. T04 전체/T05/제품 완료 선언 없음. 사이트·게임·운영 DB·실제 사용자 음원은 변경하지 않았다.

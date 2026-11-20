@@ -162,7 +162,11 @@ impl Store {
                 .map(|p| PathBuf::from(p).join("DK-Elevenlabs-GameSound-Manager"))
                 .ok_or(Error("local_appdata_unavailable"))
         }
-        #[cfg(not(windows))]
+        #[cfg(target_os = "linux")]
+        {
+            crate::linux::root().map_err(Error)
+        }
+        #[cfg(not(any(windows, target_os = "linux")))]
         {
             Err(Error("unsupported_platform"))
         }

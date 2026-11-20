@@ -128,3 +128,7 @@ v0.7의 [자동화 계약](docs/T04_AUTOMATION.md)에 따라 core/DB schema를 �
 ## T04 여러 사운드 작업 정의
 
 v0.8 [batch 계약](docs/T04_BATCH.md)은 기존 단일 recipe를 클라이언트에서 순차 조합한다. 모든 요청의 offline 공통 검증·공유 source 일치/후보 예약·전역 operation/review ID 충돌을 실행 전에 검사한다. 각 항목은 독립 CLI/MCP 세션을 쓰고 core가 실제 파일/상태/해시/ID 대조를 소유한다. 결과는 JSON 또는 항목별 JSONL이며 승인/복구 journal이 아니다. 결과 확정 오류만 명시적 keep-going으로 이어가고 통신/불확실 결과는 항상 멈춘다. 전체 transaction·롤백·checkpoint skip·새 ID 자동 발급은 없다. UI/DB schema/공통 도구 수를 유지한다.
+
+## T04 Linux headless 실행 확장 (v0.9)
+
+현재 Codex Linux 환경의 native 호출을 위해 [local Unix socket/전용 private root 계약](docs/T04_LINUX_HEADLESS.md)을 추가했다. Windows GUI·SID/named pipe·Credential Manager 선택은 유지한다. storage worker/dispatch/serve를 공통 engine 모듈로 추출해 Linux도 같은 큐·취소·검토·무재생 정책을 사용한다. Linux는 명시한 DK_SOUND_ROOT별 flock/0700 root/0600 socket 및 peer UID 대조를 사용한다. 원격 서버·Linux GUI·실제 provider 인증/HTTP fallback은 추가하지 않았다.

@@ -2,7 +2,11 @@ pub mod audio;
 mod audio_process;
 mod audio_queue;
 pub mod catalog;
+#[cfg(any(windows, target_os = "linux"))]
+mod engine;
 pub mod generation;
+#[cfg(target_os = "linux")]
+mod linux;
 pub mod mcp;
 pub mod protocol;
 pub mod provider;
@@ -33,7 +37,14 @@ pub async fn request(command: Value) -> Value {
             Err(code) => protocol::error(code),
         }
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        match linux::request(command).await {
+            Ok(response) => response,
+            Err(code) => protocol::error(code),
+        }
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     protocol::error("unsupported_platform")
 }
 
@@ -42,7 +53,11 @@ pub async fn run_engine() -> Result<(), &'static str> {
     {
         windows::run_engine().await
     }
-    #[cfg(not(windows))]
+    #[cfg(target_os = "linux")]
+    {
+        linux::run_engine().await
+    }
+    #[cfg(not(any(windows, target_os = "linux")))]
     {
         Err("unsupported_platform")
     }
