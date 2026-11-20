@@ -4,6 +4,7 @@ use crate::{
     protocol::{self, State},
 };
 use serde_json::Value;
+use std::os::unix::process::CommandExt;
 use std::{
     fs::{self, File, OpenOptions},
     os::{
@@ -95,6 +96,7 @@ fn start_engine() -> Result<(), &'static str> {
         .ok_or("executable_path_unavailable")?
         .join("dk-sound-engine");
     let mut child = Command::new(engine)
+        .process_group(0) // Client terminal Ctrl+C must not kill queued engine work.
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

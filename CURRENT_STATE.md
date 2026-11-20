@@ -1,6 +1,6 @@
 # 현재 상태
 
-기준일: 2026-11-20. **v0.8.0 T04 여러 사운드 작업 정의/결과 추적 보강. AI 자동화 우선·최소 UI, 실기/점검 대기 해제 유지.**
+기준일: 2026-11-20 UTC(한국 11-21). **v0.9.0 T04 Linux headless 실행 경로 추가. 아래 v0.8 증거와 v0.9 실제 실행 결과를 구분한다. AI 자동화 우선·최소 UI, 실기/점검 대기 해제 유지.**
 
 ## 지시와 저장소
 
@@ -35,7 +35,7 @@ Rust는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools의 Zig CC/AR·CFLAGS=-
 
 ## 남은 범위
 
-T04 전체 수용을 완료로 닫지 않는다. 자체 stdio 클라이언트·Windows CI 성공은 실제 지원 AI 제품 연결이나 사용자 Windows 11 화면/청감 성공이 아니다. 다건 Windows CI도 통과했다. 다음은 지원 AI 제품 클라이언트 호환과 필요한 사운드/작업 이력 자동화 보강이다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
+T04 전체 수용을 완료로 닫지 않는다. 자체 stdio 클라이언트·Windows CI 성공은 실제 지원 AI 제품 연결이나 사용자 Windows 11 화면/청감 성공이 아니다. 다건 Windows CI도 통과했다. 최신 사용자 지시에 따라 다음은 Linux 실제 ElevenLabs 인증/HTTP 경로 구현이다. 지원 AI 제품 클라이언트 호환/작업 이력 보강도 후속으로 남긴다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
 
 Windows 실제 FFmpeg 실행 중 취소/파일 핸들·실제 Key/요금제/과금, 원격 preview 재생, 한도 증액/초기화·다른 PC 공유·불확실 비용 정산은 후속이다. D08 기본값·loop tag·LUFS/true peak·전문 편집 화면도 없다. 미확인을 개발 대기 조건으로 쓰지 않는다.
 
@@ -56,6 +56,8 @@ Linux에서는 명시한 private DK_SOUND_ROOT/UID/0700 root·flock/0600 socket�
 - `ci_linux_smoke.py --bin-dir app/target/debug --ffmpeg /tmp/dk-audio-tools/ffmpeg --ffprobe /tmp/dk-audio-tools/ffprobe`: 루트 미설정/상대/공유/링크 거절, endpoint 일반 파일 보존, stale socket, 8개 동시 요청 동일 PID, 중복 기동 거절, mock 생성/한도/동일 ID, SIGKILL 후 기존 작업/파일 재조회, 실제 async FFmpeg 편집·검사·검토의 CLI/MCP 재호출과 원본 보존을 통과했다. 첫 fixture가 일시적 output_ready를 실패로 간주했던 검사를 수정해 완료를 기다리도록 했다. 실제 생성 결과와 mock을 혼동하지 않는다.
 - v0.9 native bins build·Windows x64 no-default-features 타입 검사·최소 UI TypeScript/Vite build·fmt/diff 통과. 이 Windows 타입 검사는 native 링크/Windows 실행 증거가 아니다.
 
-CI에 Linux headless/실제 FFmpeg job을 추가했다. **v0.9 새 SHA의 CI 결과는 아직 수신 전**이며 위 v0.8 Windows 성공을 새 공통 모듈의 증거로 확대하지 않는다. 새 코드 SHA와 CI는 후속 증거 기록으로 확정한다. 현재 코드 SHA는 Git/PR head 및 CI source SHA를 따른다.
+CI에 Linux headless/실제 FFmpeg job을 추가했다. **v0.9 코드 `e2e92a6c67864ceec6ce5f5a30b769a6ebd6bd9d`의 [run 44833857881](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44833857881)은 기동했으며 CI 결과는 아직 수신 전**이며 위 v0.8 Windows 성공을 새 공통 모듈의 증거로 확대하지 않는다. 위 source SHA는 정확한 로컬 검증 코드이며, 이후 문서 커밋과 구분한다. 현재 코드 SHA는 Git/PR head 및 CI source SHA를 따른다.
 
 다음은 Linux에서 실제 provider를 호출할 인증정보 전달·수명/명시 예산·HTTP·과금 불확실성 계약과 오프라인 회귀다. 실제 Key/비용 허용 전 라이브 요청은 하지 않는다. Codex는 이 환경에서 native CLI를 직접 호출했으나 앱 MCP 등록/다른 AI 제품 수용을 확인한 것은 아니다. T04 전체/T05/제품 완료 선언 없음. 사이트·게임·운영 DB·실제 사용자 음원은 변경하지 않았다.
+
+Linux 기동 후속 보강: autostart engine을 별도 process group으로 시작해 클라이언트 Ctrl+C 전파를 막으며 `ci_linux_smoke.py`에서 엔진/클라이언트 group 분리를 대조한다. 최초 source e2e92a6의 Linux CI job은 성공했고 Windows job은 진행 중이다. 후속 코드의 정확한 SHA/CI는 Git head와 다음 증거 갱신으로 구분한다.

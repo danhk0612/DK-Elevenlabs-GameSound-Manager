@@ -25,7 +25,7 @@ root 환경 변수가 없거나 상대 경로면 거절한다. 루트가 없으�
 - root별 `engine.lock`의 nonblocking flock으로 engine 1개만 소유한다. lock은 no-follow/regular file/UID/0600/단일 hardlink 검사 후 열며 lock inode를 삭제하지 않는다. 서로 다른 root는 별개 카탈로그·mock 예산이다. Windows SID별 전역 단일성과 구분한다.
 - `engine.sock`은 Unix domain socket/0600이며 루트 0700으로 다른 일반 UID의 접근을 제한한다. 양쪽 `SO_PEERCRED` UID도 대조한다. TCP/HTTP/원격 MCP 수신을 추가하지 않는다. root 권한 계정/같은 UID의 임의 파일 조작을 차단하는 제품은 아니다.
 - lock 소유 후에만 남은 현재 UID 소유 socket을 제거한다. 다른 종류 파일/symlink는 `socket_path_conflict`로 보존한다. 정상 종료는 socket을 제거하고, 강제 종료는 flock 해제 후 다음 기동에서 stale socket을 대조한다.
-- 첫 호출은 같은 바이너리 폴더의 engine을 기동한다. 요청을 쓰기 시작한 후 응답 유실/timeout이면 자동 재전송하지 않는다. 동시 기동 중 lock 패자는 종료하며 모든 클라이언트는 같은 socket으로 연결한다.
+- 첫 호출은 같은 바이너리 폴더의 engine을 별도 process group으로 기동해 클라이언트 터미널 Ctrl+C가 엔진으로 전파되지 않게 한다. 요청을 쓰기 시작한 후 응답 유실/timeout이면 자동 재전송하지 않는다. 동시 기동 중 lock 패자는 종료하며 모든 클라이언트는 같은 socket으로 연결한다.
 - storage worker/async fast 조회·취소/queue/검토/5분 idle/busy shutdown은 공통 구현을 공유한다. 파일/후보·원본 보존과 작업 ID 재사용·중단 무재생 정책은 기존 계약 그대로다.
 
 ## 현재 가능한 작업과 남은 생성 경로

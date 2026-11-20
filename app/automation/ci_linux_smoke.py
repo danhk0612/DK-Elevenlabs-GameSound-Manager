@@ -71,6 +71,7 @@ def main():
             with ThreadPoolExecutor(max_workers=8) as pool:
                 statuses = list(pool.map(lambda _: request('status'), range(8)))
             pid = statuses[0]['engine_pid']
+            assert os.getpgid(pid) != os.getpgrp(), 'autostart engine inherited client signal group'
             assert all(s['engine_pid'] == pid for s in statuses), statuses
             assert endpoint.stat().st_mode & 0o777 == 0o600
             duplicate = subprocess.run([str(engine)], env=env, capture_output=True, timeout=10)

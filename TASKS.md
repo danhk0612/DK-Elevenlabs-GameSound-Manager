@@ -113,3 +113,5 @@ v0.8.0 보강: 선택형 Python batch manifest(최대 32개), 전체 preflight·
 ### T04 v0.9 Linux headless 실행 경로
 
 사용자가 현재 AI 환경에서 사용할 수 있게 진행하도록 지시해 Linux native engine/CLI/MCP를 연결했다. [계약](docs/T04_LINUX_HEADLESS.md). private root/UID·flock/socket/동시 기동·stale 복구와 공통 worker/queue를 사용한다. Linux에서 실제 단일·다건 CLI/MCP/합성 mock 한도·강제 종료 재연결, 실제 FFmpeg async 편집·검사·후보 검토를 확인했다. 전체 수용/실제 ElevenLabs 제작 완료는 아니다. 다음은 Linux 실제 provider를 위한 secret 전달/수명·명시 예산·HTTP/과금 불확실성 계약과 오프라인 회귀를 구현하는 것이다. 실제 Key/비용 범위 없이 라이브 생성하지 않는다. Linux GUI/T05/게임 변경은 범위 밖이다. 정확한 SHA/CI는 CURRENT_STATE.md를 따른다.
+
+v0.9 로컬 검증 source SHA: `e2e92a6c67864ceec6ce5f5a30b769a6ebd6bd9d`. [Windows/Linux CI 44833857881](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44833857881) 기동, 결과 대조 전. 로컬 Rust 39개·Python 18개·native Linux/FFmpeg와 Windows 타입 검사/UI build는 통과했다.

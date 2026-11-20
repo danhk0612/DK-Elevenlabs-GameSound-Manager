@@ -8,7 +8,7 @@
 
 ## 최신 후속 우선순위 — 현재 AI 환경에서 실제 사용
 
-사용자는 “네가 사용 가능한 수준”을 물은 뒤 Linux 실행 경로 연결에 “진행해”라고 지시했다. v0.9 Linux headless 경로를 추가했고 [계약](T04_LINUX_HEADLESS.md)을 먼저 읽는다. Windows 선택을 폐기하거나 원격 공개 서버를 만드는 지시가 아니다. 현재 Linux native CLI/MCP/단일·다건과 실제 FFmpeg async 편집·검사·검토는 실행 가능하다. **다음 우선순위는 Linux 실제 ElevenLabs 인증/HTTP 경로**다. secret 입력/보관/수명·로그 차단과 명시적 한도·remote POST 1회·불확실 상태를 설계/구현하고 mock/offline로 검증한다. 실제 Key/허용 비용 없이 라이브 요청을 하지 않는다. 추가 batch/UI 기능만 늘려 “AI가 실제 제작 가능”이라고 보고하지 않는다. 정확한 코드/CI 상태는 CURRENT_STATE.md를 확인한다. 기존 아래 v0.8 지시문보다 이 우선순위가 앞선다.
+사용자는 “네가 사용 가능한 수준”을 물은 뒤 Linux 실행 경로 연결에 “진행해”라고 지시했다. v0.9 Linux headless 경로를 추가했고 [계약](T04_LINUX_HEADLESS.md)을 먼저 읽는다. Windows 선택을 폐기하거나 원격 공개 서버를 만드는 지시가 아니다. 현재 Linux native CLI/MCP/단일·다건과 실제 FFmpeg async 편집·검사·검토는 실행 가능하다. **다음 우선순위는 Linux 실제 ElevenLabs 인증/HTTP 경로**다. secret 입력/보관/수명·로그 차단과 명시적 한도·remote POST 1회·불확실 상태를 설계/구현하고 mock/offline로 검증한다. 실제 Key/허용 비용 없이 라이브 요청을 하지 않는다. 추가 batch/UI 기능만 늘려 “AI가 실제 제작 가능”이라고 보고하지 않는다. 코드 e2e92a6c67864ceec6ce5f5a30b769a6ebd6bd9d의 run 44833857881을 먼저 대조한다. 로컬 Rust 39개·Python 18개와 실제 Linux 엔진/FFmpeg가 통과했으며 정확한 CI 결과는 CURRENT_STATE.md를 확인한다. 기존 아래 v0.8 지시문보다 이 우선순위가 앞선다.
 
 ## 재개 지시문
 
