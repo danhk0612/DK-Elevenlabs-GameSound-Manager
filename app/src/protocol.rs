@@ -110,7 +110,7 @@ impl State {
                 let mut data = json!({"name":"DK-Elevenlabs-GameSound-Manager",
                     "version":env!("CARGO_PKG_VERSION"),"engine_pid":std::process::id(),
                     "capabilities":crate::catalog::COMMANDS.iter().map(|c|c.op).collect::<Vec<_>>(),
-                    "stage":"T02","sound_features_available":true,"remote_generation_available":true,"remote_generation_requires":"local_credentials_and_explicit_limits"});
+                    "stage":"T03","sound_features_available":true,"remote_generation_available":true,"remote_generation_requires":"local_credentials_and_explicit_limits"});
                 if op == "status" {
                     data["state"] = json!("ready");
                     data["connected_clients"] = json!(self.clients);

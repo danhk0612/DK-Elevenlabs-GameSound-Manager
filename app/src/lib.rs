@@ -1,3 +1,5 @@
+pub mod audio;
+mod audio_process;
 pub mod catalog;
 pub mod generation;
 pub mod mcp;

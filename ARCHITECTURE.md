@@ -104,3 +104,9 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 [생성 계약](docs/T02_GENERATION.md)을 현재 구현 기준으로 사용한다. catalog schema 2에 계정/workspace identity·공유 한도·불변 요청 snapshot과 attempted 상태를 저장한다. 프로젝트 DB는 schema 1이다. Windows Credential Manager만 실제 Key와 유료 허용/한도 정책을 보관하고 CLI/MCP는 credential 입력을 받지 않는다. D09 숫자 미설정은 거절이며 실제 청구액 상한을 보장하지 않는다.
 
 단일 writer의 timeout tick으로 persistent 큐를 실행하고 status/job.get/list를 원격 요청과 분리한다. POST 직전 attempted를 기록하며 원격 자동 재시도가 없다. output_ready spool을 T01 journal로 후보 등록하고 재기동 시 미완료 요청을 자동 재전송하지 않는다. 상세 한도 유지·취소/복구·오류·32개 명령/31개 MCP 도구는 T02 계약을 따른다. 과거 T01의 원격 큐 미포함/17개 도구 표기는 v0.2.0 기반 설명이다.
+
+## T03 실제 편집·분석 계약
+
+[편집/분석 계약](docs/T03_AUDIO.md)에 따라 catalog schema 3에 도구 경로/hash/version과 프로젝트별 operation snapshot·입력 hash·상태/결과를 추가했다. 프로젝트 DB는 schema 1이다. FFmpeg/ffprobe는 명시적인 신뢰 경로로 설정하며 shell 없이 제한된 인자/timeout/출력 크기로 실행한다. 현재 local audio 명령은 writer에서 동기 실행하며 status는 분리된다. 장시간 async·취소는 후속이다.
+
+출력/검사 수치는 호출마다 명시하고 D08의 제품 기본값을 만들지 않는다. decoded 첫 스트림의 채널별 샘플을 유지해 peak/RMS/quiet/파형·loop seam을 측정한다. 후보는 별도 출력·hash/output_ready → T01 journal 등록 순서로 저장하고 원본/부모/게임 파일을 보존한다. 처리 중 엔진 종료는 interrupted, 수신 완료 파일은 명시적 등록 복구 대상이다. 검증 수치는 주관 적합성/승인과 별개다. 총 39개 명령/MCP 38개 도구가 같은 검증을 사용한다. 과거 절의 schema/명령 수는 해당 버전 기반이다.

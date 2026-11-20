@@ -148,8 +148,9 @@ impl Store {
         no_link(root)?;
         fs::create_dir_all(root)?;
         let root = local_directory(root)?;
-        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,2)?;
+        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,3)?;
         crate::generation::migrate(&mut catalog)?;
+        crate::audio::migrate(&mut catalog)?;
         Ok(Self { root, catalog })
     }
     pub fn default_root() -> Result<PathBuf> {
@@ -258,6 +259,9 @@ impl Store {
     }
     fn dispatch(&mut self, c: &Value) -> Result<Value> {
         let op = text(c, "op");
+        if op.starts_with("audio.") {
+            return crate::audio::command(self, c);
+        }
         if ["account.", "budget.", "voice.", "model.", "job."]
             .iter()
             .any(|prefix| op.starts_with(prefix))
@@ -277,6 +281,7 @@ impl Store {
                 Ok(json!({"project_id":c["project_id"],"name":name,"schema_version":1}))
             },
             "asset.import"=>{
+                if self.catalog.query_row("SELECT EXISTS(SELECT 1 FROM audio_operations WHERE project_id=?1 AND asset_id=?2 AND version_id=?3 AND kind='audio.edit')",params![text(c,"project_id"),text(c,"asset_id"),text(c,"version_id")],|r|r.get::<_,bool>(0))?{return Err(Error("audio_target_reserved"));}
                 if self.catalog.query_row("SELECT EXISTS(SELECT 1 FROM generation_jobs WHERE project_id=?1 AND asset_id=?2 AND version_id=?3)",params![text(c,"project_id"),text(c,"asset_id"),text(c,"version_id")],|r|r.get::<_,bool>(0))?{return Err(Error("generation_target_reserved"));}
                 import(&root,&mut db,c)
             },

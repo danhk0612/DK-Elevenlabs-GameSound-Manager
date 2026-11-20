@@ -293,6 +293,7 @@ fn submit(store: &mut Store, c: &Value) -> Result<Value> {
         }
         return job(&store.catalog, &project, id);
     }
+    if store.catalog.query_row("SELECT EXISTS(SELECT 1 FROM audio_operations WHERE project_id=?1 AND asset_id=?2 AND version_id=?3 AND kind='audio.edit')",params![s(c,"project_id"),s(c,"asset_id"),s(c,"version_id")],|r|r.get::<_,bool>(0))? {return Err(Error("audio_target_reserved"));}
     target(store, c)?;
     let account = sync_account(store, s(c, "account_id"))?;
     let identity = account["identity"].as_str().unwrap();
@@ -500,7 +501,7 @@ pub fn read_query(root: &std::path::Path, c: &Value) -> Result<Value> {
     let db = Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
     let version: i64 = db.pragma_query_value(None, "user_version", |r| r.get(0))?;
     let app: i64 = db.pragma_query_value(None, "application_id", |r| r.get(0))?;
-    if version != 2 || app != 1145784135 {
+    if !(2..=3).contains(&version) || app != 1145784135 {
         return Err(Error("unsupported_database_schema"));
     }
     let exists: bool = db.query_row(

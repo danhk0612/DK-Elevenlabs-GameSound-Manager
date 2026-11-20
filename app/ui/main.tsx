@@ -27,6 +27,10 @@ function App() {
   const [enabled, setEnabled] = useState(false);
   const [calls, setCalls] = useState('');
   const [credits, setCredits] = useState('');
+  const [comparison, setComparison] = useState<{source: string; label: string} | null>(null);
+  const [operation, setOperation] = useState('');
+  const [waveform, setWaveform] = useState<number[][]>([]);
+  const [measurement, setMeasurement] = useState('');
 
   async function run(action: () => Promise<void>) {
     if (lock.current) return;
@@ -40,8 +44,8 @@ function App() {
     if (!reply.ok) throw new Error(reply.error?.code ?? '조회 실패');
     return reply.data;
   }
-  function resetAssets() { setAssets(empty); setAsset(''); setVersions(empty); setVersion(''); setAudio(''); }
-  function selectProject(id: string) { setProject(id); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
+  function resetAssets() { setWaveform([]); setMeasurement(''); setAssets(empty); setAsset(''); setVersions(empty); setVersion(''); setAudio(''); }
+  function selectProject(id: string) { setProject(id); setComparison(null); setWaveform([]); setMeasurement(''); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
   async function loadProjects(after = '') {
     await run(async () => {
       const page = await query('project.list', { after }) as Page;
@@ -57,7 +61,7 @@ function App() {
   }
   async function loadVersions(id: string, after = '') {
     await run(async () => {
-      setAsset(id); setVersion(''); setAudio(''); setVersions(empty);
+      setAsset(id); setVersion(''); setAudio(''); setVersions(empty); setWaveform([]); setMeasurement('');
       const page = await query('asset.versions', { project_id: project, asset_id: id, after }) as Page;
       setVersions(page); setMessage('ready 버전을 선택해 불러온 뒤 재생하세요.');
     });
@@ -105,7 +109,7 @@ function App() {
         <button disabled={busy || !project} onClick={() => loadAssets()}>파일 조회</button></div>
       <ul>{assets.items.map(row => <li key={String(row.asset_id)}><button disabled={busy} onClick={() => loadVersions(String(row.asset_id))}>{row.name} <small>{row.kind} / {row.asset_id}</small></button></li>)}</ul>
       <button disabled={busy || !assets.next_after} onClick={() => loadAssets(assets.next_after!)}>파일 다음 10개</button>
-      {asset && <div className="line"><label>{asset} 버전 <select disabled={busy} value={version} onChange={e => { setVersion(e.target.value); setAudio(''); }}>
+      {asset && <div className="line"><label>{asset} 버전 <select disabled={busy} value={version} onChange={e => { setVersion(e.target.value); setAudio(''); setWaveform([]); setMeasurement(''); }}>
         <option value="">선택</option>{versions.items.map(row => <option key={String(row.version_id)} value={String(row.version_id)} disabled={row.state !== 'ready'}>{row.version_id} · {row.role} · {row.state}</option>)}
       </select></label><button disabled={busy || !versions.next_after} onClick={() => loadVersions(asset, versions.next_after!)}>버전 다음 10개</button>
         <button disabled={busy || !version} onClick={() => run(async () => {
@@ -114,10 +118,27 @@ function App() {
           setAudio(source); setMessage('해시 확인 완료. 아래 재생 버튼을 사용하세요.');
         })}>선택 버전 불러오기</button></div>}
       {audio && <audio key={`${project}/${asset}/${version}`} controls src={audio} onError={() => setMessage('재생할 수 없는 형식이거나 파일입니다. 해당 코덱의 WebView2 지원을 확인하세요.')} />}
+      {audio && <button disabled={busy} onClick={() => setComparison({source: audio, label: `${project} / ${asset} / ${version}`})}>비교용으로 보관</button>}
+      {comparison && <div><p>비교 버전: {comparison.label}</p><audio controls src={comparison.source} /><button disabled={busy} onClick={() => setComparison(null)}>비교 닫기</button></div>}
+      <div className="line"><label>검사 작업 ID <input disabled={busy} value={operation} onChange={e => setOperation(e.target.value)} /></label>
+        <button disabled={busy || !operation || !project || !asset || !version} onClick={() => run(async () => {
+          setWaveform([]); setMeasurement('');
+          const record = await query('audio.get', { project_id: project, operation_id: operation }) as {state: string; request: {asset_id: string; version_id: string}; result?: {metadata?: {sample_rate: number; channels: number}; metrics?: {duration_ms: number; sample_peak_dbfs: number | null; rms_dbfs: number | null; waveform: number[][]}}};
+          if (record.state !== 'succeeded' || record.request.asset_id !== asset || record.request.version_id !== version || !record.result?.metrics) throw new Error('선택한 파일 버전의 완료된 분석 ID를 입력하세요.');
+          const metrics = record.result.metrics;
+          setWaveform(metrics.waveform);
+          setMeasurement(`${metrics.duration_ms.toFixed(1)} ms · ${record.result.metadata?.sample_rate} Hz · ${record.result.metadata?.channels} ch · peak ${metrics.sample_peak_dbfs?.toFixed(2) ?? '−∞'} dBFS · RMS ${metrics.rms_dbfs?.toFixed(2) ?? '−∞'} dBFS`);
+          setDetails(JSON.stringify(record, null, 2)); setMessage('검사 수치를 조회했습니다. 음질 평가와 적용 승인은 별도입니다.');
+        })}>검사 결과 조회</button></div>
+      {waveform.length > 0 && <figure><svg role="img" aria-label="채널을 합친 최소·최대 파형" viewBox={`0 0 ${waveform.length} 100`} preserveAspectRatio="none" style={{width:'100%',height:120,background:'#fff'}}>
+        <line x1="0" x2={waveform.length} y1="50" y2="50" stroke="#c3c8c0" strokeWidth="0.5" />
+        {waveform.map(([min,max],index) => <line key={index} x1={index+0.5} x2={index+0.5} y1={50-Math.max(-1,Math.min(1,max))*48} y2={50-Math.max(-1,Math.min(1,min))*48} stroke="#303833" strokeWidth="0.8" />)}
+      </svg><figcaption>{measurement} · 표시 범위 ±1</figcaption></figure>}
+
     </section>
     <p role="status" aria-live="polite">{message}</p>
-    {details && <details><summary>엔진 응답</summary><pre>{details}</pre></details>}
-    <p className="note">미리듣기는 파일당 16 MiB까지 지원합니다. 생성·편집·게임 적용 기능은 후속 단계입니다.</p>
+    {details && <details><summary>상세 응답</summary><pre>{details}</pre></details>}
+    <p className="note">미리듣기는 파일당 16 MiB까지 지원합니다. 생성·편집·검사는 CLI/MCP에서 수행합니다. 게임 적용은 후속 단계입니다.</p>
   </main>;
 }
 createRoot(document.getElementById('root')!).render(<App />);

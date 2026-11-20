@@ -511,3 +511,270 @@ fn generation_preserves_existing_original_and_checks_dialogue_snapshot() {
         "succeeded"
     );
 }
+
+impl Fixture {
+    fn audio_tools(&mut self) {
+        let ffmpeg = std::env::var("DK_TEST_FFMPEG")
+            .expect("set DK_TEST_FFMPEG for ignored audio integration tests");
+        let ffprobe = std::env::var("DK_TEST_FFPROBE")
+            .expect("set DK_TEST_FFPROBE for ignored audio integration tests");
+        let result = self.run(
+            "audio.tools.set",
+            json!({"ffmpeg_path":ffmpeg,"ffprobe_path":ffprobe}),
+        );
+        assert_eq!(result["ok"], true, "{result}");
+    }
+    fn signal(&mut self) {
+        let mut wav = b"RIFF".to_vec();
+        wav.extend(16036u32.to_le_bytes());
+        wav.extend(b"WAVEfmt ");
+        wav.extend(16u32.to_le_bytes());
+        wav.extend(1u16.to_le_bytes());
+        wav.extend(1u16.to_le_bytes());
+        wav.extend(8000u32.to_le_bytes());
+        wav.extend(16000u32.to_le_bytes());
+        wav.extend(2u16.to_le_bytes());
+        wav.extend(16u16.to_le_bytes());
+        wav.extend(b"data");
+        wav.extend(16000u32.to_le_bytes());
+        for frame in 0..8000 {
+            wav.extend(
+                if (2000..6000).contains(&frame) {
+                    16384i16
+                } else {
+                    0i16
+                }
+                .to_le_bytes(),
+            );
+        }
+        fs::write(self.root.join("합성 원본.wav"), wav).unwrap();
+        self.project("one");
+        assert_eq!(self.import("one")["ok"], true);
+    }
+    fn measure(&mut self, id: &str, version: &str) -> Value {
+        self.run("audio.analyze",json!({"project_id":"one","asset_id":"hit","version_id":version,"operation_id":id,"waveform_bins":32,"silence_db":-60,"silence_min_ms":200,"clip_level":0.49}))
+    }
+}
+fn edit_request(id: &str, version: &str) -> Value {
+    json!({"project_id":"one","asset_id":"hit","version_id":version,"parent_version_id":"original","operation_id":id,"start_ms":250,"end_ms":750,"gain_db":-6.020599913,"fade_in_ms":0,"fade_out_ms":0,"output_format":"wav_pcm_s16le","sample_rate":8000,"channels":1})
+}
+#[test]
+fn audio_parameters_are_explicit_and_invalid_ranges_never_reach_tools() {
+    let mut f = Fixture::new();
+    f.signal();
+    assert_eq!(
+        f.measure("check", "original")["error"]["code"],
+        "audio_tools_not_configured"
+    );
+    for (field, value) in [
+        ("end_ms", json!(250)),
+        ("gain_db", json!("6dB,anull")),
+        ("fade_in_ms", json!(600)),
+        ("sample_rate", json!(12345)),
+        ("channels", json!(0)),
+        ("version_id", json!("original")),
+    ] {
+        let mut c = edit_request("edit", "candidate");
+        c[field] = value;
+        assert_eq!(f.run("audio.edit", c)["ok"], false);
+    }
+    let mut c = edit_request("edit", "candidate");
+    c["loop_start_ms"] = json!(10);
+    assert_eq!(
+        f.run("audio.edit", c)["error"]["code"],
+        "invalid_audio_loop"
+    );
+    let mut c = edit_request("edit", "candidate");
+    c.as_object_mut().unwrap().remove("output_format");
+    assert_eq!(f.run("audio.edit", c)["ok"], false);
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_real_signal_metrics_waveform_and_version_bound_reports() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let report = f.measure("check", "original");
+    assert_eq!(report["ok"], true, "{report}");
+    let metrics = &report["data"]["result"]["metrics"];
+    assert_eq!(metrics["frames"], 8000);
+    assert_eq!(metrics["duration_ms"], 1000.0);
+    assert_eq!(metrics["sample_peak"], 0.5);
+    assert!((metrics["rms"].as_f64().unwrap() - 0.353553390593).abs() < 0.000001);
+    assert_eq!(metrics["threshold_exceeding_samples"], 4000);
+    assert_eq!(metrics["quiet_ms"], 500.0);
+    assert_eq!(metrics["longest_quiet_ms"], 250.0);
+    assert_eq!(metrics["silence_region_count"], 2);
+    assert_eq!(metrics["waveform"].as_array().unwrap().len(), 32);
+    assert_eq!(f.measure("check", "original"), report);
+    assert!(serde_json::to_vec(&report).unwrap().len() < crate::protocol::MAX_FRAME);
+    f.project("two");
+    assert_eq!(
+        f.run(
+            "audio.get",
+            json!({"project_id":"two","operation_id":"check"})
+        )["error"]["code"],
+        "audio_operation_not_found"
+    );
+    let page = f.run("audio.list", json!({"project_id":"one"}));
+    assert_eq!(page["data"]["items"].as_array().unwrap().len(), 1);
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_real_edit_trim_gain_fade_formats_and_original_preservation() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let original = f.run(
+        "asset.file",
+        json!({"project_id":"one","asset_id":"hit","version_id":"original"}),
+    );
+    let request = edit_request("edit", "take-1");
+    let edited = f.run("audio.edit", request.clone());
+    assert_eq!(edited["ok"], true, "{edited}");
+    assert_eq!(edited["data"]["state"], "succeeded");
+    assert_eq!(edited["data"]["result"]["candidate"]["role"], "candidate");
+    assert_eq!(f.run("audio.edit", request), edited);
+    let measured = f.measure("check", "take-1");
+    assert_eq!(measured["ok"], true, "{measured}");
+    let m = &measured["data"]["result"]["metrics"];
+    assert_eq!(m["duration_ms"], 500.0);
+    assert!((m["sample_peak"].as_f64().unwrap() - 0.25).abs() < 0.00005);
+    let mut fade = edit_request("fade", "take-2");
+    fade["fade_in_ms"] = json!(100);
+    fade["fade_out_ms"] = json!(100);
+    fade["sample_rate"] = json!(16000);
+    fade["channels"] = json!(2);
+    assert_eq!(f.run("audio.edit", fade)["ok"], true);
+    let measured = f.measure("fade-check", "take-2");
+    assert_eq!(measured["ok"], true, "{measured}");
+    let report = &measured["data"]["result"];
+    assert_eq!(report["metadata"]["channels"], 2);
+    assert_eq!(report["metadata"]["sample_rate"], 16000);
+    assert!(report["metrics"]["waveform"][0][1].as_f64().unwrap() < 0.06);
+    for (id, format) in [("ogg", "ogg_vorbis_q4"), ("mp3", "mp3_128k")] {
+        let mut request = edit_request(id, id);
+        request["output_format"] = json!(format);
+        request["sample_rate"] = json!(44100);
+        let result = f.run("audio.edit", request);
+        assert_eq!(result["ok"], true, "{result}");
+        assert_eq!(f.measure(&format!("check-{id}"), id)["ok"], true);
+    }
+    assert_eq!(
+        f.run(
+            "asset.file",
+            json!({"project_id":"one","asset_id":"hit","version_id":"original"})
+        ),
+        original
+    );
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_real_recovery_reuses_output_without_tools_and_detects_tampering() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let edited = f.run("audio.edit", edit_request("edit", "take-1"));
+    assert_eq!(edited["ok"], true, "{edited}");
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='output_ready' WHERE id='edit'",
+            [],
+        )
+        .unwrap();
+    f.store
+        .catalog
+        .execute("DELETE FROM audio_tools", [])
+        .unwrap();
+    let recovered = f.run(
+        "audio.recover",
+        json!({"project_id":"one","operation_id":"edit"}),
+    );
+    assert_eq!(recovered, edited);
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='output_ready' WHERE id='edit'",
+            [],
+        )
+        .unwrap();
+    fs::write(
+        f.root.join("settings/audio-operations/edit/output.wav"),
+        b"tampered",
+    )
+    .unwrap();
+    assert_eq!(
+        f.run(
+            "audio.recover",
+            json!({"project_id":"one","operation_id":"edit"})
+        )["error"]["code"],
+        "audio_output_integrity_mismatch"
+    );
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn audio_real_bad_input_conflicts_changed_tools_and_restart_do_not_overwrite() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    let mut c = edit_request("edit", "take-1");
+    c["end_ms"] = json!(2000);
+    assert_eq!(
+        f.run("audio.edit", c.clone())["error"]["code"],
+        "audio_trim_out_of_range"
+    );
+    assert_eq!(f.run("audio.edit", c)["data"]["state"], "failed");
+    assert_eq!(
+        f.run("audio.edit", edit_request("other", "take-1"))["error"]["code"],
+        "audio_target_reserved"
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET state='processing' WHERE id='edit'",
+            [],
+        )
+        .unwrap();
+    let root = f.root.join("settings");
+    let old = std::mem::replace(&mut f.store, Store::open(&root).unwrap());
+    drop(old);
+    assert_eq!(
+        f.run(
+            "audio.get",
+            json!({"project_id":"one","operation_id":"edit"})
+        )["data"]["state"],
+        "interrupted"
+    );
+    let mut v: Value = serde_json::from_str(
+        &f.store
+            .catalog
+            .query_row("SELECT settings FROM audio_tools", [], |r| {
+                r.get::<_, String>(0)
+            })
+            .unwrap(),
+    )
+    .unwrap();
+    v["ffmpeg"]["sha256"] = json!("different");
+    f.store
+        .catalog
+        .execute("UPDATE audio_tools SET settings=?1", [v.to_string()])
+        .unwrap();
+    assert_eq!(
+        f.run("audio.tools.get", json!({}))["error"]["code"],
+        "audio_tool_changed"
+    );
+    f.audio_tools();
+    fs::write(f.root.join("bad.wav"), b"not an audio file").unwrap();
+    assert_eq!(f.run("asset.import",json!({"project_id":"one","asset_id":"bad","version_id":"original","name":"bad","kind":"sfx","source_path":f.root.join("bad.wav"),"source_note":"synthetic invalid fixture"}))["ok"],true);
+    let mut c = json!({"project_id":"one","asset_id":"bad","version_id":"original","operation_id":"bad-check","waveform_bins":16,"silence_db":-60,"silence_min_ms":1,"clip_level":1});
+    assert_eq!(
+        f.run("audio.analyze", c.clone())["error"]["code"],
+        "audio_tool_failed"
+    );
+    c["silence_db"] = json!(-50);
+    assert_eq!(
+        f.run("audio.analyze", c)["error"]["code"],
+        "audio_operation_id_conflict"
+    );
+}
