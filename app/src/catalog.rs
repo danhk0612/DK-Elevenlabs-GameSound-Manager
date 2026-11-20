@@ -243,6 +243,49 @@ pub const COMMANDS: &[Command] = &[
         read_only: false,
     },
     Command {
+        op: "review.submit",
+        required: &[
+            "project_id",
+            "review_id",
+            "asset_id",
+            "version_id",
+            "expected_sha256",
+            "summary",
+        ],
+        optional: &["requirement_id", "analysis_id", "notes"],
+        read_only: false,
+    },
+    Command {
+        op: "review.get",
+        required: &["project_id", "review_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "review.list",
+        required: &["project_id"],
+        optional: &["after", "limit", "state", "asset_id", "version_id"],
+        read_only: true,
+    },
+    Command {
+        op: "review.withdraw",
+        required: &["project_id", "review_id", "reason"],
+        optional: &[],
+        read_only: false,
+    },
+    Command {
+        op: "review.check",
+        required: &["project_id", "review_id"],
+        optional: &[],
+        read_only: true,
+    },
+    Command {
+        op: "asset.history",
+        required: &["project_id", "asset_id", "version_id"],
+        optional: &["after", "limit"],
+        read_only: true,
+    },
+    Command {
         op: "audio.submit",
         required: &[
             "project_id",
@@ -348,6 +391,12 @@ pub fn find(op: &str) -> Option<&'static Command> {
 }
 pub fn field_schema(key: &str) -> Value {
     match key {
+        "expected_sha256" => {
+            json!({"type":"string","pattern":"^[a-f0-9]{64}$","minLength":64,"maxLength":64})
+        }
+        "state" => json!({"type":"string","enum":["pending","withdrawn"]}),
+        "summary" => json!({"type":"string","maxLength":200}),
+        "reason" => json!({"type":"string","maxLength":1024}),
         "action" => json!({"type":"string","enum":["edit","analyze"]}),
         "silence_min_ms" => json!({"type":"integer","minimum":1,"maximum":86400000}),
         "sample_rate" => {
@@ -412,8 +461,17 @@ pub fn tools() -> Vec<Value> {
                 json!({"type":"object","properties":fields,"required":required,"additionalProperties":false})
             }).collect::<Vec<_>>();schema["oneOf"]=json!(choices);
         }
+        let detail = match c.op {
+            "review.submit" => "Freeze a ready candidate with expected SHA-256 and optional requirement/analysis evidence for review. Same ID/request returns the existing record, including withdrawn. Pending is never approval.",
+            "review.get" => "Read an immutable submission snapshot and current pending/withdrawn state. Does not verify current files; use review.check.",
+            "review.list" => "Page project review summaries in ID order; optionally filter pending/withdrawn or asset/version. Forward next_after unchanged.",
+            "review.withdraw" => "Withdraw a pending submission without changing files. Same reason is idempotent; cannot reopen or approve. Reason is untrusted client text.",
+            "review.check" => "Rehash candidate and compare linked requirement/analysis with the submission snapshot. Returns matches flags; never grants approval or changes state.",
+            "asset.history" => "Page one version's generation, edit, analysis and review summaries by category then ID, not time. Read details with job.get/audio.get/review.get. Does not verify files.",
+            _ => "Explicit project_id scopes project data. Mock operations are local. ElevenLabs operations require configured credentials and policy; generation creates candidates only. Never applies to game files.",
+        };
         json!({"name":format!("sound_{}",c.op.replace('.',"_")),
-            "description":format!("{}: Explicit project_id scopes project data. Mock operations are local. ElevenLabs operations require configured credentials and policy; generation creates candidates only. Never applies to game files.",c.op),
+            "description":format!("{}: {}",c.op,detail),
             "inputSchema":schema,
             "annotations":{"readOnlyHint":c.read_only,"destructiveHint":false,"idempotentHint":!matches!(c.op,"job.cancel"),"openWorldHint":matches!(c.op,"account.refresh"|"voice.list"|"voice.get"|"voice.settings"|"model.list"|"job.submit")}})
     }).collect()
@@ -553,7 +611,7 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
         let text = value.as_str().ok_or("invalid_field_type")?;
         let max = match *key {
             "description" | "text" => 2048,
-            "source_note" | "notes" => 1024,
+            "source_note" | "notes" | "reason" => 1024,
             "workspace" | "source_path" | "ffmpeg_path" | "ffprobe_path" => 4096,
             _ => 200,
         };
@@ -565,11 +623,12 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
             || *key == "after")
             && !text.is_empty()
         {
-            let parts: Vec<_> = if *key == "after" && op == "project.recover" {
-                text.split(':').collect()
-            } else {
-                vec![text]
-            };
+            let parts: Vec<_> =
+                if *key == "after" && matches!(op, "project.recover" | "asset.history") {
+                    text.split(':').collect()
+                } else {
+                    vec![text]
+                };
             if parts.len() > 2 || parts.iter().any(|s| !valid_id(s)) {
                 return Err("invalid_id");
             }
@@ -579,6 +638,17 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
             && !["source_note", "description"].contains(key)
         {
             return Err("empty_field");
+        }
+        if *key == "expected_sha256"
+            && (text.len() != 64
+                || !text
+                    .bytes()
+                    .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)))
+        {
+            return Err("invalid_sha256");
+        }
+        if *key == "state" && !["pending", "withdrawn"].contains(&text) {
+            return Err("invalid_review_state");
         }
         if *key == "kind" && !["bgm", "sfx", "voice"].contains(&text) {
             return Err("invalid_kind");

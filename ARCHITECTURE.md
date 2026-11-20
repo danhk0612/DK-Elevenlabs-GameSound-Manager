@@ -116,3 +116,7 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 [비동기 큐/취소 계약](docs/T04_ASYNC_AUDIO.md)에 따라 catalog schema 4에 cancel_requested/phase/tools_snapshot을 추가했다. 기존 동기 명령은 유지하고 audio.submit은 동일 편집/분석 입력을 정규화하여 즉시 예약한다. 실행 당시 도구/hash·입력 버전을 고정하고 단일 엔진 실행기가 큐를 처리한다. 짧은 제출/상태 조회/취소는 migration/재시작 정리를 하지 않는 별도 catalog 연결로 처리한다.
 
 취소 플래그를 외부 프로세스/PCM 측정·단계 사이에서 대조하고 output_ready 전환/분석 완료 기록과 원자적으로 조정한다. output_ready 이후에는 취소 대신 등록/복구를 보존한다. 재기동 자동 재생은 없고 큐/실행은 interrupted 또는 이미 취소 요청됐으면 cancelled다. 실행 중 status와 audio 제출/조회/취소를 사용할 수 있으며 다른 일반 명령은 계속 직렬일 수 있다. 전체 41개 공통 명령/MCP 40개 도구다. T04 실제 AI 클라이언트 호환·검토 제출과 T05 승인/게임 적용은 별도다.
+
+## T04 검토 제출·이력 보강
+
+[검토 계약](docs/T04_REVIEW.md)에 따라 v0.6 catalog schema 5의 reviews에 불변 요청·후보 SHA/metadata·선택 requirement/검사 보고서 근거와 pending/withdrawn 상태를 저장한다. 제출은 실제 후보 파일 hash를 대조하고 get은 과거 snapshot, check는 현재 파일/연결 자료 대조다. 승인/게임 적용 경로는 없다. review.get/list·asset.history는 별도 RO 연결이고 나머지는 일반 writer다. 생성/편집/검사/검토 이력은 category_then_identifier로 페이지 처리하며 시간순을 주장하지 않는다. 총 47개 명령/MCP 46개 도구다.

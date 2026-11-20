@@ -501,7 +501,7 @@ pub fn read_query(root: &std::path::Path, c: &Value) -> Result<Value> {
     let db = Connection::open_with_flags(path, rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY)?;
     let version: i64 = db.pragma_query_value(None, "user_version", |r| r.get(0))?;
     let app: i64 = db.pragma_query_value(None, "application_id", |r| r.get(0))?;
-    if !(2..=4).contains(&version) || app != 1145784135 {
+    if !(2..=5).contains(&version) || app != 1145784135 {
         return Err(Error("unsupported_database_schema"));
     }
     let exists: bool = db.query_row(

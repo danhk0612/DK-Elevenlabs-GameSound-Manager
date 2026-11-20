@@ -360,6 +360,24 @@ async fn dispatch(command: Value, shared: &Shared, worker: &Worker) -> Value {
         }
         return response;
     }
+    if matches!(
+        command["op"].as_str(),
+        Some("review.get" | "review.list" | "asset.history")
+    ) {
+        if shared.lock().unwrap().stopping {
+            return protocol::error("engine_stopping");
+        }
+        return tokio::task::spawn_blocking(move || {
+            match crate::storage::Store::default_root()
+                .and_then(|root| crate::review::read(&root, &command))
+            {
+                Ok(value) => protocol::success(value),
+                Err(error) => protocol::error(error.0),
+            }
+        })
+        .await
+        .unwrap_or_else(|_| protocol::error("local_worker_lost"));
+    }
     if matches!(command["op"].as_str(), Some("job.get" | "job.list")) {
         if shared.lock().unwrap().stopping {
             return protocol::error("engine_stopping");

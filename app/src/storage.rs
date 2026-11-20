@@ -148,10 +148,11 @@ impl Store {
         no_link(root)?;
         fs::create_dir_all(root)?;
         let root = local_directory(root)?;
-        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,4)?;
+        let mut catalog=database(&root.join("catalog.sqlite3"),"CREATE TABLE projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,workspace TEXT NOT NULL,root TEXT NOT NULL UNIQUE);",true,5)?;
         crate::generation::migrate(&mut catalog)?;
         crate::audio::migrate(&mut catalog)?;
         crate::audio_queue::migrate(&mut catalog)?;
+        crate::review::migrate(&mut catalog)?;
         Ok(Self { root, catalog })
     }
     pub fn default_root() -> Result<PathBuf> {
@@ -260,6 +261,9 @@ impl Store {
     }
     fn dispatch(&mut self, c: &Value) -> Result<Value> {
         let op = text(c, "op");
+        if op.starts_with("review.") || op == "asset.history" {
+            return crate::review::command(self, c);
+        }
         if op.starts_with("audio.") {
             return crate::audio::command(self, c);
         }
@@ -740,7 +744,7 @@ pub(crate) fn catalog_connection(root: &Path, write: bool) -> Result<Connection>
     db.busy_timeout(Duration::from_secs(3))?;
     let version: i64 = db.pragma_query_value(None, "user_version", |r| r.get(0))?;
     let app: i64 = db.pragma_query_value(None, "application_id", |r| r.get(0))?;
-    if version != 4 || app != APP_ID {
+    if version != 5 || app != APP_ID {
         return Err(Error("unsupported_schema"));
     }
     db.pragma_update(None, "foreign_keys", true)?;

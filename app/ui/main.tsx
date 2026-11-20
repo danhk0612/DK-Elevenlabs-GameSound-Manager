@@ -6,6 +6,7 @@ import './style.css';
 type Item = Record<string, string | number | null>;
 type Page = { items: Item[]; next_after: string | null };
 type Reply = { ok: boolean; data?: unknown; error?: { code: string } };
+type Review = {project_id: string; review_id: string; state: string; snapshot: {candidate: {asset_id: string; version_id: string; sha256: string}; summary: string}};
 const empty: Page = { items: [], next_after: null };
 
 function App() {
@@ -32,6 +33,9 @@ function App() {
   const [task, setTask] = useState<{project: string; id: string; state: string; phase: string; cancelling: boolean} | null>(null);
   const [waveform, setWaveform] = useState<number[][]>([]);
   const [measurement, setMeasurement] = useState('');
+  const [reviews, setReviews] = useState<Page>(empty);
+  const [review, setReview] = useState<Review | null>(null);
+  const [history, setHistory] = useState<Page>(empty);
 
   async function run(action: () => Promise<void>) {
     if (lock.current) return;
@@ -45,8 +49,8 @@ function App() {
     if (!reply.ok) throw new Error(reply.error?.code ?? '조회 실패');
     return reply.data;
   }
-  function resetAssets() { setWaveform([]); setMeasurement(''); setAssets(empty); setAsset(''); setVersions(empty); setVersion(''); setAudio(''); }
-  function selectProject(id: string) { setProject(id); setComparison(null); setWaveform([]); setMeasurement(''); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
+  function resetAssets() { setHistory(empty); setWaveform([]); setMeasurement(''); setAssets(empty); setAsset(''); setVersions(empty); setVersion(''); setAudio(''); }
+  function selectProject(id: string) { setProject(id); setReviews(empty); setReview(null); setDetails(''); setComparison(null); setWaveform([]); setMeasurement(''); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
   async function loadProjects(after = '') {
     await run(async () => {
       const page = await query('project.list', { after }) as Page;
@@ -62,9 +66,21 @@ function App() {
   }
   async function loadVersions(id: string, after = '') {
     await run(async () => {
-      setAsset(id); setVersion(''); setAudio(''); setVersions(empty); setWaveform([]); setMeasurement('');
+      setHistory(empty); setAsset(id); setVersion(''); setAudio(''); setVersions(empty); setWaveform([]); setMeasurement('');
       const page = await query('asset.versions', { project_id: project, asset_id: id, after }) as Page;
       setVersions(page); setMessage('ready 버전을 선택해 불러온 뒤 재생하세요.');
+    });
+  }
+  async function loadReviews(after = '') {
+    await run(async () => {
+      setReviews(await query('review.list', {project_id: project, after}) as Page);
+      setMessage('검토 기록을 조회했습니다. 대기는 승인을 의미하지 않습니다.');
+    });
+  }
+  async function loadHistory(after = '') {
+    await run(async () => {
+      const page = await query('asset.history', {project_id: project, asset_id: asset, version_id: version, after}) as Page;
+      setHistory(page); setMessage('선택 버전 이력 · 종류/ID 순서');
     });
   }
   return <main>
@@ -110,7 +126,7 @@ function App() {
         <button disabled={busy || !project} onClick={() => loadAssets()}>파일 조회</button></div>
       <ul>{assets.items.map(row => <li key={String(row.asset_id)}><button disabled={busy} onClick={() => loadVersions(String(row.asset_id))}>{row.name} <small>{row.kind} / {row.asset_id}</small></button></li>)}</ul>
       <button disabled={busy || !assets.next_after} onClick={() => loadAssets(assets.next_after!)}>파일 다음 10개</button>
-      {asset && <div className="line"><label>{asset} 버전 <select disabled={busy} value={version} onChange={e => { setVersion(e.target.value); setAudio(''); setWaveform([]); setMeasurement(''); }}>
+      {asset && <div className="line"><label>{asset} 버전 <select disabled={busy} value={version} onChange={e => { setHistory(empty); setVersion(e.target.value); setAudio(''); setWaveform([]); setMeasurement(''); }}>
         <option value="">선택</option>{versions.items.map(row => <option key={String(row.version_id)} value={String(row.version_id)} disabled={row.state !== 'ready'}>{row.version_id} · {row.role} · {row.state}</option>)}
       </select></label><button disabled={busy || !versions.next_after} onClick={() => loadVersions(asset, versions.next_after!)}>버전 다음 10개</button>
         <button disabled={busy || !version} onClick={() => run(async () => {
@@ -118,6 +134,13 @@ function App() {
           const source = await invoke<string>('audio_source', { projectId: project, assetId: asset, versionId: version });
           setAudio(source); setMessage('해시 확인 완료. 아래 재생 버튼을 사용하세요.');
         })}>선택 버전 불러오기</button></div>}
+      <div className="line"><button disabled={busy || !project || !asset || !version} onClick={() => loadHistory()}>선택 버전 이력</button>
+        <button disabled={busy || !history.next_after} onClick={() => loadHistory(history.next_after!)}>이력 다음 10개</button></div>
+      <ul>{history.items.map(row => <li key={String(row.cursor)}>{row.kind} / {row.id} · {row.state} <button disabled={busy} onClick={() => run(async () => {
+        const op = row.kind === 'review' ? 'review.get' : row.kind === 'generation' ? 'job.get' : 'audio.get';
+        const idKey = row.kind === 'review' ? 'review_id' : row.kind === 'generation' ? 'job_id' : 'operation_id';
+        setDetails(JSON.stringify(await query(op, {project_id: project, [idKey]: row.id}), null, 2)); setMessage('이력 상세를 조회했습니다.');
+      })}>상세</button></li>)}</ul>
       {audio && <audio key={`${project}/${asset}/${version}`} controls src={audio} onError={() => setMessage('재생할 수 없는 형식이거나 파일입니다. 해당 코덱의 WebView2 지원을 확인하세요.')} />}
       {audio && <button disabled={busy} onClick={() => setComparison({source: audio, label: `${project} / ${asset} / ${version}`})}>비교용으로 보관</button>}
       {comparison && <div><p>비교 버전: {comparison.label}</p><audio controls src={comparison.source} /><button disabled={busy} onClick={() => setComparison(null)}>비교 닫기</button></div>}
@@ -148,6 +171,31 @@ function App() {
         {waveform.map(([min,max],index) => <line key={index} x1={index+0.5} x2={index+0.5} y1={50-Math.max(-1,Math.min(1,max))*48} y2={50-Math.max(-1,Math.min(1,min))*48} stroke="#303833" strokeWidth="0.8" />)}
       </svg><figcaption>{measurement} · 표시 범위 ±1</figcaption></figure>}
 
+    </section>
+    <section aria-label="검토 대기">
+      <h2>검토 기록</h2>
+      <div className="line"><button disabled={busy || !project} onClick={() => loadReviews()}>검토 목록</button>
+        <button disabled={busy || !reviews.next_after} onClick={() => loadReviews(reviews.next_after!)}>검토 다음 10개</button></div>
+      <ul>{reviews.items.map(row => <li key={String(row.review_id)}><button disabled={busy} onClick={() => run(async () => {
+        setReview(null);
+        const record = await query('review.get', {project_id: project, review_id: row.review_id}) as Review;
+        setReview(record); setDetails(JSON.stringify(record, null, 2)); setMessage('제출 당시 기록입니다. 현재 자료 일치는 별도로 확인하세요.');
+      })}>{row.review_id} · {row.state} · {row.asset_id}/{row.version_id}</button></li>)}</ul>
+      {review && review.project_id === project && <div>
+        <p>{review.review_id} · {review.state} · {review.snapshot.summary}</p>
+        <p><small>후보 SHA-256: {review.snapshot.candidate.sha256}</small></p>
+        <button disabled={busy} onClick={() => run(async () => {
+          const result = await query('review.check', {project_id: project, review_id: review.review_id}) as {matches: boolean};
+          setDetails(JSON.stringify(result, null, 2)); setMessage(result.matches ? '현재 파일·연결 자료가 제출 기록과 일치합니다. 적용 승인은 별도입니다.' : '제출 이후 자료가 달라졌거나 파일을 확인할 수 없습니다. 상세 응답을 확인하세요.');
+        })}>현재 자료 일치 확인</button>
+        <button disabled={busy} onClick={() => run(async () => {
+          setComparison(null);
+          const candidate = review.snapshot.candidate;
+          const source = await invoke<string>('audio_source', {projectId: project, assetId: candidate.asset_id, versionId: candidate.version_id, expectedSha256: candidate.sha256});
+          setComparison({source, label: `${project} / ${candidate.asset_id} / ${candidate.version_id} · 검토 ${review.review_id}`});
+          setMessage('검토 후보 해시를 확인했습니다. 비교 버전에서 재생하세요.');
+        })}>검토 후보 재생 준비</button>
+      </div>}
     </section>
     <p role="status" aria-live="polite">{message}</p>
     {details && <details><summary>상세 응답</summary><pre>{details}</pre></details>}

@@ -14,12 +14,12 @@ danhk0612/DK-Elevenlabs-GameSound-Manager에서 자동화 우선 개발을 계�
 PROJECT.md, REQUIREMENTS.md, ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md,
 AI_WORKFLOW.md, app/README.md와 D01~D06 결정을 읽어.
 
-현재 app/는 T04 비동기 오디오 보강 v0.5.0, SID별 Windows 엔진,
-독립 CLI·MCP 40개 도구·최소 연결/목록/재생/저장 검사 GUI다.
-docs/T01_LOCAL_LIBRARY.md, docs/T02_GENERATION.md, docs/T03_AUDIO.md와 docs/T04_ASYNC_AUDIO.md를 읽어. spikes/t00-a는 과거 격리 실험으로 유지해.
+현재 app/는 T04 검토 제출/이력 보강 v0.6.0, SID별 Windows 엔진,
+독립 CLI·MCP 46개 도구·최소 연결/목록/재생/저장 검사 GUI다.
+docs/T01_LOCAL_LIBRARY.md, docs/T02_GENERATION.md, docs/T03_AUDIO.md와 docs/T04_ASYNC_AUDIO.md와 docs/T04_REVIEW.md를 읽어. spikes/t00-a는 과거 격리 실험으로 유지해.
 실기/점검 대기로 개발을 막지 말고 기존 확인 결과와 미확인을 구분해 기록해.
 최신 Windows 빌드 실패가 있으면 먼저 구현 오류를 수정하고,
-그 외에는 검토 대기 제출·후보 이력 조회 등 T04 자동화 보강으로 진행해. async audio.submit/get/list/cancel과 기존 동기 명령을 유지하고 원본 보존·snapshot·취소/등록 경계·timeout·복구를 보강해. CLI/MCP native stdio smoke를 실제 AI 클라이언트 연결 성공으로 확대하지 마. D08 기본값은 임의 확정하지 말고 호출의 명시적 출력/검사 조건을 유지해. T05 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 마. T02는 라이브 미검증/원격 preview 재생 미구현을 남겨 두되 실기 대기로 개발을 멈추지 마. 실제 Key/허용 비용이
+그 외에는 실제 CLI/MCP 클라이언트 호환·재사용 가능한 무인 작업 예제 등 T04 자동화 보강으로 진행해. 검토 제출/철회·현재 일치 확인·후보 이력은 이미 구현했다. pending을 승인으로 취급하지 마. async audio.submit/get/list/cancel과 기존 동기 명령을 유지하고 원본 보존·snapshot·취소/등록 경계·timeout·복구를 보강해. CLI/MCP native stdio smoke를 실제 AI 클라이언트 연결 성공으로 확대하지 마. D08 기본값은 임의 확정하지 말고 호출의 명시적 출력/검사 조건을 유지해. T05 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 마. T02는 라이브 미검증/원격 preview 재생 미구현을 남겨 두되 실기 대기로 개발을 멈추지 마. 실제 Key/허용 비용이
 없으면 모의 응답과 오프라인 경로를 구현하고 라이브 생성은 하지 마.
 D09는 아직 미결정이므로 미설정 한도를 무제한으로 해석하지 마.
 

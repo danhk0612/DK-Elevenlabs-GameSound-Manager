@@ -1156,3 +1156,300 @@ fn audio_and_generation_share_atomic_target_reservations() {
         .unwrap();
     assert_eq!(count, 1);
 }
+
+impl Fixture {
+    fn review_candidate(&mut self) -> Value {
+        self.project("one");
+        assert_eq!(self.import("one")["ok"], true);
+        let result = self.run("asset.import",json!({"project_id":"one","asset_id":"hit","version_id":"take-2","parent_version_id":"original","name":"효과음","kind":"sfx","source_path":self.root.join("합성 원본.wav"),"source_note":"candidate fixture"}));
+        assert_eq!(result["ok"], true, "{result}");
+        result["data"].clone()
+    }
+    fn review_request(&self, candidate: &Value, id: &str) -> Value {
+        json!({"project_id":"one","review_id":id,"asset_id":"hit","version_id":"take-2","expected_sha256":candidate["sha256"],"summary":"검토 요청","notes":"Client text is not an approval"})
+    }
+}
+#[test]
+fn review_immutable_snapshot_withdrawal_and_no_approval_contract() {
+    let mut f = Fixture::new();
+    let candidate = f.review_candidate();
+    // Exercise upgrading an existing schema-4 catalog without touching project files.
+    f.store
+        .catalog
+        .execute_batch("DROP TABLE reviews; PRAGMA user_version=4;")
+        .unwrap();
+    f.store = Store::open(&f.root.join("settings")).unwrap();
+    assert_eq!(
+        f.store
+            .catalog
+            .pragma_query_value(None, "user_version", |r| r.get::<_, i64>(0))
+            .unwrap(),
+        5
+    );
+    let request = f.review_request(&candidate, "review-1");
+    let submitted = f.run("review.submit", request.clone());
+    assert_eq!(submitted["ok"], true, "{submitted}");
+    assert_eq!(submitted["data"]["state"], "pending");
+    assert_eq!(submitted["data"]["approval"], "not_granted");
+    assert_eq!(f.run("review.submit", request.clone()), submitted);
+    let mut changed = request.clone();
+    changed["summary"] = json!("changed");
+    assert_eq!(
+        f.run("review.submit", changed)["error"]["code"],
+        "review_id_conflict"
+    );
+    let mut forged = request.clone();
+    forged["approved"] = json!(true);
+    assert_eq!(f.run("review.submit", forged)["ok"], false);
+    assert_eq!(
+        f.run(
+            "review.approve",
+            json!({"project_id":"one","review_id":"review-1"})
+        )["ok"],
+        false
+    );
+    let withdrawn = f.run(
+        "review.withdraw",
+        json!({"project_id":"one","review_id":"review-1","reason":"別候補を作る"}),
+    );
+    assert_eq!(withdrawn["data"]["state"], "withdrawn");
+    assert_eq!(withdrawn["data"]["snapshot"], submitted["data"]["snapshot"]);
+    assert_eq!(f.run("review.submit", request), withdrawn);
+    assert_eq!(
+        f.run(
+            "review.withdraw",
+            json!({"project_id":"one","review_id":"review-1","reason":"別候補を作る"})
+        ),
+        withdrawn
+    );
+    assert_eq!(
+        f.run(
+            "review.withdraw",
+            json!({"project_id":"one","review_id":"review-1","reason":"changed"})
+        )["error"]["code"],
+        "review_withdrawal_conflict"
+    );
+    f.store = Store::open(&f.root.join("settings")).unwrap();
+    assert_eq!(
+        f.run(
+            "review.get",
+            json!({"project_id":"one","review_id":"review-1"})
+        ),
+        withdrawn
+    );
+    assert_eq!(
+        f.run(
+            "asset.file",
+            json!({"project_id":"one","asset_id":"hit","version_id":"original"})
+        )["ok"],
+        true
+    );
+}
+#[test]
+fn review_requires_exact_ready_candidate_and_detects_changed_bytes() {
+    let mut f = Fixture::new();
+    let candidate = f.review_candidate();
+    let mut request = f.review_request(&candidate, "review-1");
+    request["version_id"] = json!("original");
+    assert_eq!(
+        f.run("review.submit", request)["error"]["code"],
+        "review_ready_candidate_required"
+    );
+    let request = f.review_request(&candidate, "review-1");
+    let mut wrong = request.clone();
+    wrong["expected_sha256"] = json!("0".repeat(64));
+    assert_eq!(
+        f.run("review.submit", wrong)["error"]["code"],
+        "review_candidate_hash_mismatch"
+    );
+    let submitted = f.run("review.submit", request.clone());
+    assert_eq!(
+        f.run(
+            "review.check",
+            json!({"project_id":"one","review_id":"review-1"})
+        )["data"]["matches"],
+        true
+    );
+    fs::write(candidate["path"].as_str().unwrap(), b"tampered").unwrap();
+    let check = f.run(
+        "review.check",
+        json!({"project_id":"one","review_id":"review-1"}),
+    );
+    assert_eq!(check["data"]["matches"], false, "{check}");
+    assert_eq!(check["data"]["candidate_matches"], false);
+    assert_eq!(
+        f.run(
+            "review.get",
+            json!({"project_id":"one","review_id":"review-1"})
+        ),
+        submitted
+    );
+    let mut second = request;
+    second["review_id"] = json!("review-2");
+    assert_eq!(
+        f.run("review.submit", second)["error"]["code"],
+        "review_candidate_unavailable"
+    );
+}
+#[test]
+fn review_scoped_requirement_snapshot_and_paged_history() {
+    let mut f = Fixture::new();
+    let candidate = f.review_candidate();
+    f.project("two");
+    assert_eq!(f.run("requirement.put",json!({"project_id":"one","requirement_id":"req","name":"Hit","kind":"sfx","description":"first"}))["ok"],true);
+    let mut request = f.review_request(&candidate, "a");
+    request["requirement_id"] = json!("req");
+    assert_eq!(f.run("review.submit", request.clone())["ok"], true);
+    let req = f.run("requirement.list", json!({"project_id":"one"}));
+    assert!(req["data"]["items"][0]["asset_id"].is_null());
+    assert_eq!(
+        f.run("review.check", json!({"project_id":"one","review_id":"a"}))["data"]
+            ["requirement_matches"],
+        true
+    );
+    assert_eq!(f.run("requirement.put",json!({"project_id":"one","requirement_id":"req","name":"Hit","kind":"sfx","description":"changed"}))["ok"],true);
+    assert_eq!(
+        f.run("review.check", json!({"project_id":"one","review_id":"a"}))["data"]
+            ["requirement_matches"],
+        false
+    );
+    for id in ["b", "c"] {
+        request["review_id"] = json!(id);
+        assert_eq!(f.run("review.submit", request.clone())["ok"], true);
+    }
+    assert_eq!(
+        f.run("review.get", json!({"project_id":"two","review_id":"a"}))["error"]["code"],
+        "review_not_found"
+    );
+    assert_eq!(
+        f.run(
+            "review.withdraw",
+            json!({"project_id":"two","review_id":"a","reason":"wrong project"})
+        )["ok"],
+        false
+    );
+    assert_eq!(
+        f.run("review.list", json!({"project_id":"two"}))["data"]["items"],
+        json!([])
+    );
+    let mut after = String::new();
+    let mut ids = Vec::new();
+    loop {
+        let page=f.run("asset.history",json!({"project_id":"one","asset_id":"hit","version_id":"take-2","limit":1,"after":after}));
+        assert_eq!(page["ok"], true, "{page}");
+        ids.extend(
+            page["data"]["items"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v["id"].as_str().unwrap().to_owned()),
+        );
+        match page["data"]["next_after"].as_str() {
+            Some(next) => after = next.to_owned(),
+            None => break,
+        }
+    }
+    assert_eq!(ids, vec!["a", "b", "c"]);
+    let page=f.run("review.list",json!({"project_id":"one","state":"pending","asset_id":"hit","version_id":"take-2","limit":1}));
+    assert_eq!(page["data"]["next_after"], "a");
+    assert_eq!(
+        crate::review::read(
+            &f.root.join("settings"),
+            &json!({"protocol_version":1,"op":"review.get","project_id":"one","review_id":"a"})
+        )
+        .unwrap()["state"],
+        "pending"
+    );
+    assert!(crate::review::read(&f.root.join("settings"),&json!({"protocol_version":1,"op":"review.withdraw","project_id":"one","review_id":"a","reason":"forbidden"})).is_err());
+    f.store.catalog.execute("INSERT INTO audio_tools VALUES(1,?1)",[json!({"ffmpeg":{"path":"/not-installed","sha256":"fixture","version":"fixture"},"ffprobe":{"path":"/not-installed","sha256":"fixture","version":"fixture"}}).to_string()]).unwrap();
+    assert_eq!(
+        f.run(
+            "audio.submit",
+            queued_request(edit_request("queued", "take-3"))
+        )["data"]["state"],
+        "queued"
+    );
+    crate::review::read(
+        &f.root.join("settings"),
+        &json!({"protocol_version":1,"op":"review.list","project_id":"one"}),
+    )
+    .unwrap();
+    assert_eq!(
+        f.run(
+            "audio.get",
+            json!({"project_id":"one","operation_id":"queued"})
+        )["data"]["state"],
+        "queued"
+    );
+}
+#[test]
+#[ignore = "requires explicit DK_TEST_FFMPEG and DK_TEST_FFPROBE"]
+fn review_real_edit_analysis_handoff_and_report_tampering() {
+    let mut f = Fixture::new();
+    f.signal();
+    f.audio_tools();
+    assert_eq!(
+        f.run(
+            "audio.submit",
+            queued_request(edit_request("edit", "take-2"))
+        )["ok"],
+        true
+    );
+    crate::audio_queue::tick(&mut f.store).unwrap();
+    let file = f.run(
+        "asset.file",
+        json!({"project_id":"one","asset_id":"hit","version_id":"take-2"}),
+    );
+    assert_eq!(file["ok"], true, "{file}");
+    assert_eq!(f.measure("analysis", "take-2")["ok"], true);
+    let mut request = f.review_request(&file["data"], "review");
+    request["analysis_id"] = json!("analysis");
+    let submitted = f.run("review.submit", request.clone());
+    assert_eq!(submitted["ok"], true, "{submitted}");
+    assert_eq!(
+        submitted["data"]["snapshot"]["analysis"]["metrics"]["duration_ms"],
+        500.0
+    );
+    assert_eq!(
+        f.run(
+            "review.check",
+            json!({"project_id":"one","review_id":"review"})
+        )["data"]["matches"],
+        true
+    );
+    let history = f.run(
+        "asset.history",
+        json!({"project_id":"one","asset_id":"hit","version_id":"take-2"}),
+    );
+    assert_eq!(
+        history["data"]["items"].as_array().unwrap().len(),
+        3,
+        "{history}"
+    );
+    f.store
+        .catalog
+        .execute(
+            "UPDATE audio_operations SET result='{}' WHERE id='analysis'",
+            [],
+        )
+        .unwrap();
+    assert_eq!(
+        f.run(
+            "review.check",
+            json!({"project_id":"one","review_id":"review"})
+        )["data"]["analysis_matches"],
+        false
+    );
+    request["review_id"] = json!("second");
+    assert_eq!(
+        f.run("review.submit", request)["error"]["code"],
+        "review_analysis_mismatch"
+    );
+    assert_eq!(
+        f.run(
+            "review.get",
+            json!({"project_id":"one","review_id":"review"})
+        ),
+        submitted
+    );
+}

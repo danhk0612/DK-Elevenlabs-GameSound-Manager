@@ -6,6 +6,7 @@ pub mod generation;
 pub mod mcp;
 pub mod protocol;
 pub mod provider;
+mod review;
 pub mod storage;
 #[cfg(test)]
 mod storage_tests;

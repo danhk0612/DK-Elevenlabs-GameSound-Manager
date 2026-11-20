@@ -27,6 +27,7 @@ async fn audio_source(
     project_id: String,
     asset_id: String,
     version_id: String,
+    expected_sha256: Option<String>,
 ) -> Result<String, String> {
     let response=dk_gamesound::request(json!({"protocol_version":1,"op":"asset.file","project_id":project_id,"asset_id":asset_id,"version_id":version_id})).await;
     if response["ok"] != true {
@@ -36,6 +37,12 @@ async fn audio_source(
             .to_string());
     }
     let data = response["data"].clone();
+    if expected_sha256
+        .as_ref()
+        .is_some_and(|hash| data["sha256"].as_str() != Some(hash.as_str()))
+    {
+        return Err("review_candidate_hash_mismatch".to_string());
+    }
     tauri::async_runtime::spawn_blocking(move || {
         use base64::Engine;
         use sha2::{Digest, Sha256};
