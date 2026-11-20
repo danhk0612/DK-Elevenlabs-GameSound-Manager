@@ -50,7 +50,9 @@ def main():
             if not (stat.S_ISFIFO(mode) or stat.S_ISSOCK(mode)):
                 raise ValueError('key FD must be a pipe/socket')
             with os.fdopen(os.dup(args.key_fd), 'rb') as stream:
-                raw = stream.read(258)
+                raw = stream.read(259)
+            if len(raw) > 258:
+                raise ValueError('key input exceeds bound')
             key = raw.decode('ascii').removesuffix('\n').removesuffix('\r')
             del raw
         if not key or len(key) > 256 or any(not 33 <= ord(c) <= 126 for c in key):

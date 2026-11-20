@@ -31,6 +31,16 @@ def main():
             assert bad.returncode == 1 and not bad.stdout
             assert fake.encode() not in bad.stderr
             assert not list(root.iterdir()), 'invalid session started engine/catalog'
+        # Reject a valid-looking maximum key/newline prefix with extra trailing bytes.
+        rfd,wfd = os.pipe()
+        os.write(wfd, b'X'*256+b'\r\nX'); os.close(wfd)
+        launcher = Path(__file__).with_name('linux_session.py')
+        rejected = subprocess.run([sys.executable,str(launcher),'--engine',str(engine),'--account-id','session-test',
+                                   '--session-seconds','60','--request-limit','0','--credit-limit','0','--key-fd',str(rfd)],
+                                  env=env,pass_fds=(rfd,),capture_output=True,timeout=15)
+        os.close(rfd)
+        assert rejected.returncode == 1 and rejected.stderr.strip() == b'session_start_failed'
+        assert not rejected.stdout and not list(root.iterdir())
         payload = {'account_id':'session-test','key':fake,'enabled':False,'request_limit':0,'credit_limit':0,'session_seconds':60}
         session = subprocess.Popen([str(engine),'--session'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
         try:
