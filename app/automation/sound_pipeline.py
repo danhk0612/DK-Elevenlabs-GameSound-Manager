@@ -314,7 +314,7 @@ def compile_recipe(recipe):
     return plan, validations
 
 
-def execute(client, plan, wait_seconds, poll_seconds, context):
+def execute(client, plan, wait_seconds, poll_seconds, context, on_progress=None):
     outputs = {}
     for stage, original in plan:
         context.update(stage=stage)
@@ -323,7 +323,11 @@ def execute(client, plan, wait_seconds, poll_seconds, context):
             command['expected_sha256'] = outputs['file']['sha256']
         if command['op'] == 'audio.submit':
             context['operation_id'] = command['operation_id']
-        print(json.dumps({'stage': stage, 'op': command['op']}, separators=(',', ':')), file=sys.stderr, flush=True)
+        event = {'stage': stage, 'op': command['op']}
+        if on_progress:
+            on_progress(event)
+        else:
+            print(json.dumps(event, separators=(',', ':')), file=sys.stderr, flush=True)
         data = client.call(command)
         if command['op'] == 'audio.submit':
             deadline = time.monotonic() + wait_seconds

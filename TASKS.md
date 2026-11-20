@@ -85,6 +85,8 @@ v0.6.0 보강: review.submit/get/list/withdraw/check와 asset.history, 불변 �
 
 v0.7.0 보강: CLI offline validate와 선택형 Python JSON 작업 정의 클라이언트(CLI/MCP), 입력 preflight·async polling·hash/검사 근거 연계·중단 ID 반환을 구현했다. [계약](docs/T04_AUTOMATION.md). 클라이언트 회귀 9개·native offline preflight/MCP를 Linux에서 확인했고, Windows 실제 engine CLI/MCP 무GUI 작업 정의 재호출/재연결 CI를 추가했고 `3f47e5852942dd28d951354484ecd8d37107e582`의 [Windows run 44751508856](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44751508856)에서 전체 성공했다. 자동 기동·같은 검토 기록·원본 보존/변경 거절과 inherited-pipe 정리 회귀를 포함한다. 실제 AI 제품 클라이언트 호환은 별도다. 공통 47개/MCP 46개·schema 5·UI는 유지한다.
 
+v0.8.0 보강: 선택형 Python batch manifest(최대 32개), 전체 preflight·source/후보/전역 작업/검토 ID 충돌·독립 순차 실행·항목별 JSON/JSONL·선택 재호출·확정 오류 keep-going과 불확실 결과 중단을 구현했다. [계약](docs/T04_BATCH.md). Python 18개 회귀와 native offline batch 검사를 확인하고 실제 Windows engine 다건 CI를 추가했다. UI/DB schema/공통 47개·MCP 46개는 유지한다. 새 Windows 결과는 CURRENT_STATE.md를 따른다.
+
 ## T05 — 사람 승인·게임 적용·복구
 
 - 목적: 검토한 후보를 명시적 사람 승인 범위에 한해 적용한다.
@@ -106,4 +108,4 @@ v0.7.0 보강: CLI offline validate와 선택형 Python JSON 작업 정의 클�
 ## 다음 Codex에 입력할 지시문
 
 [새 Codex 인수인계](docs/NEXT_CODEX.md)의 지시문을 사용한다.
-현재 T04 로컬 작업의 비동기 큐/조회·취소를 구현했다. 검토 제출·후보 이력은 v0.6에서 구현했다. 작업 정의 클라이언트·CI 무GUI 전송은 v0.7에서 추가했다. Windows 실제 엔진 CI도 통과했다. 다음은 지원 AI 제품 클라이언트 호환·사운드 다건 자동화 보강이다. 실제 Key/허용 비용이 없으면 모의 응답·오프라인 경로를 개발하고 라이브 생성은 하지 않는다. 실기·청감 결과를 추가로 요구하며 대기하지 않는다. 결과가 없으면 미확인으로 기록한다. 정확한 구현/빌드 상태는 CURRENT_STATE.md를 따른다.
+현재 T04 로컬 작업의 비동기 큐/조회·취소를 구현했다. 검토 제출·후보 이력은 v0.6에서 구현했다. 작업 정의 클라이언트·CI 무GUI 전송은 v0.7에서 추가했다. Windows 실제 엔진 CI도 통과했다. 다건 작업 정의는 v0.8에서 구현했다. 다음은 새 batch CI 결과 확인·지원 AI 제품 클라이언트 호환·필요한 사운드/작업 이력 자동화 보강이다. 실제 Key/허용 비용이 없으면 모의 응답·오프라인 경로를 개발하고 라이브 생성은 하지 않는다. 실기·청감 결과를 추가로 요구하며 대기하지 않는다. 결과가 없으면 미확인으로 기록한다. 정확한 구현/빌드 상태는 CURRENT_STATE.md를 따른다.

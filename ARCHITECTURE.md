@@ -124,3 +124,7 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 ## T04 선택형 로컬 작업 정의 클라이언트
 
 v0.7의 [자동화 계약](docs/T04_AUTOMATION.md)에 따라 core/DB schema를 바꾸지 않고 CLI offline validate와 선택형 Python 클라이언트를 추가했다. 고정된 로컬 원본/후보/검사/검토 흐름이며 임의 명령·유료 생성·승인·게임 출력은 받지 않는다. 실행 전 공통 validator로 모든 요청을 검사하고 CLI stdin 또는 순차 MCP stdio로 실행한다. 타임아웃/중단은 결과 미확인으로 반환하고 서버 작업을 자동 취소/재전송하지 않는다. 불변 작업 ID와 hash 대조는 기존 core가 소유한다. GUI 변경은 없다.
+
+## T04 여러 사운드 작업 정의
+
+v0.8 [batch 계약](docs/T04_BATCH.md)은 기존 단일 recipe를 클라이언트에서 순차 조합한다. 모든 요청의 offline 공통 검증·공유 source 일치/후보 예약·전역 operation/review ID 충돌을 실행 전에 검사한다. 각 항목은 독립 CLI/MCP 세션을 쓰고 core가 실제 파일/상태/해시/ID 대조를 소유한다. 결과는 JSON 또는 항목별 JSONL이며 승인/복구 journal이 아니다. 결과 확정 오류만 명시적 keep-going으로 이어가고 통신/불확실 결과는 항상 멈춘다. 전체 transaction·롤백·checkpoint skip·새 ID 자동 발급은 없다. UI/DB schema/공통 도구 수를 유지한다.

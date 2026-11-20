@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', '.github/workflows/t00-b-build.yml']
+    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -49,9 +49,11 @@ jobs:
           cargo build --locked --release --features gui,custom-protocol --bin dk-sound-gui
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: Exercise optional recipe client contracts
-        run: python -m unittest discover -s automation -p test_sound_pipeline.py
+        run: python -m unittest discover -s automation -p 'test_sound_*.py'
       - name: Exercise real CLI and MCP against engine without GUI
         run: python automation/ci_transport_smoke.py --bin-dir target/release
+      - name: Exercise real multi-item batches against engine
+        run: python automation/ci_batch_smoke.py --bin-dir target/release
       - name: Package development ZIP contents
         run: |
           New-Item -ItemType Directory -Force artifact | Out-Null
@@ -63,6 +65,7 @@ jobs:
           Copy-Item ../docs/T04_ASYNC_AUDIO.md artifact/ASYNC_AUDIO.md
           Copy-Item ../docs/T04_REVIEW.md artifact/REVIEW.md
           Copy-Item ../docs/T04_AUTOMATION.md artifact/AUTOMATION.md
+          Copy-Item ../docs/T04_BATCH.md artifact/BATCH.md
           New-Item -ItemType Directory -Force artifact/automation | Out-Null
           Copy-Item -Path automation/*.py,automation/*.json -Destination artifact/automation
           $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
