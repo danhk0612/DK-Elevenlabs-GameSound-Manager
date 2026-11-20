@@ -1,0 +1,37 @@
+[package]
+name = "dk-gamesound"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[features]
+gui = ["dep:tauri", "dep:tauri-build"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[dependencies]
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "net", "io-util", "time", "macros"] }
+tauri = { version = "2", optional = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_System_Threading", "Win32_System_Memory"] }
+
+[build-dependencies]
+tauri-build = { version = "2", optional = true }
+
+[[bin]]
+name = "dk-sound-gui"
+path = "src/bin/gui.rs"
+required-features = ["gui"]
+
+[[bin]]
+name = "dk-sound-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "dk-sound-engine"
+path = "src/bin/engine.rs"
+
+[[bin]]
+name = "dk-sound-mcp"
+path = "src/bin/mcp.rs"

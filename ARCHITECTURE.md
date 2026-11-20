@@ -2,7 +2,7 @@
 
 ## 채택 상태
 
-Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계가 요구사항이다. **2026-11-20 사용자의 기술 선택 위임에 따라 D01~D06을 채택했다.** 구체 선택과 미검증은 [현재 결정](docs/T00_A_DECISIONS.md)의 위임 결정 절을 따른다. 사용자 Windows 화면/청감이 없어 T00-A는 진행 중이며 T00-B에 착수하지 않았다. 제품 실행 코드는 없다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.
+Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계가 요구사항이다. **2026-11-20 사용자의 기술 선택 위임에 따라 D01~D06을 채택했다.** 구체 선택과 미검증은 [현재 결정](docs/T00_A_DECISIONS.md)의 위임 결정 절을 따른다. 후속 사용자 지시 “실기, 점검 무시하고 진행해”로 실기 대기를 해제하고 app/에 T00-B 최소 엔진·CLI·MCP·GUI 실행 기반을 구현했다. 사용자 Windows 화면/청감은 미확인으로 남긴다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.
 
 ## 기술 비교와 선택
 
@@ -36,7 +36,7 @@ Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과
 
 후보 B는 사용자별 단일 로컬 엔진이 큐·DB·파일 쓰기를 소유하고 GUI·CLI·MCP가 연결하는 구조다. GUI를 닫아도 장시간 작업을 유지하기 쉽고 쓰기 규칙을 모으지만, 기동 경쟁·인증된 로컬 IPC·종료·재연결 검증 비용이 있다. **사용자 SID별 후보 B를 위임 채택했다.** 항상 실행되는 Windows 서비스는 요구하지 않는다.
 
-제품 IPC는 Windows local named pipe와 현재 사용자 SID 접근 제한으로 채택한다. 별도 DACL 실험과 제품 IPC 통합/원격 차단 검증은 구분한다. 원격 HTTP 서버는 초기 요구가 아니다. 최초 GUI/CLI/MCP 요청에서 자동 기동하고 SID별 중복 기동을 막는다. GUI 종료는 작업 취소가 아니다. 정상 busy 종료는 거절하며 연결된 클라이언트·대기/실행 작업이 모두 없는 상태가 5분 지속되면 idle 종료한다. 이 5분은 위임 설계값이며 기존 fixture 수치와 다르다. 제품 검증은 T00-B 선행 게이트 충족 후 수행한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
+제품 IPC는 Windows local named pipe와 현재 사용자 SID 접근 제한으로 채택한다. 별도 DACL 실험과 제품 IPC 통합/원격 차단 검증은 구분한다. 원격 HTTP 서버는 초기 요구가 아니다. 최초 GUI/CLI/MCP 요청에서 자동 기동하고 SID별 중복 기동을 막는다. GUI 종료는 작업 취소가 아니다. 정상 busy 종료는 거절하며 연결된 클라이언트·대기/실행 작업이 모두 없는 상태가 5분 지속되면 idle 종료한다. 이 5분은 위임 설계값이며 기존 fixture 수치와 다르다. 사용자 지시로 이전 실기 선행 게이트를 해제하고 T00-B에서 구현한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
 
 SQLite WAL은 읽기/쓰기 동시성에 도움을 주지만 동시 writer는 하나다. WAL만으로 작업·파일의 안전성을 보장하지 않는다. 프로젝트 DB는 로컬 디스크를 우선 검증하며 네트워크 공유의 DB를 지원한다고 가정하지 않는다. DB 트랜잭션을 원격 생성이나 FFmpeg 실행 동안 유지하지 않는다.
 
@@ -89,7 +89,7 @@ FFmpeg/ffprobe 호출은 셸 문자열 대신 인자 배열을 사용하고 원�
 
 ## 검증 게이트와 근거
 
-T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라이언트 경쟁, 강제 종료·재기동, 한글/공백 경로, 자격증명 보안, 실제 FFmpeg 파일 처리, 정확한 SHA의 Windows artifact·실행 결과를 확보한다. 미확보면 기술 채택을 보류한다.
+T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라이언트 경쟁, 강제 종료·재기동, 한글/공백 경로, 자격증명 보안, 실제 FFmpeg 파일 처리, 정확한 SHA의 Windows artifact·실행 결과를 확보한다. 실기 미확보는 기록하되 2026-11-20 후속 사용자 지시로 개발 진행을 막지 않는다.
 
 공식 근거(2026-10-15 열람): [Tauri process model](https://tauri.app/concept/process-model/), [Windows prerequisites](https://tauri.app/start/prerequisites/), [SQLite WAL](https://www.sqlite.org/wal.html), [MCP stdio](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/stdio), [FFmpeg 배포 조건](https://www.ffmpeg.org/legal.html). 문서 지원 사실과 이 프로젝트의 실측을 구분한다.
 

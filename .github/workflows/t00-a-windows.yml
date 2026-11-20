@@ -2,6 +2,8 @@ name: T00-A Windows spike
 on:
   push:
     branches: [task/t00-a-technical-spike]
+    paths:
+      - 'spikes/t00-a/**'
   workflow_dispatch:
 permissions:
   contents: read
