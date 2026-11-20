@@ -120,3 +120,7 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 ## T04 검토 제출·이력 보강
 
 [검토 계약](docs/T04_REVIEW.md)에 따라 v0.6 catalog schema 5의 reviews에 불변 요청·후보 SHA/metadata·선택 requirement/검사 보고서 근거와 pending/withdrawn 상태를 저장한다. 제출은 실제 후보 파일 hash를 대조하고 get은 과거 snapshot, check는 현재 파일/연결 자료 대조다. 승인/게임 적용 경로는 없다. review.get/list·asset.history는 별도 RO 연결이고 나머지는 일반 writer다. 생성/편집/검사/검토 이력은 category_then_identifier로 페이지 처리하며 시간순을 주장하지 않는다. 총 47개 명령/MCP 46개 도구다.
+
+## T04 선택형 로컬 작업 정의 클라이언트
+
+v0.7의 [자동화 계약](docs/T04_AUTOMATION.md)에 따라 core/DB schema를 바꾸지 않고 CLI offline validate와 선택형 Python 클라이언트를 추가했다. 고정된 로컬 원본/후보/검사/검토 흐름이며 임의 명령·유료 생성·승인·게임 출력은 받지 않는다. 실행 전 공통 validator로 모든 요청을 검사하고 CLI stdin 또는 순차 MCP stdio로 실행한다. 타임아웃/중단은 결과 미확인으로 반환하고 서버 작업을 자동 취소/재전송하지 않는다. 불변 작업 ID와 hash 대조는 기존 core가 소유한다. GUI 변경은 없다.

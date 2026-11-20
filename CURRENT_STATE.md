@@ -1,16 +1,16 @@
 # 현재 상태
 
-기준일: 2026-11-20. **v0.6.0 T04 검토 대기 제출·후보 이력 보강. AI 자동화 우선·최소 UI, 실기/점검 대기 해제 유지.**
+기준일: 2026-11-20. **v0.7.0 T04 작업 정의 클라이언트·오프라인 검증·전송 자동화 보강. AI 자동화 우선·최소 UI, 실기/점검 대기 해제 유지.**
 
 ## 지시와 저장소
 
 Windows 화면/청감 결과를 요청하며 개발을 멈추지 않는다. 미확인을 통과로 바꾸지 않는다. D01~D06 위임 채택 유지, D08 기본 출력/검사 기준·D09 기본 한도 수치는 미결정이다.
 
-main `4c3537c55084b71feb5c42eb2340005bf922f197`, v0.5 기반 `1b573876afc582b226c4b43fea623ffc97ed6eb8`에서 기존 `task/t00-a-technical-spike`와 [draft PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1)을 재사용한다. 새 구현 SHA는 PR head/Git 기록과 artifact source-sha.txt를 따른다.
+main `4c3537c55084b71feb5c42eb2340005bf922f197`, v0.6 기반 `2c4faed4983dfb0e53e6e17f7953d3724cd792d5`에서 기존 `task/t00-a-technical-spike`와 [PR #1](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/pull/1)을 재사용한다. 새 구현 SHA는 PR head/Git 기록과 artifact source-sha.txt를 따른다.
 
 ## 현재 구현
 
-[실행/MCP](app/README.md), [로컬 관리](docs/T01_LOCAL_LIBRARY.md), [생성](docs/T02_GENERATION.md), [편집·분석](docs/T03_AUDIO.md), [비동기 큐/취소](docs/T04_ASYNC_AUDIO.md), [검토/후보 이력](docs/T04_REVIEW.md).
+[실행/MCP](app/README.md), [로컬 관리](docs/T01_LOCAL_LIBRARY.md), [생성](docs/T02_GENERATION.md), [편집·분석](docs/T03_AUDIO.md), [비동기 큐/취소](docs/T04_ASYNC_AUDIO.md), [검토/후보 이력](docs/T04_REVIEW.md), [자동화 클라이언트](docs/T04_AUTOMATION.md).
 
 - 공통 명령 **47개 / CLI JSON / MCP 46개 도구**. 프로젝트 자료는 명시적 project_id로 격리한다. SID별 단일 엔진·owner-only local pipe·자동 기동·busy 종료 거절·5분 idle은 유지한다.
 - 원본/후보·부모·SHA·출처·copying journal/no-replace 게시/복구, 필요한 사운드·캐릭터/대사를 관리한다. 생성/편집은 candidate만 만들고 원본/기존 버전/게임 파일을 보존한다.
@@ -24,20 +24,24 @@ main `4c3537c55084b71feb5c42eb2340005bf922f197`, v0.5 기반 `1b573876afc582b226
 
 - v0.6은 review.submit/get/list/withdraw/check와 asset.history를 추가했다. 실제 ready 후보 hash·선택 requirement/완료 검사 보고서 근거를 불변 snapshot으로 고정하고 pending/withdrawn만 제공한다. 변경 일치 확인은 승인이 아니다. 목록/이력은 별도 읽기 연결, 제출/철회/현재 검사는 일반 writer다. catalog schema 4→5에 reviews 테이블/인덱스를 추가했다. 최소 UI는 목록/상세·현재 일치·해시 대조 재생·버전 이력을 제공한다.
 
+- v0.7은 CLI validate(엔진 없는 공통 문법 검사)와 선택형 Python 3.11+ JSON 작업 정의 클라이언트를 추가했다. 모든 요청 preflight 후 CLI 또는 MCP로 source→candidate import/async 편집→선택 검사→검토 제출/현재 일치/이력 첫 페이지를 연결한다. 실패/중단 재제출·복구·승인/유료 호출/게임 적용을 자동 수행하지 않는다. GUI/DB schema/공통 47개 명령·MCP 46개는 유지한다.
+
 ## 확인한 결과
 
-- v0.5 `1b573876afc582b226c4b43fea623ffc97ed6eb8`의 [Windows run 44744257751](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44744257751)은 기본 bundled 회귀·engine/CLI/MCP/GUI 링크·패키징 성공이다. 새 v0.6 실행 증거는 아니다.
+- v0.6 `2c4faed4983dfb0e53e6e17f7953d3724cd792d5`의 [Windows run 44746167182](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44746167182)은 기본 bundled 회귀·engine/CLI/MCP/GUI 링크·패키징 성공이다. 새 v0.7 실행 증거는 아니다.
 - Linux musl Rust 1.100.0·Zig CC/AR·기본 bundled SQLite와 FFmpeg/ffprobe 7.0.2 static으로 `cargo test --locked --manifest-path app/Cargo.toml --lib -- --include-ignored` **39개 통과**. DK_TEST_FFMPEG/DK_TEST_FFPROBE에 /tmp/dk-audio-tools 경로를 지정했다. 실제 외부 도구 통합은 7개이며 합성 신호만 사용했다. 도구 출처/hash는 T03 계약에 보존했다.
 - 큐 ID 재사용/입력 충돌·프로젝트 경계·32개 제한·재기동 무재생, 두 연결의 동일 대상 예약 및 생성/편집 교차 예약, 실제 실행 중 별도 조회/새 제출/취소·snapshot 고정·후보 보존, 취소/등록 경계·자식 프로세스 kill/wait·shutdown/idle 보호를 확인했다. T01~T03의 편집/분석/보존·중단 회귀도 유지했다.
 - 새 검토 회귀는 불변 snapshot/ID 재사용·철회/재기동, 원본/해시/변조 거절, 승인 필드/명령 거절, 프로젝트 격리·requirement 변경 감지·페이지/읽기 연결, 실제 편집→분석→검토 제출/이력과 분석 보고서 변조 감지를 확인했다.
 - 기본 cargo test --lib는 Linux 32개 통과/외부 도구 7개 ignore다. Windows 기본 CI에서 이 7개까지 실제 실행한 것으로 확대하지 않는다. Linux 자식 프로세스 취소와 Windows 실제 IPC/핸들 수명은 구분한다.
 - native engine/CLI/MCP build·schema와 stdio initialize/list/call/EOF, action별 schema/공통 typed 오류·46개 도구·전송 크기를 확인했다. Windows x64 cargo check는 외부 SQLite link 선언 + no-default-features 타입 검사로 통과했다. Node 24 TypeScript/Vite 최소 GUI build 통과. fmt·JSON/문서 링크·whitespace도 통과했다.
 
-Rust 도구는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools를 사용한다. Zig CC/AR와 CFLAGS=-fno-sanitize=all·rust-lld wrapper로 bundled SQLite를 빌드했다. 도구/fixture/실행 파일/음원은 Git에 넣지 않는다. Windows CI artifact는 README·LOCAL_LIBRARY.md·GENERATION.md·AUDIO.md·ASYNC_AUDIO.md·REVIEW.md·source SHA/manifest를 포함하며 해당 head 결과를 별도로 확인한다.
+- v0.7 Python 클라이언트 회귀 8개와 native CLI validate/preflight·MCP handshake/discovery/불량 hash 거절을 Linux에서 확인했다. 새 Windows CI에는 GUI 없는 실제 엔진 CLI/MCP 작업 정의 동일 결과·재연결·원본 보존/변경 거절을 추가했으며 해당 head 실행 결과를 별도 확인한다. Python 선택형 자체 클라이언트는 실제 AI 제품 연결 성공을 뜻하지 않는다.
+
+Rust 도구는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools를 사용한다. Zig CC/AR와 CFLAGS=-fno-sanitize=all·rust-lld wrapper로 bundled SQLite를 빌드했다. 도구/fixture/실행 파일/음원은 Git에 넣지 않는다. Windows CI artifact는 README·LOCAL_LIBRARY.md·GENERATION.md·AUDIO.md·ASYNC_AUDIO.md·REVIEW.md·AUTOMATION.md·선택형 automation 소스/예제·source SHA/manifest를 포함하며 해당 head 결과를 별도로 확인한다.
 
 ## 남은 범위와 다음
 
-T04 전체를 완료로 닫지 않는다. 검토 대기 제출·후보 이력은 구현했다. 다음은 CLI/MCP 실제 클라이언트 호환과 재사용 가능한 자동화 예제 보강이다. 실제 AI 클라이언트 연결 검증은 native stdio smoke와 다르다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
+T04 전체를 완료로 닫지 않는다. 검토 대기 제출·후보 이력은 구현했다. 재사용 가능한 로컬 작업 정의 클라이언트와 CI 전송 자동화를 추가했다. 다음은 해당 Windows 엔진 전송 결과 확인·지원 AI 제품 클라이언트 호환과 필요한 사운드 다건 작업 정의 보강이다. 실제 AI 클라이언트 연결 검증은 native stdio smoke와 다르다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
 
 Windows 실제 IPC/GUI·실행 중 FFmpeg 취소/파일 핸들·사용자 청감·실제 Key/요금제/과금은 미확인이다. T02 원격 preview는 URL 반환만 제공하며 한도 증액/초기화·다른 PC 공유·불확실 비용 정산은 후속이다. D08 게임별 기본값·loop tag·LUFS/true peak·전문 편집 화면도 없다. 이 미확인을 개발 대기 조건으로 쓰지 않는다.
 

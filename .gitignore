@@ -51,3 +51,6 @@ spikes/t00-a/tools/__pycache__/
 app/icons/
 app/gen/
 app/artifact/
+
+# Optional automation client caches
+app/automation/__pycache__/

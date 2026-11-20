@@ -83,6 +83,8 @@ T04 보강 상태: v0.5.0에서 audio.submit/cancel, 실행 중 별도 get/list,
 
 v0.6.0 보강: review.submit/get/list/withdraw/check와 asset.history, 불변 후보/검사 근거·철회·현재 일치 확인·최소 검토 UI를 구현했다. [계약](docs/T04_REVIEW.md). 총 47개 명령/MCP 46개 도구, 실제 FFmpeg 7개 포함 39개 회귀 통과. 승인 도구/게임 적용은 없으며 T04 실제 클라이언트 수용은 미완료다.
 
+v0.7.0 보강: CLI offline validate와 선택형 Python JSON 작업 정의 클라이언트(CLI/MCP), 입력 preflight·async polling·hash/검사 근거 연계·중단 ID 반환을 구현했다. [계약](docs/T04_AUTOMATION.md). 클라이언트 회귀 8개·native offline preflight/MCP를 Linux에서 확인했고, Windows 실제 engine CLI/MCP 무GUI 작업 정의 재호출/재연결 CI를 추가했다. 이 CI 결과와 실제 AI 제품 클라이언트 호환은 구분한다. 공통 47개/MCP 46개·schema 5·UI는 유지한다.
+
 ## T05 — 사람 승인·게임 적용·복구
 
 - 목적: 검토한 후보를 명시적 사람 승인 범위에 한해 적용한다.
@@ -104,4 +106,4 @@ v0.6.0 보강: review.submit/get/list/withdraw/check와 asset.history, 불변 �
 ## 다음 Codex에 입력할 지시문
 
 [새 Codex 인수인계](docs/NEXT_CODEX.md)의 지시문을 사용한다.
-현재 T04 로컬 작업의 비동기 큐/조회·취소를 구현했다. 검토 제출·후보 이력은 v0.6에서 구현했다. 다음은 실제 AI 클라이언트 호환과 재사용 가능한 자동화 예제 보강이다. 실제 Key/허용 비용이 없으면 모의 응답·오프라인 경로를 개발하고 라이브 생성은 하지 않는다. 실기·청감 결과를 추가로 요구하며 대기하지 않는다. 결과가 없으면 미확인으로 기록한다. 정확한 구현/빌드 상태는 CURRENT_STATE.md를 따른다.
+현재 T04 로컬 작업의 비동기 큐/조회·취소를 구현했다. 검토 제출·후보 이력은 v0.6에서 구현했다. 작업 정의 클라이언트·CI 무GUI 전송은 v0.7에서 추가했다. 다음은 Windows 실제 엔진 CI 결과 확인과 지원 AI 제품 클라이언트 호환·사운드 다건 자동화 보강이다. 실제 Key/허용 비용이 없으면 모의 응답·오프라인 경로를 개발하고 라이브 생성은 하지 않는다. 실기·청감 결과를 추가로 요구하며 대기하지 않는다. 결과가 없으면 미확인으로 기록한다. 정확한 구현/빌드 상태는 CURRENT_STATE.md를 따른다.

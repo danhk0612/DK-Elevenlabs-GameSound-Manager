@@ -5,7 +5,7 @@ use std::io::{self, Read};
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args == ["--help"] {
-        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\ndk-sound-cli schema\nJSON stdout; exit 0 success, 1 request/runtime error. Windows only.");
+        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\ndk-sound-cli schema\ndk-sound-cli validate < request.json (offline syntax/fields only)\nJSON stdout; exit 0 success, 1 request/runtime error. Windows only.");
         return;
     }
     if args == ["schema"] {
@@ -19,7 +19,7 @@ fn main() {
         [op] if ["version", "status", "shutdown"].contains(&op.as_str()) => {
             Ok(json!({"protocol_version":1,"op":op}))
         }
-        [op] if op == "request" => {
+        [op] if op == "request" || op == "validate" => {
             let mut bytes = Vec::new();
             match io::stdin()
                 .take(protocol::MAX_FRAME as u64 + 1)
@@ -35,6 +35,12 @@ fn main() {
         _ => Err("invalid_arguments"),
     };
     let response = match command {
+        Ok(command) if args == ["validate"] => match protocol::validate(&command) {
+            Ok(()) => protocol::success(
+                json!({"valid":true,"op":command["op"],"scope":"syntax_and_fields_only","engine_started":false}),
+            ),
+            Err(code) => protocol::error(code),
+        },
         Ok(command) => match runtime() {
             Ok(runtime) => runtime.block_on(request(command)),
             Err(_) => protocol::error("runtime_unavailable"),

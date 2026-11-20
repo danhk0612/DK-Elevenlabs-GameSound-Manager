@@ -1,4 +1,4 @@
-# DK GameSound — 사운드 관리·생성·편집/분석 v0.6.0
+# DK GameSound — 사운드 관리·생성·편집/분석 v0.7.0
 
 AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 목록과 재생에 필요한 최소 화면을 제공한다. T02 ElevenLabs 계정·한도·TTS/SFX 후보 생성 경로와 Key 없는 mock을 제공한다. T03 로컬 편집·변환·파형/기술 수치 검사와 T04 비동기 큐/조회·취소와 검토 제출/후보 이력을 제공한다. 주관 품질 평가·사람 승인/게임 적용은 아직 제공하지 않는다.
 
@@ -32,6 +32,10 @@ CLI stdout은 JSON 한 개이며 성공 exit 0/오류 exit 1이다. schema는 �
 ## 검토 제출·후보 이력
 
 [전체 계약과 호출 예시](../docs/T04_REVIEW.md)에 따라 review.submit/get/list/withdraw/check와 asset.history를 사용한다. 후보 SHA-256과 선택한 검사 근거를 고정하며 현재 자료 변경을 감지한다. pending/withdrawn만 제공하고 검토 제출은 승인이 아니다. GUI에서 목록/상세·검토 후보 재생·현재 일치 확인·버전 이력을 조회할 수 있다.
+
+## JSON 작업 정의 자동화
+
+[선택형 Python 클라이언트와 예제](../docs/T04_AUTOMATION.md)는 원본 등록→후보 import/편집→선택 검사→검토 제출을 CLI 또는 MCP로 연결한다. Python 3.11+ 표준 라이브러리만 사용하며 핵심 프로그램에는 Python이 필요 없다. `dk-sound-cli validate`로 모든 공통 요청의 문법을 엔진 없이 검사한 후 실행한다. `--validate-only`는 등록 없이 이 검사만 수행한다. 중단 시 작업 ID를 대조하고, 실패/취소/중단 작업을 새 ID로 자동 반복하지 않는다. 개발 ZIP에는 `AUTOMATION.md`와 `automation/`을 동봉한다.
 
 ## MCP stdio 설정
 
