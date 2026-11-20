@@ -19,7 +19,7 @@ AI_WORKFLOW.md, app/README.md와 D01~D06 결정을 읽어.
 docs/T01_LOCAL_LIBRARY.md, docs/T02_GENERATION.md, docs/T03_AUDIO.md와 docs/T04_ASYNC_AUDIO.md와 docs/T04_REVIEW.md와 docs/T04_AUTOMATION.md를 읽어. spikes/t00-a는 과거 격리 실험으로 유지해.
 실기/점검 대기로 개발을 막지 말고 기존 확인 결과와 미확인을 구분해 기록해.
 최신 Windows 빌드 실패가 있으면 먼저 구현 오류를 수정하고,
-그 외에는 Windows CI의 새 실제 engine CLI/MCP 작업 정의 smoke 결과를 확인하고, 지원 AI 제품 클라이언트 호환·다건 작업 정의 등 T04 자동화 보강으로 진행해. app/automation의 선택형 Python 클라이언트와 CLI offline validate를 유지해. 자체 stdio 클라이언트를 AI 제품 연결 성공으로 취급하지 마. 검토 제출/철회·현재 일치 확인·후보 이력은 이미 구현했다. pending을 승인으로 취급하지 마. async audio.submit/get/list/cancel과 기존 동기 명령을 유지하고 원본 보존·snapshot·취소/등록 경계·timeout·복구를 보강해. CLI/MCP native stdio smoke를 실제 AI 클라이언트 연결 성공으로 확대하지 마. D08 기본값은 임의 확정하지 말고 호출의 명시적 출력/검사 조건을 유지해. T05 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 마. T02는 라이브 미검증/원격 preview 재생 미구현을 남겨 두되 실기 대기로 개발을 멈추지 마. 실제 Key/허용 비용이
+그 외에는 v0.7 코드 3f47e5852942dd28d951354484ecd8d37107e582의 Windows run 44751508856은 실제 engine CLI/MCP 독립 기동·작업 정의 재호출/재연결·원본 보존 및 개발 패키징까지 성공했다. 초기 timeout은 inherited stdout reader 정리 수정으로 해소됐다. 최신 실행 상태를 대조하고 지원 AI 제품 클라이언트 호환·다건 작업 정의 등 T04 자동화 보강으로 진행해. app/automation의 선택형 Python 클라이언트와 CLI offline validate를 유지해. 자체 stdio 클라이언트를 AI 제품 연결 성공으로 취급하지 마. 검토 제출/철회·현재 일치 확인·후보 이력은 이미 구현했다. pending을 승인으로 취급하지 마. async audio.submit/get/list/cancel과 기존 동기 명령을 유지하고 원본 보존·snapshot·취소/등록 경계·timeout·복구를 보강해. CLI/MCP native stdio smoke를 실제 AI 클라이언트 연결 성공으로 확대하지 마. D08 기본값은 임의 확정하지 말고 호출의 명시적 출력/검사 조건을 유지해. T05 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 마. T02는 라이브 미검증/원격 preview 재생 미구현을 남겨 두되 실기 대기로 개발을 멈추지 마. 실제 Key/허용 비용이
 없으면 모의 응답과 오프라인 경로를 구현하고 라이브 생성은 하지 마.
 D09는 아직 미결정이므로 미설정 한도를 무제한으로 해석하지 마.
 

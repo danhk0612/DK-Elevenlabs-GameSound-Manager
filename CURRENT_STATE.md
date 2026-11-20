@@ -41,7 +41,7 @@ Rust 도구는 /tmp/dk-cargo, /tmp/dk-rustup, /tmp/dk-rust-tools를 사용한다
 
 ## 남은 범위와 다음
 
-T04 전체를 완료로 닫지 않는다. 검토 대기 제출·후보 이력은 구현했다. 재사용 가능한 로컬 작업 정의 클라이언트와 CI 전송 자동화를 추가했다. 다음은 해당 Windows 엔진 전송 결과 확인·지원 AI 제품 클라이언트 호환과 필요한 사운드 다건 작업 정의 보강이다. 실제 AI 클라이언트 연결 검증은 native stdio smoke와 다르다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
+T04 전체를 완료로 닫지 않는다. 검토 대기 제출·후보 이력은 구현했다. 재사용 가능한 로컬 작업 정의 클라이언트와 CI 전송 자동화를 추가했다. Windows 엔진 전송 CI도 통과했다. 다음은 지원 AI 제품 클라이언트 호환과 필요한 사운드 다건 작업 정의 보강이다. 실제 AI 클라이언트 연결 검증은 native stdio smoke와 다르다. T05 사람 승인/게임 적용(D07)은 별도 설계 범위이며 착수하지 않는다.
 
 Windows 실제 IPC/GUI·실행 중 FFmpeg 취소/파일 핸들·사용자 청감·실제 Key/요금제/과금은 미확인이다. T02 원격 preview는 URL 반환만 제공하며 한도 증액/초기화·다른 PC 공유·불확실 비용 정산은 후속이다. D08 게임별 기본값·loop tag·LUFS/true peak·전문 편집 화면도 없다. 이 미확인을 개발 대기 조건으로 쓰지 않는다.
 
@@ -52,3 +52,7 @@ T00-A의 [과거 Windows 33개/별도 ACL·ZIP 증거](docs/T00_A_RESULTS.md)와
 추가 CI 증거: v0.7 초기 `97d13df9c402e602d888af6f888519e8992aa8d5`의 [run 44749313675](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44749313675)는 Windows Rust 29개/외부 7개 ignore·Python 8개·native/GUI build 통과 후 실제 엔진 recipe 첫 실행 timeout으로 실패했다. 요청별 제한/단계 로그를 보강해 진단하며 실제 IPC 성공으로 처리하지 않는다.
 
 진단 후 수정: `8d6414b20dcf18e4d8d8531a25619ab5ff0931f9` run 44750187476도 첫 recipe timeout이었다. 후속 프로세스가 stdout을 상속하면 reader thread의 BufferedReader.close가 EOF까지 대기하는 조건을 Linux에서 4초 자식으로 재현했다. CLI reader를 단일 응답으로 끝내고 raw pipe/부분 쓰기 처리를 추가했다. 동일 조건 정리 회귀를 추가해 9개 통과를 확인하며, 새 Windows 실행으로 실제 효과를 대조한다.
+
+최신 v0.7 코드 증거: `3f47e5852942dd28d951354484ecd8d37107e582`의 [Windows run 44751508856](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44751508856) **전체 성공**. Windows Server 2022/Rust 1.100.0/Python 3.12.10에서 Rust 29개 통과·외부 FFmpeg 7개 ignore, Python 9개(Windows 전용 reader 취소/상속 pipe 정리 포함) 통과, 실제 엔진 CLI/MCP 독립 자동 기동·같은 recipe/검토 기록 재호출 일치·재연결·원본 보존/변경 거절 통과, engine/CLI/MCP/GUI build와 개발 artifact 패키징/업로드 성공이다. 초기 두 timeout은 클라이언트 pipe 정리 수정 후 해소됐다. 새 artifact source-sha는 이 코드 SHA이며 이후 상태 문서 변경과 구분한다. Windows 11 사용자 실기/청감·실제 FFmpeg Windows 실행·지원 AI 제품 연결·유료 API는 이 CI에서 검증하지 않았다.
+
+[개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44751508856/artifacts/14635831632), ZIP SHA-256 `72397ae32d9335ead240ad4b184b7f64792e21ba9fb5755f41e813577c728810`. source-sha.txt/재귀 SHA256SUMS와 automation 소스/예제 포함, Release나 공개 배포는 아니다.
