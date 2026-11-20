@@ -42,20 +42,29 @@ impl Session {
             }
             "ping" => json!({}),
             "tools/list" if self.ready => {
-                json!({"tools":[tool("sound_version"), tool("sound_status")]})
+                json!({"tools":crate::catalog::tools()})
             }
             "tools/call" if self.ready => {
-                let op = match message["params"]["name"].as_str() {
-                    Some("sound_version") => "version",
-                    Some("sound_status") => "status",
-                    _ => return Some(error(id, -32602, "Unknown tool")),
+                let tool_name = message["params"]["name"].as_str().unwrap_or("");
+                let definition = crate::catalog::COMMANDS.iter().find(|c| {
+                    c.op != "shutdown" && format!("sound_{}", c.op.replace('.', "_")) == tool_name
+                });
+                let Some(definition) = definition else {
+                    return Some(error(id, -32602, "Unknown tool"));
                 };
-                if let Some(arguments) = message["params"].get("arguments") {
-                    if !arguments.as_object().is_some_and(|v| v.is_empty()) {
-                        return Some(error(id, -32602, "Tool arguments must be an empty object"));
-                    }
+                let arguments = message["params"]
+                    .get("arguments")
+                    .cloned()
+                    .unwrap_or(json!({}));
+                let Some(mut arguments) = arguments.as_object().cloned() else {
+                    return Some(error(id, -32602, "Tool arguments must be an object"));
+                };
+                if arguments.contains_key("op") || arguments.contains_key("protocol_version") {
+                    return Some(error(id, -32602, "Reserved arguments"));
                 }
-                let response = crate::request(json!({"protocol_version":1,"op":op})).await;
+                arguments.insert("op".to_string(), json!(definition.op));
+                arguments.insert("protocol_version".to_string(), json!(1));
+                let response = crate::request(Value::Object(arguments)).await;
                 json!({"content":[{"type":"text","text":response.to_string()}],
                     "structuredContent":response,"isError":response["ok"]!=true})
             }
@@ -66,12 +75,6 @@ impl Session {
         };
         Some(json!({"jsonrpc":"2.0","id":id,"result":result}))
     }
-}
-
-fn tool(name: &str) -> Value {
-    json!({"name":name,"description":"Query the local DK GameSound engine; starts it if needed. No sound generation or game writes.",
-        "inputSchema":{"type":"object","properties":{},"additionalProperties":false},
-        "annotations":{"readOnlyHint":true,"destructiveHint":false,"idempotentHint":true,"openWorldHint":false}})
 }
 
 pub fn parse_error() -> Value {
@@ -90,9 +93,10 @@ mod tests {
             assert_eq!(session.handle(request("initialize",json!({"protocolVersion":"unknown"}))).await.unwrap()["error"]["code"],-32602);
             assert_eq!(session.handle(request("initialize",json!({"protocolVersion":VERSION}))).await.unwrap()["result"]["protocolVersion"],VERSION);
             assert!(session.handle(json!({"jsonrpc":"2.0","method":"notifications/initialized"})).await.is_none());
-            assert_eq!(session.handle(request("tools/list",json!({}))).await.unwrap()["result"]["tools"].as_array().unwrap().len(),2);
+            assert_eq!(session.handle(request("tools/list",json!({}))).await.unwrap()["result"]["tools"].as_array().unwrap().len(),crate::catalog::COMMANDS.len()-1);
             for params in [json!({"name":"sound_status","arguments":{"approved":true}}), json!({"name":"apply"})] {
-                assert_eq!(session.handle(request("tools/call",params)).await.unwrap()["error"]["code"],-32602);
+                let response=session.handle(request("tools/call",params)).await.unwrap();
+                assert!(response.get("error").is_some() || response["result"]["isError"]==true);
             }
         });
     }

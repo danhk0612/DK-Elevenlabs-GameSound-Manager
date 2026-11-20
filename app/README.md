@@ -1,25 +1,29 @@
-# DK GameSound — T00-B 자동화 실행 기반
+# DK GameSound — 로컬 사운드 관리 v0.2.0
 
-Windows 11 x64를 첫 대상으로 개발하는 최소 실행 기반이다. 현재 명령은 version/status/shutdown이며 사운드 등록·생성·편집·게임 적용은 아직 제공하지 않는다. 실제 Key·크레딧·사용자 자료를 사용하지 않는다. T00-A의 실험 실행 파일과 서로 다르다.
+AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 목록과 재생에 필요한 최소 화면을 제공한다. **원격 생성·편집·파형/품질 분석·승인/게임 적용은 아직 제공하지 않는다.**
 
-## 실행
+[전체 명령·입력·저장·중단 복구 계약](../docs/T01_LOCAL_LIBRARY.md)을 따른다. 다운로드한 개발 ZIP에는 같은 내용을 `LOCAL_LIBRARY.md`로 동봉한다.
 
-빌드 산출물의 `dk-sound-engine.exe`, `dk-sound-cli.exe`, `dk-sound-mcp.exe`, 선택적 `dk-sound-gui.exe`를 같은 폴더에 둔다. CLI/MCP에는 WebView2가 필요 없고 GUI에는 별도 WebView2 Runtime이 필요하다. 현 단계에 SQLite DB/FFmpeg 실행은 없다.
+## 빠른 시작
+
+`dk-sound-engine.exe`, `dk-sound-cli.exe`, `dk-sound-mcp.exe`, 선택적 `dk-sound-gui.exe`를 같은 폴더에 둔다. Windows 11 x64를 우선 개발 대상으로 한다. CLI/MCP는 WebView2 없이 동작하고 GUI에는 별도 WebView2 Runtime이 필요하다. SQLite는 기본 빌드에 정적으로 포함하며 FFmpeg/API Key는 필요하지 않다.
 
 ```powershell
+.\dk-sound-cli.exe schema
 .\dk-sound-cli.exe version
 .\dk-sound-cli.exe status
-'{"protocol_version":1,"op":"status"}' | .\dk-sound-cli.exe request
-.\dk-sound-cli.exe shutdown
+'{"protocol_version":1,"op":"project.list"}' | .\dk-sound-cli.exe request
 ```
 
-stdout은 JSON 한 개, 성공 exit 0/오류 exit 1이다. `--help`만 일반 텍스트다. JSON 요청은 protocol_version=1과 op만 허용하며 추가 필드/알 수 없는 명령을 거절한다. 상태에 engine_pid·버전·연결 수·5분 idle 정책과 `sound_features_available:false`, `jobs.available:false`를 표시한다. 이 상태를 작업 큐 구현으로 해석하지 않는다.
+실제 파일을 등록하기 전에 기존 로컬 작업공간 폴더를 정하고 project.create로 프로젝트를 만든다. [호출 예시와 필드](../docs/T01_LOCAL_LIBRARY.md)를 사용한다. 데이터는 LOCALAPPDATA 인덱스와 선택한 작업공간의 프로젝트별 DB/원본/후보 폴더에 저장한다. 실행 파일 폴더에 사용자 자료를 두지 않는다.
 
-version/status는 엔진이 없으면 같은 폴더의 실행 파일을 자동 기동한다. shutdown은 엔진이 없을 때 새로 띄우지 않고 engine_not_running을 반환한다. 경로는 셸 명령 문자열로 조립하지 않는다. 엔진 자식 stdio는 모두 null로 연결하여 CLI/MCP 종료를 가로막지 않는다. 요청 전 연결은 최대 10초 대기하며 전송 후 응답 유실은 재제출하지 않는다. 오류는 안정된 code만 전달하고 개인 경로/OS 오류 원문을 노출하지 않는다.
+CLI stdout은 JSON 한 개이며 성공 exit 0/오류 exit 1이다. schema는 엔진 없이 공통 MCP 도구 스키마를 출력한다. --help만 일반 텍스트다. 모든 프로젝트 자료 호출에 project_id를 넣고 안정된 lowercase ID를 사용한다. 파일 import는 읽기·복사이며 외부 원본 이동/수정이나 기존 ready 버전 덮어쓰기를 하지 않는다.
 
-## MCP stdio 설정 예시
+오류/응답 유실 후 새 ID로 무조건 반복하지 않는다. asset.versions/file과 project.recover로 상태를 대조하고 같은 입력/같은 ID로 재개한다. 기존 엔진 v0.1.0이 실행 중이면 이전 CLI의 shutdown 또는 5분 idle 종료 후 새 실행 파일 세트를 사용한다. 버전/경로가 다른 바이너리를 한 폴더에 섞지 않는다.
 
-해당 로컬 실행 파일을 실행할 수 있는 MCP 클라이언트에서 경로를 지정한다. 웹 ChatGPT 직접 연결을 보장하지 않는다.
+## MCP stdio 설정
+
+해당 로컬 프로그램을 실행할 수 있는 MCP 클라이언트에서 설정한다. 웹 ChatGPT 직접 연결을 보장하지 않는다.
 
 ```json
 {
@@ -32,21 +36,19 @@ version/status는 엔진이 없으면 같은 폴더의 실행 파일을 자동 �
 }
 ```
 
-newline JSON-RPC stdio, protocolVersion `2025-11-25`만 제공한다. initialize → notifications/initialized → tools/list, tools/call 순서다. 도구는 `sound_version`, `sound_status`이며 arguments는 `{}` 또는 생략한다. content text와 structuredContent에 같은 공통 응답을 반환하고 실패면 isError=true다. stdout에는 프로토콜만 쓰고 EOF에서 종료한다. 입력/IPC frame은 64KiB까지 허용하며 batch 요청과 원격 HTTP는 제공하지 않는다. CLI만 정상 엔진 shutdown을 제공하며 MCP에는 승인/적용 도구가 없다.
+newline JSON-RPC stdio, protocolVersion 2025-11-25. initialize → notifications/initialized → tools/list/call 순서다. 17개 도구의 inputSchema를 읽고 arguments를 제출한다. 이름은 sound_project_create, sound_asset_import처럼 op의 마침표를 밑줄로 바꾼 형태다. protocol_version/op를 arguments에 넣지 않는다. content text/structuredContent는 같은 공통 결과이며 실패는 isError=true다. shutdown은 CLI만 제공한다. 원격 HTTP·승인/게임 적용 도구는 없다.
 
-## 엔진 소유와 수명
+## 엔진·최소 GUI
 
-- 사용자 SID별 `Global\\DKGameSound-{SID}-engine-v1` mutex를 보유한 엔진 하나만 실행한다. 프로젝트·현재 폴더·Windows 세션이 달라도 같은 SID의 `\\.\pipe\DKGameSound-{SID}-engine-v1`을 사용한다. 별도 endpoint/token 파일이 없으며 작업공간별 엔진을 만들지 않는다.
-- pipe와 mutex에는 현재 owner SID만 허용하는 보호 DACL을 지정하고, pipe에는 first-instance 보호와 remote-client rejection을 설정한다. 제품 IPC 코드는 T00-A의 TCP/token을 사용하지 않는다. 같은 SID의 악성 프로세스/관리자에 대한 보안 격리 보장은 아니다.
-- 엔진은 서비스/로그인 시작이 아니며 최초 요청에서 자동 기동한다. GUI 종료는 엔진 shutdown이 아니다. 각 조회는 요청 동안 pipe에 연결하며 GUI/MCP 프로세스가 열려 있다는 것만으로 상시 연결을 유지하지 않는다. 무요청 상태에는 열린 GUI/MCP가 있어도 5분 idle 종료 후 다음 조회에서 재기동할 수 있다.
-- 연결 0·대기/실행 작업 0인 상태가 5분 연속이면 종료한다. 클라이언트가 다시 연결되면 타이머를 리셋한다. 정상 shutdown은 busy에서 거절하며 force 옵션은 없다. 현 단계에 작업 제출 기능이 없으므로 실제 작업 중 수명은 후속 큐 연결 시 확인한다.
-- 강제 종료하면 OS가 pipe와 mutex 소유권을 해제한다. 다음 조회가 새 엔진을 시작하며 작업 자동 재실행은 없다. 현재 작업 저장소/복구 기능이 없는 것을 복구 성공으로 표현하지 않는다.
+SID별 Global mutex와 owner-only protected DACL의 local named pipe를 사용한다. remote-client rejection과 first-instance 보호를 설정한다. 같은 사용자의 프로젝트/현재 폴더/Windows 세션이 달라도 한 엔진에 연결한다. 같은 SID의 악성 프로세스/관리자를 차단하는 보안 제품은 아니다.
 
-향후 설정은 LOCALAPPDATA 앱 루트, 자료는 사용자 선택 로컬 작업공간에 저장한다. 현재 명령은 설정/DB/오디오 파일을 만들지 않는다.
+최초 요청에서 자동 기동하며 child stdio를 분리한다. 엔진 연결은 최대 10초, 응답은 최대 300초 대기하고 전송 후 자동 재제출하지 않는다. 단일 writer 스레드가 로컬 작업을 순차 처리하며 상태에 queued/running을 표시한다. GUI/클라이언트를 닫아도 처리 중 복사는 계속된다. 정상 shutdown은 busy에서 거절하고 force 옵션은 없다. 연결/queued/running이 모두 0인 상태가 5분 지속되면 idle 종료한다. 요청마다 pipe를 연결하므로 창이나 MCP가 열려 있다는 이유만으로 엔진을 상시 유지하지 않는다.
+
+GUI는 프로젝트 목록/명시적 선택, 파일 검색/종류·버전 목록, 해시 대조 후 재생을 제공한다. 등록/쓰기 폼은 만들지 않는다. 미리듣기 최대 16 MiB, WebView2 지원 코덱에 한정하며 보관 허용 크기 512 MiB와 구분한다. 파형/주관 청감/품질 적합 판정은 현재 기능이 아니다.
 
 ## 빌드
 
-Windows Rust/MSVC build tools, Node 24, GUI용 WebView2 준비 후 app/에서:
+Windows Rust/MSVC build tools, Node 24, GUI용 WebView2를 준비한 뒤 app/에서 실행한다.
 
 ```powershell
 npm ci
@@ -55,6 +57,6 @@ cargo build --locked --release --bins
 cargo build --locked --release --features gui,custom-protocol --bin dk-sound-gui
 ```
 
-[T00-B workflow](../.github/workflows/t00-b-build.yml)는 정확한 SHA의 컴파일/개발용 artifact만 수행한다. 사용자 지시에 따라 Windows 화면/청감·장시간 실기를 개발 착수 게이트로 기다리지 않는다. 빌드 artifact는 정식 Release/배포 승인이 아니다.
+[빌드 workflow](../.github/workflows/t00-b-build.yml)는 정확한 SHA의 실행 파일·명령 문서·manifest를 개발 artifact로 묶는다. 사용자 지시에 따라 Windows 화면/청감·장시간 실기를 기다리지 않고 구현을 진행한다. artifact는 정식 Release/공개 배포 승인이 아니다. 일반 로컬 회귀는 `cargo test --locked --lib`로 실행할 수 있다.
 
-공식 구현 근거: [Tokio pipe server/security attributes](https://docs.rs/tokio/latest/tokio/net/windows/named_pipe/struct.ServerOptions.html), [pipe client](https://docs.rs/tokio/latest/tokio/net/windows/named_pipe/struct.ClientOptions.html), [Windows named pipe security](https://learn.microsoft.com/en-us/windows/win32/ipc/named-pipe-security-and-access-rights), [Tauri Rust 호출](https://v2.tauri.app/develop/calling-rust/). 문서와 제품 실측을 구분한다.
+공식 구현 근거: [rusqlite](https://docs.rs/rusqlite/0.37.0/rusqlite/), [SQLite user_version](https://www.sqlite.org/pragma.html#pragma_user_version), [RustCrypto SHA-2](https://docs.rs/sha2/0.10.9/sha2/), [Tokio named pipe](https://docs.rs/tokio/latest/tokio/net/windows/named_pipe/struct.ServerOptions.html), [Tauri Rust 호출](https://v2.tauri.app/develop/calling-rust/). 문서와 실제 실행 증거를 구분한다.

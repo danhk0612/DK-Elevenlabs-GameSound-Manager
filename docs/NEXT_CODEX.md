@@ -14,16 +14,18 @@ danhk0612/DK-Elevenlabs-GameSound-Manager에서 자동화 우선 개발을 계�
 PROJECT.md, REQUIREMENTS.md, ARCHITECTURE.md, CURRENT_STATE.md, TASKS.md,
 AI_WORKFLOW.md, app/README.md와 D01~D06 결정을 읽어.
 
-현재 app/는 T00-B의 공통 version/status/shutdown, SID별 Windows 엔진,
-독립 CLI·stdio MCP·최소 상태 GUI다. spikes/t00-a는 과거 격리 실험으로 유지해.
+현재 app/는 T01 로컬 라이브러리 v0.2.0, SID별 Windows 엔진,
+독립 CLI·MCP 17개 도구·최소 목록/재생 GUI다. docs/T01_LOCAL_LIBRARY.md를 읽어. spikes/t00-a는 과거 격리 실험으로 유지해.
 실기/점검 대기로 개발을 막지 말고 기존 확인 결과와 미확인을 구분해 기록해.
-T00-B Windows 빌드 실패가 있으면 먼저 구현 오류를 수정하고,
-그 외에는 다음 T01 프로젝트·로컬 사운드 관리로 진행해.
+최신 Windows 빌드 실패가 있으면 먼저 구현 오류를 수정하고,
+그 외에는 T02 핵심 계정 연결/한도/생성으로 진행해. 실제 Key/허용 비용이
+없으면 모의 응답과 오프라인 경로를 구현하고 라이브 생성은 하지 마.
+D09는 아직 미결정이므로 미설정 한도를 무제한으로 해석하지 마.
 
 각 기능의 공통 명령·CLI/MCP 구조화 입출력·오류·무인 동작을 함께 만든다.
 GUI는 필수 상태/실패·재생/비교·설정·사람 승인 범위로 최소화한다.
 원본/승인본을 보존하고 실제 사용자 자료는 테스트 입력으로 사용하지 마.
-T01에서는 API 생성·유료 Key·게임 적용 기능을 만들지 마.
+실제 Key를 인자/로그/DB/Git에 노출하지 말고 실제 게임 적용은 하지 마.
 
 기존 작업 브랜치와 draft PR #1을 재사용하고 코드/상태/Task/문서를 반영해.
 push·PR 갱신·빌드 CI는 허용한다. 직접 병합·Release/tag·공개 배포는 하지 마.

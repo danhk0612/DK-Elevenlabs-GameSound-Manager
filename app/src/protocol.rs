@@ -8,15 +8,7 @@ pub const IDLE_TIMEOUT: Duration = Duration::from_secs(300);
 pub const MAX_FRAME: usize = 64 * 1024;
 
 pub fn validate(command: &Value) -> Result<(), &'static str> {
-    let object = command.as_object().ok_or("invalid_request")?;
-    if object.len() != 2 || object.get("protocol_version").and_then(Value::as_u64) != Some(PROTOCOL)
-    {
-        return Err("invalid_request");
-    }
-    match object.get("op").and_then(Value::as_str) {
-        Some("version" | "status" | "shutdown") => Ok(()),
-        _ => Err("unsupported_operation"),
-    }
+    crate::catalog::validate(command)
 }
 
 pub fn error(code: &str) -> Value {
@@ -107,21 +99,21 @@ impl State {
                 self.stopping = true;
                 success(json!({"shutdown":"accepted"}))
             }
-            op => {
+            op @ ("version" | "status") => {
                 let mut data = json!({"name":"DK-Elevenlabs-GameSound-Manager",
                     "version":env!("CARGO_PKG_VERSION"),"engine_pid":std::process::id(),
-                    "capabilities":["version","status","shutdown"],
-                    "stage":"T00-B","sound_features_available":false});
+                    "capabilities":crate::catalog::COMMANDS.iter().map(|c|c.op).collect::<Vec<_>>(),
+                    "stage":"T01","sound_features_available":true,"remote_generation_available":false});
                 if op == "status" {
                     data["state"] = json!("ready");
                     data["connected_clients"] = json!(self.clients);
-                    data["jobs"] =
-                        json!({"available":false,"queued":self.queued,"running":self.running});
+                    data["jobs"] = json!({"available":true,"scope":"serialized_local_commands","queued":self.queued,"running":self.running});
                     data["idle_timeout_ms"] = json!(IDLE_TIMEOUT.as_millis());
                     data["transport"] = json!("windows_named_pipe_owner_sid_local_only");
                 }
                 success(data)
             }
+            _ => error("requires_storage_dispatch"),
         }
     }
 }

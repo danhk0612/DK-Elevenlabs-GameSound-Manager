@@ -5,7 +5,14 @@ use std::io::{self, Read};
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     if args == ["--help"] {
-        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\nJSON stdout; exit 0 success, 1 request/runtime error. Windows only.");
+        println!("dk-sound-cli version|status|shutdown\ndk-sound-cli request < request.json\ndk-sound-cli schema\nJSON stdout; exit 0 success, 1 request/runtime error. Windows only.");
+        return;
+    }
+    if args == ["schema"] {
+        println!(
+            "{}",
+            json!({"protocol_version":1,"tools":dk_gamesound::catalog::tools()})
+        );
         return;
     }
     let command: Result<Value, &'static str> = match args.as_slice() {
@@ -18,9 +25,10 @@ fn main() {
                 .take(protocol::MAX_FRAME as u64 + 1)
                 .read_to_end(&mut bytes)
             {
-                Ok(_) if bytes.len() <= protocol::MAX_FRAME => {
-                    serde_json::from_slice(&bytes).map_err(|_| "invalid_json")
-                }
+                Ok(_) if bytes.len() <= protocol::MAX_FRAME => serde_json::from_slice(
+                    bytes.strip_prefix(&[0xef, 0xbb, 0xbf]).unwrap_or(&bytes),
+                )
+                .map_err(|_| "invalid_json"),
                 _ => Err("invalid_input_size_or_io"),
             }
         }

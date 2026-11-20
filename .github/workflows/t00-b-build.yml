@@ -1,8 +1,8 @@
-name: T00-B build portable foundation
+name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', '.github/workflows/t00-b-build.yml']
+    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -47,11 +47,12 @@ jobs:
           New-Item -ItemType Directory -Force artifact | Out-Null
           Copy-Item target/release/dk-sound-*.exe artifact
           Copy-Item README.md artifact
+          Copy-Item ../docs/T01_LOCAL_LIBRARY.md artifact/LOCAL_LIBRARY.md
           $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
           rustc -Vv | Set-Content artifact/toolchain.txt
           Get-ChildItem artifact -File | ForEach-Object { $h=Get-FileHash $_.FullName -Algorithm SHA256; "$($h.Hash)  $($_.Name)" } | Set-Content artifact/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: t00-b-foundation-${{ github.sha }}
+          name: gamesound-local-library-${{ github.sha }}
           path: app/artifact/
           retention-days: 14

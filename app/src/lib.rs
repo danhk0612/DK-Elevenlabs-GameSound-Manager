@@ -1,5 +1,9 @@
+pub mod catalog;
 pub mod mcp;
 pub mod protocol;
+pub mod storage;
+#[cfg(test)]
+mod storage_tests;
 #[cfg(windows)]
 mod windows;
 

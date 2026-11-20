@@ -187,7 +187,7 @@ pub async fn request(command: Value) -> Result<Value, &'static str> {
         time::sleep(Duration::from_millis(40)).await;
     };
     // No automatic replay after a write/response failure, even for future commands.
-    time::timeout(Duration::from_secs(10), async {
+    time::timeout(Duration::from_secs(300), async {
         protocol::write_frame(&mut client, &command).await?;
         protocol::read_frame(&mut client).await
     })
@@ -218,6 +218,70 @@ fn start_engine() -> Result<(), &'static str> {
 }
 
 type Shared = Arc<Mutex<State>>;
+type Work = (Value, tokio::sync::oneshot::Sender<Value>);
+type Worker = std::sync::mpsc::SyncSender<Work>;
+
+fn storage_worker(shared: Shared) -> Worker {
+    let (sender, receiver) = std::sync::mpsc::sync_channel::<Work>(32);
+    std::thread::spawn(move || {
+        let mut store = None;
+        while let Ok((command, reply)) = receiver.recv() {
+            {
+                let mut state = shared.lock().unwrap();
+                state.queued -= 1;
+                state.running += 1;
+            }
+            let result = if let Some(store) = store.as_mut() {
+                crate::storage::Store::execute(store, &command)
+            } else {
+                match crate::storage::Store::default_root()
+                    .and_then(|p| crate::storage::Store::open(&p))
+                {
+                    Ok(mut opened) => {
+                        let result = opened.execute(&command);
+                        store = Some(opened);
+                        result
+                    }
+                    Err(e) => protocol::error(e.0),
+                }
+            };
+            {
+                let mut state = shared.lock().unwrap();
+                state.running -= 1;
+                if state.clients == 0 && !state.busy() {
+                    state.last_empty = Instant::now();
+                }
+            }
+            let _ = reply.send(result);
+        }
+    });
+    sender
+}
+
+async fn dispatch(command: Value, shared: &Shared, worker: &Worker) -> Value {
+    if let Err(code) = protocol::validate(&command) {
+        return protocol::error(code);
+    }
+    if !command["op"].as_str().unwrap().contains('.') {
+        return shared.lock().unwrap().execute(&command);
+    }
+    let (sender, receiver) = tokio::sync::oneshot::channel();
+    {
+        let mut state = shared.lock().unwrap();
+        if state.stopping {
+            return protocol::error("engine_stopping");
+        }
+        state.queued += 1;
+        if worker.try_send((command, sender)).is_err() {
+            state.queued -= 1;
+            return protocol::error("local_queue_unavailable");
+        }
+    }
+    receiver
+        .await
+        .unwrap_or_else(|_| protocol::error("local_worker_lost"))
+}
+
 struct Connection(Shared);
 impl Drop for Connection {
     fn drop(&mut self) {
@@ -225,14 +289,14 @@ impl Drop for Connection {
     }
 }
 
-async fn serve(mut pipe: NamedPipeServer, shared: Shared) {
+async fn serve(mut pipe: NamedPipeServer, shared: Shared, worker: Worker) {
     let _connection = Connection(shared.clone());
     loop {
         let command = match protocol::read_frame(&mut pipe).await {
             Ok(command) => command,
             Err(_) => break,
         };
-        let response = shared.lock().unwrap().execute(&command);
+        let response = dispatch(command.clone(), &shared, &worker).await;
         let shutdown = command["op"] == "shutdown" && response["ok"] == true;
         let written = time::timeout(
             Duration::from_secs(5),
@@ -258,6 +322,7 @@ pub async fn run_engine() -> Result<(), &'static str> {
         .pipe(&name, true)
         .map_err(|_| "pipe_create_failed")?;
     let shared = Arc::new(Mutex::new(State::default()));
+    let worker = storage_worker(shared.clone());
     let mut tick = time::interval(Duration::from_millis(100));
     loop {
         tokio::select! {
@@ -265,7 +330,7 @@ pub async fn run_engine() -> Result<(), &'static str> {
                 connected.map_err(|_| "pipe_accept_failed")?;
                 let next = security.pipe(&name, false).map_err(|_| "pipe_create_failed")?;
                 shared.lock().unwrap().connect(Instant::now());
-                tokio::spawn(serve(server, shared.clone()));
+                tokio::spawn(serve(server, shared.clone(),worker.clone()));
                 server = next;
             },
             _ = tick.tick() => {
