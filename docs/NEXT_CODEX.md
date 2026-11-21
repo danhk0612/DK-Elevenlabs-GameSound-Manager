@@ -6,6 +6,12 @@
 - 후속 “실기, 점검 무시하고 진행해”. 이전 T00-A 실기/점검 대기·T00-B 미착수 지시를 해제했다. 실기 자료를 다시 요청하며 멈추지 않는다. 미확인을 성공으로 기록하지 않는다.
 - D01~D06 위임 채택은 유지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧 사용·현재 게임/실제 음원 변경은 별도다.
 
+## 최신 실제 연결 결과
+
+사용자는 NAS 파일에 API key/허용·한도를 설정하고 “아 그럼 진행해”라고 지시했다. [실제 SFX 결과](T02_LIVE_RESULTS.md)를 읽는다. account.refresh·SFX v3 500ms POST 1회·8,820-byte 후보·header cost 5·FFmpeg decode/analysis·pending review·정상 재시작 동일 ID 무중복을 확인했다. 계정/키 원문은 출력하지 않는다. 이전 “실제 key/HTTP 0회”는 당시 기록이며 최신 결과가 앞선다.
+
+Docker 기본 ~/.local/state 쓰기 실패를 해결해 빈 새 기본 경로에만 private OS temp dk-gamesound-UID를 사용한다. 기존/명시 root는 자동 변경하지 않는다. 실제 ledger는 현재 그 Docker-local 경로에 있고 자료 사본은 Git 제외 user-data/live-check다. 임시 ledger를 삭제/초기화하지 말고, 같은 job_id 재조회에 새 ID/새 POST를 쓰지 않는다. 사용자 설정 한도를 늘리거나 기존 설정을 덮어쓰지 않는다. TTS/청감/최종 과금 정산/지속 volume·T05는 별도다. 최신 코드 SHA/CI는 CURRENT_STATE.md와 대조한다.
+
 ## 최신 사용자 요청 — Windows/NAS 설정 파일
 
 사용자는 Windows에서 NAS 파일을 편집하고 Codex CLI는 Docker인 환경이므로 key/한도를 파일에 넣도록 요청했다. [설정 안내](WINDOWS_NAS_SETUP.md)의 명시적 --config를 지원한다. 최상단 elevenlabs.local.json은 실제 편집 파일이며 Git 제외다. Git 예제 elevenlabs.config.example.json에는 절대 실제 key를 넣지 않는다. 기존 '평문 파일 입력 금지'는 이 최신 명시적 요청이 우선한다. 파일을 cat/내용 출력하지 말고 --check-config로 검사한다. user가 설정 완료를 알리면 같은 config로 Docker-local private runtime의 engine 세션을 열고 계정/명시 한도를 확인한다. 원본 설정을 덮어쓰거나 설정 한도를 임의 증액하지 않는다. 실제 서비스 호출/비용은 설정된 허용·범위 내에서만 진행한다. 기존 stdin/FD/Windows Credential Manager·원본 보존·T05 경계는 유지한다. 파일 입력 source 28a2a654a23a8efe3e71b47c64fbaeed7a1e9187/run 44841185626과 CURRENT_STATE.md의 결과를 대조한다. 로컬 Linux Python 22개+실제 engine config 세션은 통과했다.

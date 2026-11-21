@@ -14,7 +14,7 @@
 | credit_limit | 총 예약 크레딧 한도. 생성 허용 시 양수 정수 |
 | session_seconds | 세션 유효 초, 60..86400. 현재 예제 3600은 1시간 |
 | account_id | 현재 elevenlabs-main 유지 가능 |
-| state_root | 빈 문자열 유지 가능. Docker 사용자의 ~/.local/state/dk-gamesound를 사용 |
+| state_root | 빈 문자열 유지 가능. Docker 사용자 기본 경로, 쓰기 불가한 새 기본 경로는 전용 임시 경로 사용 |
 | schema_version | 1 유지 |
 
 UTF-8로 저장한다(BOM/CRLF 허용). 숫자/true/false에는 따옴표를 붙이지 않고 JSON 주석은 넣지 않는다. 처음 만든 파일은 key가 비어 있고 생성 false/한도 0이므로 실제 생성하지 않는다. 횟수/크레딧의 유료 기본 수치는 정하지 않았다.
@@ -41,3 +41,7 @@ Codex는 현재 세션/계정·한도를 확인하고 명시한 생성 범위에
 ## 계약 변경 범위
 
 이전 stdin/숨김 입력/private FD 방식은 유지한다. 사용자 요청으로 **명시적인 --config만** 추가했으며 자동 파일 검색/secret persistence fallback이나 Windows Credential Manager 변경이 아니다. 읽은 key를 DB/다른 파일/로그/argv/env로 복사하지 않는다. 사용자가 직접 작성한 NAS 원본 설정은 삭제/변경하지 않는다. 공통 명령/DB schema/GUI 변경은 없다.
+
+빈 state_root는 기본 ~/.local/state/dk-gamesound가 없고 부모 경로 생성이 권한 오류이면 OS 임시 디렉터리의 dk-gamesound-<effective UID>를 사용한다. 기존 기본 경로나 명시 경로는 자동 변경하지 않는다. 컨테이너/임시 경로 정리 후에도 예산을 유지하려면 쓰기 가능한 private 지속 volume 절대 경로를 state_root로 지정한다. 실제 생성 검증은 [실기 기록](T02_LIVE_RESULTS.md)을 따른다.
+
+기존 전용 temp root가 있으면 기본 home의 쓰기 권한이 회복돼도 그 root를 재사용한다. home/temp 기본 root가 둘 다 있으면 암묵적으로 하나를 선택하지 않고 명시 경로를 요구한다. 새 ledger로 조용히 갈아타 한도가 초기화되는 상황을 막는다.

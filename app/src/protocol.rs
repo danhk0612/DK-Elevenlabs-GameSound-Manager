@@ -122,7 +122,13 @@ impl State {
                     data["connected_clients"] = json!(self.clients);
                     data["jobs"] = json!({"available":true,"scope":"serialized_local_and_generation","generation_queued":self.generation_queued,"generation_running":self.generation_running,"audio_queued":self.audio_queued,"audio_running":self.audio_running,"queued":self.queued+self.generation_queued+self.audio_queued,"running":self.running+self.generation_running+self.audio_running});
                     data["idle_timeout_ms"] = json!(IDLE_TIMEOUT.as_millis());
-                    data["transport"] = json!("windows_named_pipe_owner_sid_local_only");
+                    data["transport"] = json!(if cfg!(windows) {
+                        "windows_named_pipe_owner_sid_local_only"
+                    } else if cfg!(target_os = "linux") {
+                        "linux_unix_socket_owner_uid_local_only"
+                    } else {
+                        "unsupported_platform"
+                    });
                 }
                 success(data)
             }

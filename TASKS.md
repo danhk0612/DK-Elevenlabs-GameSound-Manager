@@ -129,3 +129,7 @@ v0.10 구현 source `3a5c52ca1a525785a6cc96ffd4e761a04a7cbfff`, 초과 key pipe 
 사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.
 
 NAS file config source `28a2a654a23a8efe3e71b47c64fbaeed7a1e9187`, 로컬 Linux Python 22개+실제 session smoke 통과, [CI 44841185626](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44841185626) 진행 중. Windows는 설정 파일 편집만 하고 Codex는 Docker 경로의 --config로 연결한다.
+
+## T02 실제 Linux SFX 생성 검증 (2026-11-21)
+
+사용자의 실제 key 설정 및 진행 지시에 따라 [실기 결과](docs/T02_LIVE_RESULTS.md)의 SFX POST 1회·header cost 5·candidate/실제 decode·pending review·재시작 동일 ID 무중복을 확인했다. 실행 환경의 새 기본 state 부모 권한 실패에만 private temp를 선택하고 기존/명시 ledger 경로는 바꾸지 않는 보완, Linux transport 표시 수정을 적용했다. 사용자 설정/음원은 Git 제외이고 TTS/Windows 인증/청감/최종 과금·T04 전체/T05는 미확인/별도다.

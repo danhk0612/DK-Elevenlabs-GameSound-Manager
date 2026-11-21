@@ -13,6 +13,7 @@ import subprocess
 import sys
 import warnings
 import resource
+import tempfile
 
 
 CONFIG_LIMIT = 8192
@@ -48,6 +49,37 @@ def load_config(path):
     if any(not isinstance(config[k], str) for k in ('account_id','api_key','state_root')):
         raise ValueError('invalid config text')
     return config
+
+
+def prepare_state_root(state):
+    root = Path(state) if state else Path.home()/'.local'/'state'/'dk-gamesound'
+    if not root.is_absolute():
+        raise ValueError('state_root must be absolute')
+    # Do not abandon an existing ledger, or an explicitly configured path.
+    missing = False
+    try:
+        root.lstat()
+    except FileNotFoundError:
+        missing = True
+    fallback = Path(tempfile.gettempdir())/('dk-gamesound-' + str(os.geteuid()))
+    if not state:
+        try:
+            fallback.lstat()
+        except FileNotFoundError:
+            pass
+        else:
+            if not missing and fallback != root:
+                raise ValueError('multiple default roots require explicit selection')
+            print('state_root_using_private_temp', file=sys.stderr)
+            return fallback
+    try:
+        root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    except PermissionError:
+        if state or not missing:
+            raise
+        root = fallback
+        print('state_root_using_private_temp', file=sys.stderr)
+    return root
 
 
 def default_engine():
@@ -124,7 +156,7 @@ def main():
             return 0
         if args.config is not None:
             # Create only runtime parents after complete offline validation.
-            root.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            root = prepare_state_root(state)
             os.environ['DK_SOUND_ROOT'] = str(root)
         if not os.environ.get('DK_SOUND_ROOT'):
             raise ValueError('DK_SOUND_ROOT is required')

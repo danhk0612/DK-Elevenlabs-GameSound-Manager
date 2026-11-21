@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 if sys.platform == 'linux':
     import linux_session
@@ -44,6 +45,26 @@ class ConfigTests(unittest.TestCase):
         raw=json.dumps(self.config)
         for text in [raw[:-1]+',"api_key":"other"}',raw.replace('"request_limit": 0','"request_limit": NaN'), 'X'*8193, '{"api_key":"synthetic-config-key",bad}']:
             self.path.write_text(text); self.check(False)
+    def test_unwritable_missing_default_uses_temp_but_explicit_root_never_switches(self):
+        home = self.root/'home'
+        home.mkdir()
+        with patch.object(Path,'home',return_value=home), patch.object(linux_session.tempfile,'gettempdir',return_value=str(self.root)), patch.object(Path,'mkdir',side_effect=PermissionError):
+            fallback = linux_session.prepare_state_root('')
+            self.assertTrue(fallback.is_absolute())
+            self.assertEqual(fallback.name, 'dk-gamesound-' + str(linux_session.os.geteuid()))
+            with self.assertRaises(PermissionError):
+                linux_session.prepare_state_root(str(home/'explicit-state'))
+        fallback.mkdir()
+        # Restored home write access must not silently start a fresh ledger.
+        with patch.object(Path,'home',return_value=home), patch.object(linux_session.tempfile,'gettempdir',return_value=str(self.root)):
+            self.assertEqual(linux_session.prepare_state_root(''), fallback)
+        fallback.rmdir()
+        existing = home/'.local/state/dk-gamesound'
+        existing.mkdir(parents=True)
+        with patch.object(Path,'home',return_value=home), patch.object(linux_session.tempfile,'gettempdir',return_value=str(self.root)), patch.object(Path,'mkdir',side_effect=PermissionError):
+            with self.assertRaises(PermissionError):
+                linux_session.prepare_state_root('')
+
     def test_symlink_and_mixed_cli_settings_are_rejected(self):
         self.write()
         target=self.root/'target.json'; self.path.rename(target); self.path.symlink_to(target)

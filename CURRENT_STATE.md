@@ -1,6 +1,6 @@
 # 현재 상태
 
-기준일: 2026-11-20 UTC(한국 11-21). **v0.10.0 Linux 인증 세션·ElevenLabs HTTPS 구현. AI 자동화 우선·최소 UI·실기 대기 해제 유지. 실제 서비스 생성/과금은 미검증이다.**
+기준일: 2026-11-21 UTC. **v0.10.0 Linux 실제 인증·SFX 생성 1회/디코딩·재연결 확인. 최신 결과는 아래 실제 생성 절을 따르며 이전 미검증 문장은 당시 상태다. 최종 과금 정산/청감은 미확인이다.**
 
 ## 저장소와 범위
 
@@ -47,3 +47,11 @@ T04 전체·제품 완성/T05 착수는 선언하지 않는다. 지원 AI 제품
 2026-11-21, 사용자 Windows/NAS 파일 편집·Codex CLI Docker 연결 환경에 따라 [명시적인 NAS 설정 파일 입력](docs/WINDOWS_NAS_SETUP.md)을 구현했다. 최상단 elevenlabs.local.json을 key 빈 값/생성 false/한도 0으로 한 번 만들고 Git 제외했다. 이후 사용자 값을 출력/덮어쓰지 않는다. --config는 BOM/CRLF/합성 0777·bounded strict JSON과 --check-config 무기동/무HTTP 검사, Docker-local runtime과 기존 engine stdin 전달을 지원한다. 기존 숨김 입력/private FD·Windows Credential Manager/엔진 규칙/schema/GUI는 유지한다.
 
 Linux Python 22개(기존 18+설정 4)와 실제 engine metadata-only session smoke의 NAS 파일 입력/재시작·키 무출력·원본 파일 보존을 통과했다. Rust 제품 코드는 변경하지 않았다. 실제 key/서비스 HTTP는 사용하지 않았다. 신규 source `28a2a654a23a8efe3e71b47c64fbaeed7a1e9187`의 [Windows/Linux run 44841185626](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44841185626)은 진행 중이다. 이 코드의 Linux Python 22개·실제 engine NAS file/FD 세션 smoke·원본 보존은 로컬에서 통과했고 새 CI를 성공으로 기록하지 않는다. 이후 상태 문서 커밋과 실행 source를 구분한다. 이전 '평문 파일 입력 없음'은 최신 사용자 명시 요청으로 이 입력 모드에 한해 변경됐다. 입력 파일은 NAS에 남는 평문이며 Git 제외가 NAS 공유 ACL/백업 접근 제어를 대신하지 않는다.
+
+## 최신 — 실제 계정 인증과 SFX 생성 확인
+
+사용자가 NAS 파일에 key/생성 허용·한도를 입력하고 진행을 지시해 [실제 결과](docs/T02_LIVE_RESULTS.md)를 확인했다. SFX v3 500ms POST 1회 succeeded, MP3 8,820 bytes/SHA 13ce7c3f028bd67bc3c517d3ddf1d7bc35c6bacea992a767e84db8f590cf0079, character-cost header 5, 실제 decoded 480ms/stereo/44.1kHz·명시 threshold 초과 sample 0, review pending/현재 일치 true다. ledger는 보수적 예약 200을 유지하며 같은 ID를 재시작 후 다시 제출해도 요청 수 1/기존 결과를 반환했다. 추가 생성/자동 재시도 없음. 실제 청감과 최종 서비스 비용 반영 완료를 주장하지 않는다.
+
+새 기본 state 부모 쓰기 실패 시 기존 ledger가 없는 경우만 private OS temp dk-gamesound-UID로 선택하는 보완과 Linux status transport 표시 수정을 적용했다. 실제 NAS 설정은 수정하지 않았다. 소리/analysis/receipt는 Git 제외 user-data/live-check에 보관한다. key·원격 계정 identity·사용자 설정·음원은 Git/CI에 포함하지 않는다. 게임/사이트 적용은 하지 않았다.
+
+Python 23개/실제 NAS config 세션 smoke·Rust 36개(외부 도구 7개 ignore)·native bins build·Windows x64 타입 검사·fmt/diff를 확인했다. 실제 파일은 별도의 라이브 FFmpeg 분석까지 성공했다. 신규 코드 SHA/CI는 push 후 기록한다. 이전 NAS config source 28a2a654a23a8efe3e71b47c64fbaeed7a1e9187/run 44841185626은 Windows/Linux 전체 성공이다.
