@@ -54,3 +54,7 @@ app/artifact/
 
 # Optional automation client caches
 app/automation/__pycache__/
+
+# User-authorized Windows/NAS credential file and editor backups (never commit)
+/elevenlabs.local*
+/.elevenlabs.local*

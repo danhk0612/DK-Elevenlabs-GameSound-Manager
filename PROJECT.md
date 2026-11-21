@@ -37,3 +37,7 @@
 T04 v0.9에서 현재 AI Linux 환경을 위한 headless native CLI/MCP 실행을 추가했다. Windows GUI가 첫 제품 대상인 결정은 유지하며 Linux에서 로컬 관리·FFmpeg·합성 mock만 사용한다. Linux 라이브 ElevenLabs/GUI·AI 제품 MCP 등록은 미완료다. [Linux 범위](docs/T04_LINUX_HEADLESS.md).
 
 v0.10은 Linux 메모리 인증 세션과 ElevenLabs 고정 HTTPS를 구현했다. 키 전달은 engine 전용 stdin/선택형 숨김 입력·private FD 런처로 제한하며 실제 키/과금/청감은 확인하지 않았다. Windows 설정은 유지한다. [계약](docs/T02_LINUX_PROVIDER.md).
+
+## Windows/NAS 파일 입력 확장
+
+사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.

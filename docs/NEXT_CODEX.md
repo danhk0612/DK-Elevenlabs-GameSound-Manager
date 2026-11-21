@@ -6,6 +6,10 @@
 - 후속 “실기, 점검 무시하고 진행해”. 이전 T00-A 실기/점검 대기·T00-B 미착수 지시를 해제했다. 실기 자료를 다시 요청하며 멈추지 않는다. 미확인을 성공으로 기록하지 않는다.
 - D01~D06 위임 채택은 유지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧 사용·현재 게임/실제 음원 변경은 별도다.
 
+## 최신 사용자 요청 — Windows/NAS 설정 파일
+
+사용자는 Windows에서 NAS 파일을 편집하고 Codex CLI는 Docker인 환경이므로 key/한도를 파일에 넣도록 요청했다. [설정 안내](WINDOWS_NAS_SETUP.md)의 명시적 --config를 지원한다. 최상단 elevenlabs.local.json은 실제 편집 파일이며 Git 제외다. Git 예제 elevenlabs.config.example.json에는 절대 실제 key를 넣지 않는다. 기존 '평문 파일 입력 금지'는 이 최신 명시적 요청이 우선한다. 파일을 cat/내용 출력하지 말고 --check-config로 검사한다. user가 설정 완료를 알리면 같은 config로 Docker-local private runtime의 engine 세션을 열고 계정/명시 한도를 확인한다. 원본 설정을 덮어쓰거나 설정 한도를 임의 증액하지 않는다. 실제 서비스 호출/비용은 설정된 허용·범위 내에서만 진행한다. 기존 stdin/FD/Windows Credential Manager·원본 보존·T05 경계는 유지한다. 정확한 최신 SHA/CI는 CURRENT_STATE.md를 대조한다.
+
 ## 최신 후속 우선순위 — Linux 생성 코드 구현 이후
 
 v0.9 code 32828ea/run 44834877114의 Windows·Linux CI는 모두 성공했다. 사용자의 후속 “진행해”로 v0.10 [Linux 인증 세션/HTTPS](T02_LINUX_PROVIDER.md)를 구현했다. engine --session 전용 private stdin·메모리 account/key/TTL/허용·한도와 숨김 입력/private key FD 런처, fixed-origin reqwest/rustls 전송이 공통 큐에 연결된다. 일반 CLI/MCP에는 key·live 정책 변경 명령을 추가하지 않는다. default autostart는 키 없이 유지한다. 원본/후보/예산·단일 POST/불확실 상태·T05 경계를 유지한다.

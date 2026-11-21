@@ -136,3 +136,7 @@ v0.8 [batch 계약](docs/T04_BATCH.md)은 기존 단일 recipe를 클라이언�
 ## T02 Linux 인증/HTTP (v0.10)
 
 [T02 Linux 계약](docs/T02_LINUX_PROVIDER.md)에 따라 engine 전용 stdin 세션(메모리/단일 계정/명시 TTL·한도)과 고정 ElevenLabs HTTPS·retry/redirect/proxy 차단을 추가한다. Windows D05/D06·공통 명령/큐/schema는 유지한다. key는 CLI/MCP/일반 IPC에 넣지 않고 default autostart는 인증 없이 유지한다. Linux의 metadata 전용 session smoke와 런타임 생성 인증서의 로컬 TLS 검사로 실제 유료 서비스와 분리해 검증한다.
+
+## Windows/NAS 파일 입력 확장
+
+사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.

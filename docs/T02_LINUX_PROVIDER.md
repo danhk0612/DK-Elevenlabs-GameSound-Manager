@@ -2,6 +2,10 @@
 
 Windows Credential Manager/WinHTTP는 유지한다. Linux는 GUI/secret service/평문 저장을 추가하지 않고 엔진 시작 때만 받는 메모리 인증 세션과 Rust HTTPS 전송을 추가한다. 공통 명령/CLI/MCP 47/46개·DB schema 5/1은 같다. 생성은 기존 job.submit/get/list/cancel/recover·예산·후보 보존 계약을 따른다. 이 기능을 실제 Key/과금/청감 검증 성공으로 해석하지 않는다.
 
+## Windows/NAS 파일 입력 — 최신 사용자 요청
+
+사용자가 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하는 환경 때문에 파일 입력을 요청했다. [파일 설정 절차](WINDOWS_NAS_SETUP.md)의 --config 모드를 추가했다. 아래 기존 file 옵션 없음/평문 파일 금지 문장은 과거 숨김 입력 모드의 범위이며 최신 명시적 파일 입력 허용에는 적용하지 않는다. actual elevenlabs.local.json과 백업은 Git 제외하며 자동 검색/덤프/다른 저장소로 복사하지 않는다. Windows Credential Manager는 유지한다.
+
 ## 실행 절차
 
 1. [Linux private root](T04_LINUX_HEADLESS.md)를 정하고 기존 엔진을 정상 shutdown한다. 진행 작업이 있으면 종료 거절을 확인하고 기존 상태를 대조한다. 키 없이 자동 기동한 기존 엔진에 세션이 소급 주입되지는 않는다.

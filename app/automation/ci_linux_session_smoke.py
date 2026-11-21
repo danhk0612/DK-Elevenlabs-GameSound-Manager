@@ -87,6 +87,31 @@ def main():
                 assert fake.encode() not in child.stdout.read()+child.stderr.read()
             finally:
                 if child.poll() is None: child.terminate(); child.wait(timeout=15)
+            time.sleep(.2)
+            # User-authorized Windows/NAS JSON mode: BOM/CRLF and synthesized 0777.
+            config_path = Path(directory)/'elevenlabs.local.json'
+            config = {'schema_version':1,'account_id':'session-test','api_key':fake,'enable_generation':False,
+                      'request_limit':0,'credit_limit':0,'session_seconds':60,'state_root':str(root)}
+            config_path.write_text(json.dumps(config),encoding='utf-8-sig',newline='\r\n')
+            config_path.chmod(0o777)
+            checked = subprocess.run([sys.executable,str(launcher),'--config',str(config_path),'--check-config'],env=env,capture_output=True,timeout=15)
+            assert checked.returncode == 0 and json.loads(checked.stdout)['engine_started'] is False
+            file_child = subprocess.Popen([sys.executable,str(launcher),'--config',str(config_path),'--engine',str(engine)],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+            try:
+                for _ in range(200):
+                    if (root/'engine.sock').exists(): break
+                    assert file_child.poll() is None, 'config session exited'
+                    time.sleep(.05)
+                assert call('account.get',account_id='session-test')['data']['credential_configured'] is True
+                assert call('shutdown')['ok'] is True
+                file_child.wait(timeout=15)
+                assert file_child.returncode == 0
+                assert fake.encode() not in file_child.stdout.read()+file_child.stderr.read()
+                assert json.loads(config_path.read_text(encoding='utf-8-sig')) == config
+                for path in root.rglob('*'):
+                    if path.is_file(): assert fake.encode() not in path.read_bytes()
+            finally:
+                if file_child.poll() is None: file_child.terminate(); file_child.wait(timeout=15)
             print('Linux real engine private stdin session, account scope, no IPC key/policy, metadata-only, no persistence/restart, FD launcher: PASS')
         finally:
             if session.poll() is None:

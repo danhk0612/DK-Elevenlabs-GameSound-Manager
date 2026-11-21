@@ -84,3 +84,7 @@ cargo build --locked --release --features gui,custom-protocol --bin dk-sound-gui
 [빌드 workflow](../.github/workflows/t00-b-build.yml)는 정확한 SHA의 실행 파일·명령 문서·manifest를 개발 artifact로 묶는다. 사용자 지시에 따라 Windows 화면/청감·장시간 실기를 기다리지 않고 구현을 진행한다. artifact는 정식 Release/공개 배포 승인이 아니다. 일반 로컬 회귀는 `cargo test --locked --lib`로 실행할 수 있다.
 
 공식 구현 근거: [rusqlite](https://docs.rs/rusqlite/0.37.0/rusqlite/), [SQLite user_version](https://www.sqlite.org/pragma.html#pragma_user_version), [RustCrypto SHA-2](https://docs.rs/sha2/0.10.9/sha2/), [Tokio named pipe](https://docs.rs/tokio/latest/tokio/net/windows/named_pipe/struct.ServerOptions.html), [Tauri Rust 호출](https://v2.tauri.app/develop/calling-rust/). 문서와 실제 실행 증거를 구분한다.
+
+## Windows 편집 + NAS 파일 + Docker Codex 연결
+
+사용자 요청에 따라 [NAS 파일 설정 안내](../docs/WINDOWS_NAS_SETUP.md)를 추가했다. 최상단 elevenlabs.local.json에 key/허용·한도를 적고 저장하면 Codex가 --config로 검사/기동한다. 실제 파일과 편집기 백업은 Git 제외하고, Git의 elevenlabs.config.example.json에는 빈 key·생성 false/한도 0만 둔다. stdin/숨김 입력/private FD도 유지하며 실제 키 파일을 출력하거나 덮어쓰지 않는다.

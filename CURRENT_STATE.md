@@ -41,3 +41,9 @@ T04 전체·제품 완성/T05 착수는 선언하지 않는다. 지원 AI 제품
 사이트/게임 개발은 계속 일시 정지한다. 병합·Release/tag·공개 배포·실제 Key/크레딧 사용·사용자 음원/게임/사이트/운영 DB·사이트 빌드/배포는 수행하지 않았다. 게임 수정 목록은 사이트 games/02-deck-expedition/POST_AUDIO_BACKLOG.md를 유지한다.
 
 최종 source 54d2fbf2fa5809b251857aac23527743be7afff8의 [Windows 개발 artifact](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44839231602/artifacts/14679409749)는 LINUX_PROVIDER.md/인증 세션 런처·smoke를 포함한다. GitHub metadata reported SHA-256: `720bffa7b937eeddd461c7271f488fb5a8244e6777e29cb93d83ab5fb52df8f2`. 이 기록은 artifact 다운로드 후 독립 해시 대조와 구분하며 Release/공개 배포가 아니다.
+
+## 최신 사용자 요청 — Windows/NAS 파일 입력
+
+2026-11-21, 사용자 Windows/NAS 파일 편집·Codex CLI Docker 연결 환경에 따라 [명시적인 NAS 설정 파일 입력](docs/WINDOWS_NAS_SETUP.md)을 구현했다. 최상단 elevenlabs.local.json을 key 빈 값/생성 false/한도 0으로 한 번 만들고 Git 제외했다. 이후 사용자 값을 출력/덮어쓰지 않는다. --config는 BOM/CRLF/합성 0777·bounded strict JSON과 --check-config 무기동/무HTTP 검사, Docker-local runtime과 기존 engine stdin 전달을 지원한다. 기존 숨김 입력/private FD·Windows Credential Manager/엔진 규칙/schema/GUI는 유지한다.
+
+Linux Python 22개(기존 18+설정 4)와 실제 engine metadata-only session smoke의 NAS 파일 입력/재시작·키 무출력·원본 파일 보존을 통과했다. Rust 제품 코드는 변경하지 않았다. 실제 key/서비스 HTTP는 사용하지 않았다. 신규 source SHA/CI는 push 후 기록한다. 이전 '평문 파일 입력 없음'은 최신 사용자 명시 요청으로 이 입력 모드에 한해 변경됐다. 입력 파일은 NAS에 남는 평문이며 Git 제외가 NAS 공유 ACL/백업 접근 제어를 대신하지 않는다.
