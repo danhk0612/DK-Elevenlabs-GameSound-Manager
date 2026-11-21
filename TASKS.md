@@ -127,3 +127,5 @@ v0.10 구현 source `3a5c52ca1a525785a6cc96ffd4e761a04a7cbfff`, 초과 key pipe 
 ## Windows/NAS 파일 입력 확장
 
 사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.
+
+NAS file config source `28a2a654a23a8efe3e71b47c64fbaeed7a1e9187`, 로컬 Linux Python 22개+실제 session smoke 통과, [CI 44841185626](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44841185626) 진행 중. Windows는 설정 파일 편집만 하고 Codex는 Docker 경로의 --config로 연결한다.

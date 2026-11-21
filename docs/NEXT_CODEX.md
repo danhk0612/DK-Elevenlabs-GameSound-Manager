@@ -8,7 +8,7 @@
 
 ## 최신 사용자 요청 — Windows/NAS 설정 파일
 
-사용자는 Windows에서 NAS 파일을 편집하고 Codex CLI는 Docker인 환경이므로 key/한도를 파일에 넣도록 요청했다. [설정 안내](WINDOWS_NAS_SETUP.md)의 명시적 --config를 지원한다. 최상단 elevenlabs.local.json은 실제 편집 파일이며 Git 제외다. Git 예제 elevenlabs.config.example.json에는 절대 실제 key를 넣지 않는다. 기존 '평문 파일 입력 금지'는 이 최신 명시적 요청이 우선한다. 파일을 cat/내용 출력하지 말고 --check-config로 검사한다. user가 설정 완료를 알리면 같은 config로 Docker-local private runtime의 engine 세션을 열고 계정/명시 한도를 확인한다. 원본 설정을 덮어쓰거나 설정 한도를 임의 증액하지 않는다. 실제 서비스 호출/비용은 설정된 허용·범위 내에서만 진행한다. 기존 stdin/FD/Windows Credential Manager·원본 보존·T05 경계는 유지한다. 정확한 최신 SHA/CI는 CURRENT_STATE.md를 대조한다.
+사용자는 Windows에서 NAS 파일을 편집하고 Codex CLI는 Docker인 환경이므로 key/한도를 파일에 넣도록 요청했다. [설정 안내](WINDOWS_NAS_SETUP.md)의 명시적 --config를 지원한다. 최상단 elevenlabs.local.json은 실제 편집 파일이며 Git 제외다. Git 예제 elevenlabs.config.example.json에는 절대 실제 key를 넣지 않는다. 기존 '평문 파일 입력 금지'는 이 최신 명시적 요청이 우선한다. 파일을 cat/내용 출력하지 말고 --check-config로 검사한다. user가 설정 완료를 알리면 같은 config로 Docker-local private runtime의 engine 세션을 열고 계정/명시 한도를 확인한다. 원본 설정을 덮어쓰거나 설정 한도를 임의 증액하지 않는다. 실제 서비스 호출/비용은 설정된 허용·범위 내에서만 진행한다. 기존 stdin/FD/Windows Credential Manager·원본 보존·T05 경계는 유지한다. 파일 입력 source 28a2a654a23a8efe3e71b47c64fbaeed7a1e9187/run 44841185626과 CURRENT_STATE.md의 결과를 대조한다. 로컬 Linux Python 22개+실제 engine config 세션은 통과했다.
 
 ## 최신 후속 우선순위 — Linux 생성 코드 구현 이후
 
