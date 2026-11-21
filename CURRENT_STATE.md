@@ -54,4 +54,4 @@ Linux Python 22개(기존 18+설정 4)와 실제 engine metadata-only session sm
 
 새 기본 state 부모 쓰기 실패 시 기존 ledger가 없는 경우만 private OS temp dk-gamesound-UID로 선택하는 보완과 Linux status transport 표시 수정을 적용했다. 실제 NAS 설정은 수정하지 않았다. 소리/analysis/receipt는 Git 제외 user-data/live-check에 보관한다. key·원격 계정 identity·사용자 설정·음원은 Git/CI에 포함하지 않는다. 게임/사이트 적용은 하지 않았다.
 
-Python 23개/실제 NAS config 세션 smoke·Rust 36개(외부 도구 7개 ignore)·native bins build·Windows x64 타입 검사·fmt/diff를 확인했다. 실제 파일은 별도의 라이브 FFmpeg 분석까지 성공했다. 신규 코드 SHA/CI는 push 후 기록한다. 이전 NAS config source 28a2a654a23a8efe3e71b47c64fbaeed7a1e9187/run 44841185626은 Windows/Linux 전체 성공이다.
+Python 23개/실제 NAS config 세션 smoke·Rust 36개(외부 도구 7개 ignore)·native bins build·Windows x64 타입 검사·fmt/diff를 확인했다. 실제 파일은 별도의 라이브 FFmpeg 분석까지 성공했다. 신규 코드 source `1c21d8e640f97364bc3e1767c0befd08e65aa892`의 [Windows/Linux run 44842948393](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44842948393)은 진행 중이다. 로컬 라이브 결과/회귀와 새 CI 완료 여부를 구분하며 이후 문서 커밋을 실행 source로 취급하지 않는다. 이전 NAS config source 28a2a654a23a8efe3e71b47c64fbaeed7a1e9187/run 44841185626은 Windows/Linux 전체 성공이다.

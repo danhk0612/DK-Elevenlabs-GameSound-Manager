@@ -10,7 +10,7 @@
 
 사용자는 NAS 파일에 API key/허용·한도를 설정하고 “아 그럼 진행해”라고 지시했다. [실제 SFX 결과](T02_LIVE_RESULTS.md)를 읽는다. account.refresh·SFX v3 500ms POST 1회·8,820-byte 후보·header cost 5·FFmpeg decode/analysis·pending review·정상 재시작 동일 ID 무중복을 확인했다. 계정/키 원문은 출력하지 않는다. 이전 “실제 key/HTTP 0회”는 당시 기록이며 최신 결과가 앞선다.
 
-Docker 기본 ~/.local/state 쓰기 실패를 해결해 빈 새 기본 경로에만 private OS temp dk-gamesound-UID를 사용한다. 기존/명시 root는 자동 변경하지 않는다. 실제 ledger는 현재 그 Docker-local 경로에 있고 자료 사본은 Git 제외 user-data/live-check다. 임시 ledger를 삭제/초기화하지 말고, 같은 job_id 재조회에 새 ID/새 POST를 쓰지 않는다. 사용자 설정 한도를 늘리거나 기존 설정을 덮어쓰지 않는다. TTS/청감/최종 과금 정산/지속 volume·T05는 별도다. 최신 코드 SHA/CI는 CURRENT_STATE.md와 대조한다.
+Docker 기본 ~/.local/state 쓰기 실패를 해결해 빈 새 기본 경로에만 private OS temp dk-gamesound-UID를 사용한다. 기존/명시 root는 자동 변경하지 않는다. 실제 ledger는 현재 그 Docker-local 경로에 있고 자료 사본은 Git 제외 user-data/live-check다. 임시 ledger를 삭제/초기화하지 말고, 같은 job_id 재조회에 새 ID/새 POST를 쓰지 않는다. 사용자 설정 한도를 늘리거나 기존 설정을 덮어쓰지 않는다. TTS/청감/최종 과금 정산/지속 volume·T05는 별도다. 최신 source 1c21d8e640f97364bc3e1767c0befd08e65aa892/run 44842948393과 CURRENT_STATE.md를 대조한다.
 
 ## 최신 사용자 요청 — Windows/NAS 설정 파일
 

@@ -133,3 +133,5 @@ NAS file config source `28a2a654a23a8efe3e71b47c64fbaeed7a1e9187`, 로컬 Linux 
 ## T02 실제 Linux SFX 생성 검증 (2026-11-21)
 
 사용자의 실제 key 설정 및 진행 지시에 따라 [실기 결과](docs/T02_LIVE_RESULTS.md)의 SFX POST 1회·header cost 5·candidate/실제 decode·pending review·재시작 동일 ID 무중복을 확인했다. 실행 환경의 새 기본 state 부모 권한 실패에만 private temp를 선택하고 기존/명시 ledger 경로는 바꾸지 않는 보완, Linux transport 표시 수정을 적용했다. 사용자 설정/음원은 Git 제외이고 TTS/Windows 인증/청감/최종 과금·T04 전체/T05는 미확인/별도다.
+
+제한 Docker root/transport 보완 및 실제 SFX 결과 source `1c21d8e640f97364bc3e1767c0befd08e65aa892`, [run 44842948393](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44842948393) 진행 중. 로컬 Python 23개/Rust 36개(외부 도구 7개 ignore)/실제 NAS config와 live SFX·분석·동일 ID 재연결은 통과했다.
