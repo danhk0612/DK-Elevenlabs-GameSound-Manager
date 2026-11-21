@@ -2,6 +2,10 @@
 
 ## 최신 — 월 10,000크레딧/음악·짧은 음성 (2026-11-21)
 
+확장 코드 source `82d8b6f1212ae99e27b0bde38c58f63864527236`, [Windows/Linux CI 44846395069](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44846395069)는 진행 중이다. 문서 후속 커밋은 실행 source와 구분한다. Linux musl/Rust 1.100.0/Zig·FFmpeg 7.0.2/Python 3.14 환경에서 cargo test --lib -- --include-ignored 45개 통과, HTTP status 보존 보완 후 cargo test --lib 38개 통과/외부 도구 7개 ignore, Python unittest discover 27개 통과, native bins·Windows x64 no-default-features 타입 검사·ci_transport_smoke.py --local-linux/CLI·MCP parity·fmt/diff를 통과했다. GUI 변경/사이트 build는 없다.
+
+최종 source의 새 엔진을 자격 증명 없이 자동 기동해 기존 7개 생성 job을 동일 요청으로 재제출했다. 성공 6개/음악 실패 1개를 그대로 반환하고 ledger 8회/예약 1,250을 유지했다. 추가 POST/실패 재생성 없이 재연결을 확인했으며 엔진은 종료했다. 이후 새 생성에는 원래 NAS config 세션을 다시 열어야 한다.
+
 [계약/실제 결과](docs/T02_MUSIC_SHORT_VOICES.md). job.submit music_v1/명시 instrumental·길이/MP3·bgm 후보를 기존 예산/단일 POST/공통 CLI·MCP에 추가했다. 실패 HTTP status 숫자 보존과 과금 없는 sound_starter.py 전체 사전 검사/선택/Voice 타입·대사 연결/예약 합계를 제공한다. 초기 8항목 예약 1,800/계획 상한 2,000이며 사용자 설정은 수정하지 않았다. 새 GUI·DB schema·명령 수 변경은 없다.
 
 실제 TTS 6개 성공/header 비용 합계 15·0.601~0.914초·전체 decode·review pending/current match를 확인했다. NAS Git 제외 user-data/starter-pack의 listen.html에서 재생할 수 있다. 음악 첫 POST는 provider_http_error로 실패했고 status는 당시 미보존/원인 미확인이다. 재시도/두 번째 곡 생성 없이 예약 750 유지. 기존 SFX까지 누적 ledger 8회/보수 예약 1,250이며 실제 잔액/최종 청구액과 다르다. 서비스 usage 반영은 지연 중이다. 음악 실제 생성 성공/청감·게임 적용/T05는 미완료다.

@@ -65,4 +65,6 @@ Windows에서는 Python/CLI 로컬 경로를 사용한다. --only music-battle �
 - Git 제외 user-data/starter-pack에 MP3 6개·hash/metadata·receipt·summary·listen.html을 보관한다. managed 후보도 보존한다. Key/계정 identity/원격 응답 전문/음원은 Git·CI에 없다.
 - 6개 review pending/check matches=true/approval=not_granted. 청감/타입 적합성·게임 적용은 미확인/미승인이다.
 
+코드 source 82d8b6f1212ae99e27b0bde38c58f63864527236의 새 엔진을 자격 증명 없이 자동 기동한 뒤 기존 7개 job 요청을 동일 ID로 재제출했다. 성공 6개/음악 실패 1개를 그대로 반환하고 ledger 8회/예약 1,250을 유지했다. 실패 재생성·새 POST·추가 key 전달 없이 재연결을 확인하고 엔진을 종료했다.
+
 이후 개발은 과금 없는 mock/오프라인 검증을 우선한다. 음악의 기존 실패 요청을 재시도하지 않는다. 추가 제작 시 HTTP status 진단이 가능한 별도 후보 요청 여부를 판단한다. Windows 실제 생성·AI 제품 MCP 연결·T05/게임 적용은 별도다.
