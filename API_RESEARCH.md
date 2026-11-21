@@ -1,5 +1,7 @@
 # ElevenLabs 및 기술 근거
 
+2026-11-21 사용자 요청으로 Music API를 구현 범위에 추가했다. [공식 compose](https://elevenlabs.io/docs/api-reference/music/compose)의 POST /v1/music·music_v1·prompt/music_length_ms/force_instrumental/MP3 계약을 구현했다. [공식 요금표](https://elevenlabs.io/pricing)의 근사 비용과 실제 계정 청구를 구분한다. [계약/실제 결과](docs/T02_MUSIC_SHORT_VOICES.md): TTS 6개는 성공했지만 실제 음악 첫 요청은 HTTP 오류이며 원인/성공을 확인하지 못했다. 아래 과거 Music 미구현·Key 미사용 문장은 당시 기록이다.
+
 확인일: 2026-10-15. 아래 URL은 공식 페이지를 직접 열어 접근 가능 여부와 내용을 확인했다. 문서 확인이며 계정 인증·실제 API 호출 성공 증거가 아니다. 모델·요금·필드는 구현 시 다시 확인한다.
 
 ## 핵심 API

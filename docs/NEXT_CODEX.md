@@ -1,5 +1,11 @@
 # 다음 Codex — 자동화 우선 구현 계속
 
+## 최우선 후속 — 음악·짧은 음성/월 10,000크레딧
+
+2026-11-21 사용자가 음악과 짧은 기합/피격 음성을 요청했고 월 제공량 10,000이므로 필수분부터 제작하라고 지시했다. [계약/실제 결과](T02_MUSIC_SHORT_VOICES.md)를 먼저 읽는다. Music v1 공통 job.submit/bgm 후보와 sound_starter.py 오프라인 계획/선택/명시 Voice 연결/예약 합계를 추가했다. 전체 초기 계획 예약 1,800/상한 2,000, 사용자 설정/ledger 유지다. 음성 6개 실제 성공/header 비용 합계 15/FFmpeg decode·pending review, NAS Git 제외 user-data/starter-pack/listen.html에 보관했다.
+
+음악 starter-20261121-music-adventure는 POST 1회 provider_http_error/확인 비용 null이다. 당시 코드가 HTTP status를 저장하지 않아 원인은 미확인이고 예약 750을 유지한다. 같은 요청 재시도/다른 ID로 재생성/두 번째 곡 호출은 하지 않았다. 후속 진단을 위해 실패 HTTP status 숫자 보존을 추가했다. 기존 실패의 status는 소급할 수 없다. 누적 ledger 8회/credits_held=1,250은 실제 청구액/잔액이 아니다. 정확한 코드 SHA/새 CI는 CURRENT_STATE.md와 대조한다. 추가 과금 없이 mock/오프라인 보강을 우선하고 음악 실제 생성 성공/청감/게임 적용/T05를 완료로 기록하지 않는다. 기존 source 1c21d8e/run 44842948393은 Windows/Linux 전체 성공으로 확인했다.
+
 ## 현재 유효한 사용자 지시
 
 - “ai가 자동화 가능한 작업을 위한 개발에 집중해. 실제 화면(UI)는 최소한도로.”

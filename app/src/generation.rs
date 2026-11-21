@@ -247,10 +247,10 @@ fn target(store: &Store, c: &Value) -> Result<()> {
             |r| Ok((r.get(0)?, r.get(1)?)),
         )
         .optional()?;
-    let kind = if s(c, "generation_kind") == "tts" {
-        "voice"
-    } else {
-        "sfx"
+    let kind = match c["generation_kind"].as_str().unwrap_or("") {
+        "tts" => "voice",
+        "music" => "bgm",
+        _ => "sfx",
     };
     if let Some((name, old_kind)) = asset {
         if name != s(c, "name") || old_kind != kind {
@@ -396,6 +396,10 @@ fn run(store: &mut Store, id: &str, c: &Value) -> Result<()> {
             "/v1/text-to-speech/{}?output_format=mp3_44100_128",
             provider::encoded(s(c, "voice_id"))
         )
+    } else if s(c, "generation_kind") == "music" {
+        body = json!({"prompt":c["text"],"model_id":c["model_id"],
+            "music_length_ms":c["duration_ms"],"force_instrumental":c["force_instrumental"]});
+        "/v1/music?output_format=mp3_44100_128".to_string()
     } else {
         if p == "elevenlabs"
             && !["eleven_text_to_sound_v2", "eleven_text_to_sound_v3"].contains(&s(c, "model_id"))
@@ -423,14 +427,15 @@ fn run(store: &mut Store, id: &str, c: &Value) -> Result<()> {
     )?;
     if response.status != 200 {
         store.catalog.execute(
-            "UPDATE generation_jobs SET state='failed',error=?2 WHERE id=?1",
+            "UPDATE generation_jobs SET state='failed',error=?2,result=?3 WHERE id=?1",
             params![
                 id,
                 match response.status {
                     401 | 403 => "provider_access_denied",
                     429 => "provider_rate_limited",
                     _ => "provider_http_error",
-                }
+                },
+                json!({"provider_http_status":response.status}).to_string()
             ],
         )?;
         return Ok(());
@@ -473,7 +478,12 @@ fn attach(store: &mut Store, id: &str) -> Result<()> {
     if crate::storage::hash_file(&file)?.0 != hash {
         return Err(Error("job_output_integrity_mismatch"));
     }
-    let mut command = json!({"op":"asset.import","protocol_version":1,"project_id":c["project_id"],"asset_id":c["asset_id"],"version_id":c["version_id"],"name":c["name"],"kind":if c["generation_kind"]=="tts"{"voice"}else{"sfx"},"source_path":file,"source_note":format!("{} job {}; candidate only",if ext=="wav"{"mock synthetic"}else{"ElevenLabs"},id)});
+    let kind = match c["generation_kind"].as_str().unwrap_or("") {
+        "tts" => "voice",
+        "music" => "bgm",
+        _ => "sfx",
+    };
+    let mut command = json!({"op":"asset.import","protocol_version":1,"project_id":c["project_id"],"asset_id":c["asset_id"],"version_id":c["version_id"],"name":c["name"],"kind":kind,"source_path":file,"source_note":format!("{} job {}; candidate only",if ext=="wav"{"mock synthetic"}else{"ElevenLabs"},id)});
     if let Some(parent) = c.get("parent_version_id") {
         command["parent_version_id"] = parent.clone();
     }

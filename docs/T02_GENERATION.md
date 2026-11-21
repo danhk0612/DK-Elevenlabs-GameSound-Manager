@@ -43,7 +43,7 @@ job.submit은 transaction 안에서 요청 1회와 입력 reserve_credits를 예
 | job.get / job.cancel / job.recover | project_id, job_id | 상태 / 미전송 취소 / 받은 파일 등록 복구 |
 | job.list | project_id | after/limit 페이지, 최대 10개 |
 
-Voice preview_url은 HTTPS 메타데이터로만 반환한다. 원격 preview 다운로드/GUI 재생은 아직 제공하지 않는다. Voice Design 미리보기/저장·Remix·Music·Voice 변경/삭제는 없다. 캐릭터 Voice 할당은 기존 character.put으로 한다.
+Voice preview_url은 HTTPS 메타데이터로만 반환한다. 원격 preview 다운로드/GUI 재생은 아직 제공하지 않는다. Voice Design 미리보기/저장·Remix·Voice 변경/삭제는 없다. 캐릭터 Voice 할당은 기존 character.put으로 한다. 2026-11-21 [Music v1/짧은 음성·최소 제작 계획](T02_MUSIC_SHORT_VOICES.md)이 job.submit에 음악을 추가한다. TTS/SFX 계약을 유지하며 실패 HTTP status 숫자를 결과에 보존한다.
 
 TTS는 voice_id 필수, model.list에 있는 TTS 가능 model_id를 명시한다. 선택 language, voice_settings(stability/similarity_boost/style 0..1, speed 0.7..1.2, use_speaker_boost boolean)를 지원한다. dialogue_id를 지정하면 저장 대사의 text/language/캐릭터 Voice와 요청 snapshot이 모두 같아야 한다. SFX 전용 필드는 TTS에 허용하지 않는다.
 

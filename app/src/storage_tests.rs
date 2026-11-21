@@ -265,6 +265,65 @@ fn generation_setup(f: &mut Fixture, calls: i64, credits: i64) {
     );
 }
 #[test]
+fn music_generates_a_bgm_candidate_once_with_shared_budget() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 1, 20);
+    let mut c = generation_request("music");
+    c["generation_kind"] = json!("music");
+    c["model_id"] = json!("music_v1");
+    c["duration_ms"] = json!(3000);
+    c["force_instrumental"] = json!(true);
+    assert_eq!(f.run("job.submit", c.clone())["ok"], true);
+    crate::generation::tick(&mut f.store).unwrap();
+    let result = f.run("job.submit", c);
+    assert_eq!(result["data"]["state"], "succeeded");
+    assert_eq!(
+        f.run("budget.get", json!({"account_id":"demo"}))["data"]["requests_held"],
+        1
+    );
+    let assets = f.run("asset.list", json!({"project_id":"one","kind":"bgm"}));
+    assert_eq!(assets["data"]["items"][0]["kind"], "bgm");
+    let mut speech = generation_request("speech-after-music");
+    speech["generation_kind"] = json!("tts");
+    speech.as_object_mut().unwrap().remove("duration_ms");
+    speech["voice_id"] = json!("mock-voice");
+    speech["model_id"] = json!("mock-model");
+    assert_eq!(
+        f.run("job.submit", speech)["error"]["code"],
+        "budget_exceeded"
+    );
+}
+
+#[test]
+fn music_and_sfx_reject_cross_kind_parameters_before_reserving() {
+    let mut f = Fixture::new();
+    generation_setup(&mut f, 5, 100);
+    let mut c = generation_request("music");
+    c["generation_kind"] = json!("music");
+    c["model_id"] = json!("music_v1");
+    c["duration_ms"] = json!(3000);
+    c["force_instrumental"] = json!(true);
+    for (field, value) in [
+        ("duration_ms", json!(2999)),
+        ("model_id", json!("unknown")),
+        ("force_instrumental", Value::Null),
+        ("loop", json!(true)),
+        ("voice_id", json!("mock-voice")),
+        ("text", json!("한".repeat(4101))),
+    ] {
+        let mut bad = c.clone();
+        bad[field] = value;
+        assert_eq!(f.run("job.submit", bad)["ok"], false, "{field}");
+    }
+    let mut sfx = generation_request("long-sfx");
+    sfx["duration_ms"] = json!(30001);
+    assert_eq!(f.run("job.submit", sfx)["ok"], false);
+    assert_eq!(
+        f.run("budget.get", json!({"account_id":"demo"}))["data"]["requests_held"],
+        0
+    );
+}
+#[test]
 fn generation_requires_policy_reuses_ids_and_registers_only_candidates() {
     let mut f = Fixture::new();
     f.project("one");
@@ -455,6 +514,13 @@ fn generation_network_failure_or_rate_limit_is_attempted_once_and_not_replayed()
         );
         assert!(!crate::generation::tick(&mut f.store).unwrap());
         assert_eq!(crate::provider::mock_posts(), 1);
+        if fault == 2 {
+            assert_eq!(
+                f.run("job.get", json!({"project_id":"one","job_id":"first"}))["data"]["result"]
+                    ["provider_http_status"],
+                429
+            );
+        }
         assert_eq!(
             f.run("job.submit", generation_request("first"))["data"]["state"],
             expected

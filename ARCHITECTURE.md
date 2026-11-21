@@ -1,5 +1,7 @@
 # 아키텍처와 채택 경계
 
+2026-11-21 확장: [Music v1/짧은 음성](docs/T02_MUSIC_SHORT_VOICES.md)은 기존 generation worker·job.submit/예산/후보·character/dialogue를 재사용한다. 오프라인 초기 제작 계획기는 제출/인증 없이 명령을 출력한다. 새 GUI/DB schema/엔진을 추가하지 않는다.
+
 ## 채택 상태
 
 Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계가 요구사항이다. **2026-11-20 사용자의 기술 선택 위임에 따라 D01~D06을 채택했다.** 구체 선택과 미검증은 [현재 결정](docs/T00_A_DECISIONS.md)의 위임 결정 절을 따른다. 후속 사용자 지시 “실기, 점검 무시하고 진행해”로 실기 대기를 해제하고 app/에 T00-B 최소 엔진·CLI·MCP·GUI 실행 기반을 구현했다. 사용자 Windows 화면/청감은 미확인으로 남긴다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.

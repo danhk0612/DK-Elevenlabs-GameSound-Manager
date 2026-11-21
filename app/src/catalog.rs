@@ -213,6 +213,7 @@ pub const COMMANDS: &[Command] = &[
             "duration_ms",
             "loop",
             "prompt_influence",
+            "force_instrumental",
             "parent_version_id",
             "dialogue_id",
         ],
@@ -415,14 +416,14 @@ pub fn field_schema(key: &str) -> Value {
         "credit_limit" | "reserve_credits" => {
             json!({"type":"integer","minimum":1,"maximum":1000000000})
         }
-        "duration_ms" => json!({"type":"integer","minimum":500,"maximum":30000}),
-        "loop" => json!({"type":"boolean"}),
+        "duration_ms" => json!({"type":"integer","minimum":500,"maximum":600000}),
+        "loop" | "force_instrumental" => json!({"type":"boolean"}),
         "prompt_influence" => json!({"type":"number","minimum":0,"maximum":1}),
         "voice_settings" => {
             json!({"type":"object","properties":{"stability":{"type":"number","minimum":0,"maximum":1},"similarity_boost":{"type":"number","minimum":0,"maximum":1},"style":{"type":"number","minimum":0,"maximum":1},"speed":{"type":"number","minimum":0.7,"maximum":1.2},"use_speaker_boost":{"type":"boolean"}},"additionalProperties":false})
         }
         "provider" => json!({"type":"string","enum":["mock","elevenlabs"]}),
-        "generation_kind" => json!({"type":"string","enum":["tts","sfx"]}),
+        "generation_kind" => json!({"type":"string","enum":["tts","sfx","music"]}),
         "output_format" => {
             json!({"type":"string","enum":["mp3_44100_128","wav_pcm_s16le","ogg_vorbis_q4","mp3_128k"]})
         }
@@ -568,7 +569,7 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
             let n = value.as_i64().ok_or("invalid_numeric_field")?;
             let (min, max) = match *key {
                 "request_limit" => (1, 1000000),
-                "duration_ms" => (500, 30000),
+                "duration_ms" => (500, 600000),
                 _ => (1, 1000000000),
             };
             if n < min || n > max {
@@ -576,7 +577,7 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
             }
             continue;
         }
-        if *key == "loop" {
+        if ["loop", "force_instrumental"].contains(key) {
             if !value.is_boolean() {
                 return Err("invalid_boolean");
             }
@@ -610,6 +611,7 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
         }
         let text = value.as_str().ok_or("invalid_field_type")?;
         let max = match *key {
+            "text" if command["generation_kind"] == "music" => 16400,
             "description" | "text" => 2048,
             "source_note" | "notes" | "reason" => 1024,
             "workspace" | "source_path" | "ffmpeg_path" | "ffprobe_path" => 4096,
@@ -692,24 +694,47 @@ pub fn validate(command: &Value) -> Result<(), &'static str> {
     }
     if op == "job.submit" {
         let kind = command["generation_kind"].as_str().unwrap_or("");
-        if !["tts", "sfx"].contains(&kind) || command["output_format"] != "mp3_44100_128" {
+        if !["tts", "sfx", "music"].contains(&kind) || command["output_format"] != "mp3_44100_128" {
             return Err("unsupported_generation_format_or_kind");
         }
         if kind == "tts"
             && (command["voice_id"].as_str().unwrap_or("").is_empty()
                 || command.get("duration_ms").is_some()
                 || command.get("loop").is_some()
+                || command.get("force_instrumental").is_some()
                 || command.get("prompt_influence").is_some())
         {
             return Err("invalid_tts_parameters");
         }
         if kind == "sfx"
             && (command.get("duration_ms").is_none()
+                || command["duration_ms"].as_i64().unwrap_or(0) > 30000
+                || command.get("force_instrumental").is_some()
                 || ["voice_id", "voice_settings", "dialogue_id", "language"]
                     .iter()
                     .any(|k| command.get(*k).is_some()))
         {
             return Err("invalid_sfx_parameters");
+        }
+        if kind == "music"
+            && (!matches!(command["model_id"].as_str(), Some("music_v1"))
+                || !command["duration_ms"]
+                    .as_i64()
+                    .is_some_and(|n| (3000..=600000).contains(&n))
+                || !command["force_instrumental"].is_boolean()
+                || command["text"].as_str().unwrap_or("").chars().count() > 4100
+                || [
+                    "voice_id",
+                    "voice_settings",
+                    "dialogue_id",
+                    "language",
+                    "loop",
+                    "prompt_influence",
+                ]
+                .iter()
+                .any(|k| command.get(*k).is_some()))
+        {
+            return Err("invalid_music_parameters");
         }
     }
     Ok(())

@@ -168,6 +168,7 @@ fn mock(method: &str, path: &str, body: &Value) -> Result<Response> {
         let ms = body["duration_seconds"]
             .as_f64()
             .map(|n| n * 1000.0)
+            .or_else(|| body["music_length_ms"].as_f64())
             .unwrap_or(250.0) as usize;
         let samples = (ms * 8).clamp(1, 240_000);
         let mut audio = b"RIFF".to_vec();

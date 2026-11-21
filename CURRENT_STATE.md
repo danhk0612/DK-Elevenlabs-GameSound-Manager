@@ -1,5 +1,13 @@
 # 현재 상태
 
+## 최신 — 월 10,000크레딧/음악·짧은 음성 (2026-11-21)
+
+[계약/실제 결과](docs/T02_MUSIC_SHORT_VOICES.md). job.submit music_v1/명시 instrumental·길이/MP3·bgm 후보를 기존 예산/단일 POST/공통 CLI·MCP에 추가했다. 실패 HTTP status 숫자 보존과 과금 없는 sound_starter.py 전체 사전 검사/선택/Voice 타입·대사 연결/예약 합계를 제공한다. 초기 8항목 예약 1,800/계획 상한 2,000이며 사용자 설정은 수정하지 않았다. 새 GUI·DB schema·명령 수 변경은 없다.
+
+실제 TTS 6개 성공/header 비용 합계 15·0.601~0.914초·전체 decode·review pending/current match를 확인했다. NAS Git 제외 user-data/starter-pack의 listen.html에서 재생할 수 있다. 음악 첫 POST는 provider_http_error로 실패했고 status는 당시 미보존/원인 미확인이다. 재시도/두 번째 곡 생성 없이 예약 750 유지. 기존 SFX까지 누적 ledger 8회/보수 예약 1,250이며 실제 잔액/최종 청구액과 다르다. 서비스 usage 반영은 지연 중이다. 음악 실제 생성 성공/청감·게임 적용/T05는 미완료다.
+
+로컬 Linux Rust 45개(실제 FFmpeg 7개 포함)·Python 27개와 native bins/Windows x64 타입 검사를 확인했다. 마지막 HTTP status 보존 회귀를 포함한 최종 코드/CI 증거는 후속 SHA 기록과 대조한다. 기반 source 1c21d8e640f97364bc3e1767c0befd08e65aa892/run 44842948393은 Windows/Linux 전체 성공으로 확인했다. 현재 확장 코드의 정확한 SHA/새 CI는 별도 기록한다.
+
 기준일: 2026-11-21 UTC. **v0.10.0 Linux 실제 인증·SFX 생성 1회/디코딩·재연결 확인. 최신 결과는 아래 실제 생성 절을 따르며 이전 미검증 문장은 당시 상태다. 최종 과금 정산/청감은 미확인이다.**
 
 ## 저장소와 범위
