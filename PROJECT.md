@@ -32,7 +32,7 @@
 
 ## 기준의 상태
 
-확정 요구사항은 REQUIREMENTS.md, 설계 권고는 ARCHITECTURE.md, 실제 상태는 CURRENT_STATE.md를 따른다. 현재 로컬 관리·T02 생성 adapter/mock·T03 편집/분석·T04 비동기 큐/조회·취소·검토 제출/후보 이력·선택형 단일/다건 작업 정의 클라이언트의 CLI·MCP와 최소 설정/재생/검사/작업 GUI를 구현했다. 실제 유료 API 검증·주관 검토/승인·게임 적용을 포함한 전체 제품 완성은 아니다. 상세 탭 배치와 라이선스·공개 배포 정책은 아직 확정되지 않았다. D01~D06의 기술·프로세스·경로와 초기 포터블 제공 방식은 2026-11-20 사용자 판단 위임으로 채택했으며, 실제 제품 구현과 Windows 사용자 실기는 별도다.
+확정 요구사항은 REQUIREMENTS.md, 설계 권고는 ARCHITECTURE.md, 실제 상태는 CURRENT_STATE.md를 따른다. 현재 로컬 관리·T02 생성 adapter/mock·T03 편집/분석·T04 비동기 큐/조회·취소·검토 제출/후보 이력·선택형 단일/다건 작업 정의 클라이언트의 CLI·MCP와 최소 설정/재생/검사/작업 GUI를 구현했다. 실제 유료 API 검증·주관 검토/승인·게임 적용을 포함한 전체 제품 완성은 아니다. 자체 코드와 문서는 MIT이며 v0.10.0 Windows ZIP을 GitHub Releases에서 배포한다. D01~D06의 기술·프로세스·경로와 초기 포터블 제공 방식은 2026-11-20 사용자 판단 위임으로 채택했으며, 실제 제품 구현과 Windows 사용자 실기는 별도다.
 
 T04 v0.9에서 현재 AI Linux 환경을 위한 headless native CLI/MCP 실행을 추가했다. Windows GUI가 첫 제품 대상인 결정은 유지하며 Linux에서 로컬 관리·FFmpeg·합성 mock만 사용한다. Linux 라이브 ElevenLabs/GUI·AI 제품 MCP 등록은 미완료다. [Linux 범위](docs/T04_LINUX_HEADLESS.md).
 

@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [main, task/t00-a-technical-spike]
-    paths: ['README.md', '.github/release/**', '.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
+    paths: ['LICENSE', 'README.md', '.github/release/**', '.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -68,6 +68,7 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $schema = Get-Content artifact/tools.json -Raw | ConvertFrom-Json
           if ($schema.tools.Count -lt 1) { throw "Empty CLI schema" }
+          Copy-Item ../LICENSE artifact
           Copy-Item ../README.md artifact
           python ../.github/release/notices.py
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
@@ -146,9 +147,31 @@ jobs:
           set -euo pipefail
           test "$(tr -d '\r\n' < source-sha.txt)" = "$GITHUB_SHA"
           sed 's/\r$//' SHA256SUMS.txt | sha256sum --strict -c -
-          for file in dk-sound-{gui,cli,mcp,engine}.exe README.md tools.json THIRD-PARTY-NOTICES.txt; do test -s "$file"; done
+          for file in dk-sound-{gui,cli,mcp,engine}.exe README.md LICENSE tools.json THIRD-PARTY-NOTICES.txt; do test -s "$file"; done
           archive=DK-GameSound-Manager-v0.10.0-windows-x64.zip
           zip -qr "../$archive" .
           cd ..
           sha256sum "$archive" > "$archive.sha256"
           gh release create v0.10.0 "$archive" "$archive.sha256" --target "$GITHUB_SHA" --title "DK GameSound Manager v0.10.0 · Windows x64" --notes "Windows 11용 포터블 ZIP입니다. 압축을 모두 풀고 사람은 dk-sound-gui.exe, 외부 AI는 dk-sound-cli.exe 또는 dk-sound-mcp.exe로 시작하세요. README에 프로젝트 생성, 로컬 음원 등록, 후보 비교, MCP 설정과 AI 지시문이 있습니다. 실제 게임 적용은 수동입니다. Windows Server 2022 WebView2와 Linux headless 회귀를 검증했습니다."
+  license-v010:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[license v0.10.0]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add MIT distribution to the existing release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag=v0.10.0
+          base=DK-GameSound-Manager-v0.10.0-windows-x64
+          gh release download "$tag" -p "$base.zip"
+          echo "d6111eedce30458b6eb6eabab43d7af48759ced0d4bd6e3a8761fd069dbc20fd  $base.zip" | sha256sum -c -
+          unzip -q "$base.zip" -d package
+          (cd package && sed 's/\r$//' SHA256SUMS.txt | sha256sum --strict -c -)
+          cp LICENSE README.md package/
+          (cd package && find . -type f ! -name SHA256SUMS.txt -printf '%P\0' | sort -z | xargs -0 sha256sum > SHA256SUMS.txt && zip -q -r "../$base-MIT.zip" .)
+          sha256sum "$base-MIT.zip" > "$base-MIT.zip.sha256"
+          gh release upload "$tag" LICENSE "$base-MIT.zip" "$base-MIT.zip.sha256"

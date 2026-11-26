@@ -90,3 +90,7 @@ cargo build --locked --release --features gui,custom-protocol --bin dk-sound-gui
 ## Windows 편집 + NAS 파일 + Docker Codex 연결
 
 사용자 요청에 따라 [NAS 파일 설정 안내](../docs/WINDOWS_NAS_SETUP.md)를 추가했다. 최상단 elevenlabs.local.json에 key/허용·한도를 적고 저장하면 Codex가 --config로 검사/기동한다. 실제 파일과 편집기 백업은 Git 제외하고, Git의 elevenlabs.config.example.json에는 빈 key·생성 false/한도 0만 둔다. stdin/숨김 입력/private FD도 유지하며 실제 키 파일을 출력하거나 덮어쓰지 않는다.
+
+## 라이선스
+
+DK GameSound Manager의 자체 코드와 문서에는 MIT 라이선스가 적용됩니다. 전문은 저장소와 배포 ZIP의 `LICENSE`에 있습니다. 외부 구성 요소의 고지는 ZIP의 `THIRD-PARTY-NOTICES.txt`에서, 게임 음원과 ElevenLabs 생성물의 사용 조건은 각 출처에서 확인하세요.

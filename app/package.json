@@ -1,6 +1,7 @@
 {
   "name": "dk-gamesound-ui",
   "version": "0.10.0",
+  "license": "MIT",
   "private": true,
   "type": "module",
   "scripts": {

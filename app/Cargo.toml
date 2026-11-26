@@ -1,6 +1,7 @@
 [package]
 name = "dk-gamesound"
 version = "0.10.0"
+license = "MIT"
 edition = "2021"
 build = "build.rs"
 

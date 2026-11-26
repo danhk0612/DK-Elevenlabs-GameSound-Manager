@@ -95,7 +95,7 @@ T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라�
 
 공식 근거(2026-10-15 열람): [Tauri process model](https://tauri.app/concept/process-model/), [Windows prerequisites](https://tauri.app/start/prerequisites/), [SQLite WAL](https://www.sqlite.org/wal.html), [MCP stdio](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/stdio), [FFmpeg 배포 조건](https://www.ffmpeg.org/legal.html). 문서 지원 사실과 이 프로젝트의 실측을 구분한다.
 
-초기 패키징은 포터블 ZIP을 선택했다. WebView2는 외부 준비, FFmpeg/ffprobe는 사용자 지정 경로/PATH로 사용하고 자동 설치/동봉하지 않는다. 설치/업데이트/고지·공개 배포 허용은 T06 및 D11의 별도 게이트다.
+초기 패키징은 포터블 ZIP을 선택했다. WebView2는 외부 준비, FFmpeg/ffprobe는 사용자 지정 경로/PATH로 사용하고 자동 설치/동봉하지 않는다. v0.10.0 포터블 공개 배포와 자체 코드 MIT가 승인됐다. ZIP에 LICENSE와 서드파티 고지를 포함한다.
 
 ## T01 실제 저장·명령 계약
 
