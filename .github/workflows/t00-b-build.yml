@@ -2,7 +2,7 @@ name: GameSound build portable library
 on:
   push:
     branches: [task/t00-a-technical-spike]
-    paths: ['app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
+    paths: ['.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -54,6 +54,11 @@ jobs:
         run: python automation/ci_transport_smoke.py --bin-dir target/release
       - name: Exercise real multi-item batches against engine
         run: python automation/ci_batch_smoke.py --bin-dir target/release
+      - name: Exercise human library and AI CLI in the same workspace
+        run: |
+          python -m pip install playwright==1.55.0
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python ../.github/tests/windows_library.py
       - name: Package development ZIP contents
         run: |
           New-Item -ItemType Directory -Force artifact | Out-Null
