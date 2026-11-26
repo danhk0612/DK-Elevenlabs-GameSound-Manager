@@ -1,0 +1,52 @@
+[package]
+name = "dk-gamesound"
+version = "0.10.0"
+edition = "2021"
+build = "build.rs"
+
+[features]
+default = ["bundled-sqlite"]
+bundled-sqlite = ["rusqlite/bundled"]
+gui = ["dep:tauri", "dep:tauri-build"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[dependencies]
+rusqlite = "0.37"
+sha2 = "0.10"
+base64 = "0.22"
+zeroize = "1"
+serde_json = "1"
+tokio = { version = "1", features = ["rt", "net", "io-util", "time", "macros", "sync"] }
+tauri = { version = "2", optional = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+serde = { version = "1", features = ["derive"] }
+reqwest = { version = "=0.13.5", default-features = false, features = ["blocking", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Credentials", "Win32_Networking_WinHttp", "Win32_System_Threading", "Win32_System_Memory", "Win32_Storage_FileSystem"] }
+
+[build-dependencies]
+tauri-build = { version = "2", optional = true }
+
+[[bin]]
+name = "dk-sound-gui"
+path = "src/bin/gui.rs"
+required-features = ["gui"]
+
+[[bin]]
+name = "dk-sound-cli"
+path = "src/bin/cli.rs"
+
+[[bin]]
+name = "dk-sound-engine"
+path = "src/bin/engine.rs"
+
+[[bin]]
+name = "dk-sound-mcp"
+path = "src/bin/mcp.rs"
+
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+rcgen = { version = "0.14", default-features = false, features = ["crypto", "ring"] }

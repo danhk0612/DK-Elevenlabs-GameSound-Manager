@@ -1,0 +1,11 @@
+{
+  "source_sha": "c7780481a086174fdf476bfc157694bbb8cef4f6",
+  "scope": "standalone native named pipe candidate, not engine integration",
+  "remote_clients": "PIPE_REJECT_REMOTE_CLIENTS flag set, remote machine not tested",
+  "different_real_user": "unverified",
+  "actual_key": "not_used",
+  "check": "inconclusive_anonymous_control_access_denied",
+  "result": "partial_environment_blocked",
+  "current_user_open": "passed",
+  "cross_identity_acl": "unverified: anonymous permitted control also denied access"
+}

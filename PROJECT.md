@@ -10,9 +10,11 @@
 
 ## 확정된 흐름
 
+2026-11-20 사용자 우선순위: AI가 CLI·MCP로 자동화할 수 있는 작업을 먼저 구현한다. 기능마다 공통 명령·구조화 입력/출력·오류·무인 회귀를 함께 제공한다. GUI는 상태/실패 확인·후보 재생/비교·필요한 설정·사람 승인에 필요한 최소 화면으로 제한한다. 시각 디자인 확장은 후순위다. 후속 사용자 지시 “실기, 점검 무시하고 진행해”로 실기 대기는 개발 착수 조건에서 해제했다. 미확인은 성공으로 바꾸지 않는다.
+
 1. 게임 프로젝트와 필요한 사운드 목록을 정리한다.
 2. 기존 파일을 등록하고 필요한 사운드와 대응시킨다.
-3. TTS·SFX를 생성하거나 로컬 사운드를 편집한다.
+3. TTS·SFX·음악을 생성하거나 로컬 사운드를 편집한다.
 4. 원본을 보존하고 별도 후보 버전을 만든다.
 5. 기술적 검사 결과와 작업 이력을 기록한다.
 6. 사람이 후보를 재생·비교하고 적용할 파일·대상을 명시적으로 승인한다.
@@ -24,10 +26,18 @@
 
 핵심은 프로젝트 관리, BGM·SFX·Voices 등록·검색·재생, Voice·캐릭터·대사 관리, ElevenLabs TTS·SFX, 기본 편집·파형·검증, 후보·버전·작업 이력, CLI·MCP, 사람 승인·게임 적용·복구다.
 
-후속 검토는 Voice 정보·설정 변경, Voice Design, Remix, 서비스 생성 이력 조회, Music API다. 계정 Voice 삭제는 초기 필수가 아니다. 프로젝트의 Voice 연결 해제와 원격 삭제는 구분한다.
+2026-11-21 음악·짧은 음성/월 10,000크레딧 요청으로 Music API 초기 계약과 최소 제작 계획기를 포함한다. [계약/결과](docs/T02_MUSIC_SHORT_VOICES.md). 후속 검토는 Voice 정보·설정 변경, Voice Design, Remix, 서비스 생성 이력 조회다. 계정 Voice 삭제는 초기 필수가 아니다. 프로젝트의 Voice 연결 해제와 원격 삭제는 구분한다.
 
 전문 DAW, 내장 대화형 AI, 다중 사용자 원격 협업 서버, 모든 게임 엔진 분석기, 특정 게임 전용 기능은 초기 범위에 포함하지 않는다.
 
 ## 기준의 상태
 
-확정 요구사항은 REQUIREMENTS.md, 설계 권고는 ARCHITECTURE.md, 실제 상태는 CURRENT_STATE.md를 따른다. 이번 단계는 초기 분석·문서화·저장소 준비이며 전체 제품 구현이 아니다. 상세 탭 배치와 기술 스택·배포 정책은 아직 확정되지 않았다.
+확정 요구사항은 REQUIREMENTS.md, 설계 권고는 ARCHITECTURE.md, 실제 상태는 CURRENT_STATE.md를 따른다. 현재 로컬 관리·T02 생성 adapter/mock·T03 편집/분석·T04 비동기 큐/조회·취소·검토 제출/후보 이력·선택형 단일/다건 작업 정의 클라이언트의 CLI·MCP와 최소 설정/재생/검사/작업 GUI를 구현했다. 실제 유료 API 검증·주관 검토/승인·게임 적용을 포함한 전체 제품 완성은 아니다. 상세 탭 배치와 라이선스·공개 배포 정책은 아직 확정되지 않았다. D01~D06의 기술·프로세스·경로와 초기 포터블 제공 방식은 2026-11-20 사용자 판단 위임으로 채택했으며, 실제 제품 구현과 Windows 사용자 실기는 별도다.
+
+T04 v0.9에서 현재 AI Linux 환경을 위한 headless native CLI/MCP 실행을 추가했다. Windows GUI가 첫 제품 대상인 결정은 유지하며 Linux에서 로컬 관리·FFmpeg·합성 mock만 사용한다. Linux 라이브 ElevenLabs/GUI·AI 제품 MCP 등록은 미완료다. [Linux 범위](docs/T04_LINUX_HEADLESS.md).
+
+v0.10은 Linux 메모리 인증 세션과 ElevenLabs 고정 HTTPS를 구현했다. 키 전달은 engine 전용 stdin/선택형 숨김 입력·private FD 런처로 제한하며 실제 키/과금/청감은 확인하지 않았다. Windows 설정은 유지한다. [계약](docs/T02_LINUX_PROVIDER.md).
+
+## Windows/NAS 파일 입력 확장
+
+사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.

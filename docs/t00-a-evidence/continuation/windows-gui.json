@@ -1,0 +1,27 @@
+{
+  "source_sha": "c7780481a086174fdf476bfc157694bbb8cef4f6",
+  "os": "Windows-2022Server-10.0.20348-SP0",
+  "scope": "actual Tauri/WebView2 via Microsoft Edge WebDriver, no IPC mocks",
+  "checks": {
+    "gui_button_real_invoke_equals_cli_status": "passed",
+    "gui_submit_same_engine_job": "passed",
+    "native_wm_close": "passed",
+    "gui_closed_cli_job_continues": "passed",
+    "new_gui_reconnect_same_engine_result": "passed",
+    "real_webview_decode_play_ended_not_human_listening": "passed"
+  },
+  "human_observation": "unverified",
+  "audible_output": "unverified",
+  "capabilities": {
+    "browserName": "webview2",
+    "browserVersion": "131.0.2903.86",
+    "platformName": "windows"
+  },
+  "media": {
+    "currentTime": 1,
+    "duration": 1,
+    "ended": true,
+    "error": null
+  },
+  "result": "passed_automated_only"
+}

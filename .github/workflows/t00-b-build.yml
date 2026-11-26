@@ -1,0 +1,154 @@
+name: GameSound build portable library
+on:
+  push:
+    branches: [main, task/t00-a-technical-spike]
+    paths: ['README.md', '.github/release/**', '.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare Rust
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal
+          rustup override set 1.100.0
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/target
+          key: product-windows-1.100-${{ hashFiles('app/Cargo.lock') }}
+          restore-keys: product-windows-1.100-
+      - name: Compile minimal UI
+        run: |
+          npm ci
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          npm run build
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Test shared library and generation contracts
+        run: cargo test --locked --lib
+      - name: Compile independent engine CLI MCP and minimal GUI
+        run: |
+          cargo build --locked --release --bins
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo build --locked --release --features gui,custom-protocol --bin dk-sound-gui
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Exercise optional recipe client contracts
+        run: python -m unittest discover -s automation -p 'test_sound_*.py'
+      - name: Exercise real CLI and MCP against engine without GUI
+        run: python automation/ci_transport_smoke.py --bin-dir target/release
+      - name: Exercise real multi-item batches against engine
+        run: python automation/ci_batch_smoke.py --bin-dir target/release
+      - name: Exercise human library and AI CLI in the same workspace
+        run: |
+          python -m pip install playwright==1.55.0
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          python ../.github/tests/windows_library.py
+      - name: Package development ZIP contents
+        run: |
+          New-Item -ItemType Directory -Force artifact | Out-Null
+          Copy-Item target/release/dk-sound-*.exe artifact
+          Copy-Item START_HERE.md artifact
+          & ./target/release/dk-sound-cli.exe schema | Set-Content artifact/tools.json -Encoding utf8NoBOM
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $schema = Get-Content artifact/tools.json -Raw | ConvertFrom-Json
+          if ($schema.tools.Count -lt 1) { throw "Empty CLI schema" }
+          Copy-Item ../README.md artifact
+          python ../.github/release/notices.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          Copy-Item ../docs/T01_LOCAL_LIBRARY.md artifact/LOCAL_LIBRARY.md
+          Copy-Item ../docs/T02_GENERATION.md artifact/GENERATION.md
+          Copy-Item ../docs/T03_AUDIO.md artifact/AUDIO.md
+          Copy-Item ../docs/T04_ASYNC_AUDIO.md artifact/ASYNC_AUDIO.md
+          Copy-Item ../docs/T04_REVIEW.md artifact/REVIEW.md
+          Copy-Item ../docs/T04_AUTOMATION.md artifact/AUTOMATION.md
+          Copy-Item ../docs/T04_BATCH.md artifact/BATCH.md
+          Copy-Item ../docs/T04_LINUX_HEADLESS.md artifact/LINUX_HEADLESS.md
+          Copy-Item ../docs/T02_LINUX_PROVIDER.md artifact/LINUX_PROVIDER.md
+          New-Item -ItemType Directory -Force artifact/automation | Out-Null
+          Copy-Item -Path automation/*.py,automation/*.json -Destination artifact/automation
+          $env:GITHUB_SHA | Set-Content artifact/source-sha.txt -Encoding utf8
+          rustc -Vv | Set-Content artifact/toolchain.txt
+          $artifactRoot = (Resolve-Path artifact).Path
+          Get-ChildItem artifact -File -Recurse | Where-Object Name -ne SHA256SUMS.txt | ForEach-Object { $h=Get-FileHash $_.FullName -Algorithm SHA256; $relative=$_.FullName.Substring($artifactRoot.Length+1).Replace('\','/'); "$($h.Hash)  $relative" } | Set-Content artifact/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gamesound-local-library-${{ github.sha }}
+          path: app/artifact/
+          retention-days: 14
+  linux-headless:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare headless tools
+        run: |
+          rustup toolchain install 1.100.0 --profile minimal
+          rustup override set 1.100.0
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            app/target
+          key: product-linux-1.100-${{ hashFiles('app/Cargo.lock') }}
+      - name: Build and test shared engine
+        run: |
+          cargo build --locked --bins
+          DK_TEST_FFMPEG=/usr/bin/ffmpeg DK_TEST_FFPROBE=/usr/bin/ffprobe cargo test --locked --lib -- --include-ignored
+      - name: Exercise real Linux CLI MCP and batch
+        run: |
+          python -m unittest discover -s automation -p 'test_sound_*.py'
+          python automation/ci_transport_smoke.py --bin-dir target/debug --local-linux
+          python automation/ci_batch_smoke.py --bin-dir target/debug --local-linux
+          python automation/ci_linux_smoke.py --bin-dir target/debug --ffmpeg /usr/bin/ffmpeg --ffprobe /usr/bin/ffprobe
+          python automation/ci_linux_session_smoke.py --bin-dir target/debug
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release v0.10.0]')
+    needs: [build, linux-headless]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: gamesound-local-library-${{ github.sha }}
+          path: package
+      - name: Verify and publish Windows portable release
+        working-directory: package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < source-sha.txt)" = "$GITHUB_SHA"
+          sed 's/\r$//' SHA256SUMS.txt | sha256sum --strict -c -
+          for file in dk-sound-{gui,cli,mcp,engine}.exe README.md tools.json THIRD-PARTY-NOTICES.txt; do test -s "$file"; done
+          archive=DK-GameSound-Manager-v0.10.0-windows-x64.zip
+          zip -qr "../$archive" .
+          cd ..
+          sha256sum "$archive" > "$archive.sha256"
+          gh release create v0.10.0 "$archive" "$archive.sha256" --target "$GITHUB_SHA" --title "DK GameSound Manager v0.10.0 · Windows x64" --notes "Windows 11용 포터블 ZIP입니다. 압축을 모두 풀고 사람은 dk-sound-gui.exe, 외부 AI는 dk-sound-cli.exe 또는 dk-sound-mcp.exe로 시작하세요. README에 프로젝트 생성, 로컬 음원 등록, 후보 비교, MCP 설정과 AI 지시문이 있습니다. 실제 게임 적용은 수동입니다. Windows Server 2022 WebView2와 Linux headless 회귀를 검증했습니다."

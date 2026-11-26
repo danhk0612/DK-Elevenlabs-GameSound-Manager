@@ -1,0 +1,10 @@
+{
+  "source_sha": "c1e2e016a93fd84219ae9adf006ec711fae3e08e",
+  "scope": "standalone native named pipe candidate, not engine integration",
+  "remote_clients": "PIPE_REJECT_REMOTE_CLIENTS flag set, remote machine not tested",
+  "different_real_user": "LocalService SID token impersonation; ordinary second interactive account unverified",
+  "actual_key": "not_used",
+  "account_changes": "none",
+  "result": "failed",
+  "failure": "Exception calling \"Check\" with \"0\" argument(s): \"LocalService logon failed\""
+}

@@ -1,0 +1,25 @@
+{
+  "source_sha": "80993133331c134e8a6bea12c7a9c8e0f7493a4e",
+  "run_id": 38693413115,
+  "artifact_id": 11953730364,
+  "zip_sha256": "79ee05c2ce61dce573e905af3833b9f2257d15aceab0252d9cce8d3f20455e7c",
+  "all_manifest_hashes_match": true,
+  "executables": {
+    "spike-cli.exe": {
+      "bytes": 290304,
+      "sha256": "d348955424a05a082d59d2af53e96cd8b685410f237bccbea73b1ede9b885eef"
+    },
+    "spike-engine.exe": {
+      "bytes": 1970688,
+      "sha256": "c396bdf967523094b24d466f547bbc8cb5b4ccad57058425824866bf629c4245"
+    },
+    "spike-gui.exe": {
+      "bytes": 8664064,
+      "sha256": "0a9ee1630a1c656bc349341ceff6411d107128116b81806c042f28ca1ac6b4e9"
+    },
+    "spike-mcp.exe": {
+      "bytes": 323584,
+      "sha256": "4a1dab356a634b5318923b00db18ecf157b45ec9e6f6921b345d55cc60099eb6"
+    }
+  }
+}

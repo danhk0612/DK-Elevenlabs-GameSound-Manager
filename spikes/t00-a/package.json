@@ -1,0 +1,1 @@
+{"name":"t00-isolated-spike","version":"0.0.0","private":true,"type":"module","scripts":{"build":"tsc --noEmit && vite build"},"dependencies":{"@tauri-apps/api":"^2","react":"^19","react-dom":"^19"},"devDependencies":{"@types/react":"^19","@types/react-dom":"^19","typescript":"^5","vite":"^7"}}

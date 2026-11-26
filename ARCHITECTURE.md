@@ -1,20 +1,24 @@
-# 아키텍처 검토안
+# 아키텍처와 채택 경계
+
+2026-11-21 확장: [Music v1/짧은 음성](docs/T02_MUSIC_SHORT_VOICES.md)은 기존 generation worker·job.submit/예산/후보·character/dialogue를 재사용한다. 오프라인 초기 제작 계획기는 제출/인증 없이 명령을 출력한다. 새 GUI/DB schema/엔진을 추가하지 않는다.
 
 ## 채택 상태
 
-확정된 것은 Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계다. **구체 기술·프로세스·경로는 권고안이며 제품에 최종 채택되지 않았다.** T00-A의 실측과 D01~D06 결정 후 본 문서를 채택 구조로 갱신한다. 현재 실행 코드는 없다.
+Windows GUI, CLI·MCP, 공통 작업 규칙, 로컬 파일, ElevenLabs 연동과 사람 승인 경계가 요구사항이다. **2026-11-20 사용자의 기술 선택 위임에 따라 D01~D06을 채택했다.** 구체 선택과 미검증은 [현재 결정](docs/T00_A_DECISIONS.md)의 위임 결정 절을 따른다. 후속 사용자 지시 “실기, 점검 무시하고 진행해”로 실기 대기를 해제하고 app/에 T00-B 최소 엔진·CLI·MCP·GUI 실행 기반을 구현했다. 사용자 Windows 화면/청감은 미확인으로 남긴다. `spikes/t00-a/`의 격리 실험은 [결과](docs/T00_A_RESULTS.md)와 [결정 자료](docs/T00_A_DECISIONS.md)를 따르며 채택 구조가 아니다.
 
-## 기술 비교
+## 기술 비교와 선택
 
 | 후보 | 장점 | 비용·위험 | 판단 |
 | --- | --- | --- | --- |
-| Tauri 2 + React/TypeScript + Rust | GUI와 독립 CLI가 Rust 작업 계층을 재사용하기 좋고 웹 UI 개발 가능 | Rust·MSVC·WebView2, 오디오 재생/파형 연결, IPC·MCP 라이브러리 검증 필요 | 우선 검증 권고 |
+| Tauri 2 + React/TypeScript + Rust | GUI와 독립 CLI가 Rust 작업 계층을 재사용하기 좋고 웹 UI 개발 가능 | Rust·MSVC·WebView2, 오디오 재생/파형 연결, IPC·MCP 라이브러리 검증 필요 | 위임 채택. 사용자 실기/제품 검증은 별도 |
 | Electron + React/TypeScript + Node | UI·CLI 언어 통일, 웹 생태계 사용 | 런타임 배포 크기, DB·오디오/자격증명 네이티브 의존성 및 패키징 검증 | 비교 대안 |
 | .NET + Windows GUI | Windows 파일·인증정보·배포 환경과 통합하기 좋음 | UI 기술 선택, CLI·MCP 재사용과 오디오 처리 경험 검증 필요 | Tauri 실패/부적합 시 비교 |
 
-현재 환경의 Rust 부재는 제품 기술 부적합의 증거가 아니다. Windows에서 동작·배포 증거를 얻기 전 선택을 바꾸거나 확정하지 않는다. 데이터는 SQLite, 편집·분석은 FFmpeg/ffprobe 외부 프로세스를 우선 검토한다. 생성용 모델은 서비스 요청 설정이며 제품 내부 AI 모델을 만들지 않는다.
+격리 Windows 자동 실행 증거를 근거로 Tauri/Rust 후보를 선택했다. 사용자 데스크톱과 제품 배포 검증은 자동 실행과 별도다. 데이터는 SQLite, 편집·분석은 FFmpeg/ffprobe 외부 프로세스를 우선 검토한다. 생성용 모델은 서비스 요청 설정이며 제품 내부 AI 모델을 만들지 않는다.
 
 ## 권장 구성과 책임
+
+개발 순서는 자동화 경로 우선이다. 각 기능은 공통 명령의 구조화 요청/응답·오류와 CLI·MCP 어댑터, GUI 없는 회귀를 함께 만든다. GUI는 그 명령을 사용하는 최소 상태/실패 확인·재생/비교·설정·사람 승인 창으로 둔다. T04는 누락 연결·실제 클라이언트 호환·전체 흐름 검증을 마무리한다. 장식·상세 대시보드·전문 편집 화면은 현재 우선순위에 포함하지 않는다.
 
 | 구성 | 책임 | 하지 않는 일 |
 | --- | --- | --- |
@@ -32,15 +36,15 @@
 
 후보 A는 GUI·CLI·MCP가 각각 공통 라이브러리와 DB를 여는 구조다. 프로세스 수는 적지만 작업 소유권·한도 예약·DB와 파일 변경을 모든 진입점에서 조정해야 한다.
 
-후보 B는 사용자별 단일 로컬 엔진이 큐·DB·파일 쓰기를 소유하고 GUI·CLI·MCP가 연결하는 구조다. GUI를 닫아도 장시간 작업을 유지하기 쉽고 쓰기 규칙을 모으지만, 기동 경쟁·인증된 로컬 IPC·종료·재연결 검증 비용이 있다. **후보 B를 우선 검증한다.** 항상 실행되는 Windows 서비스는 요구하지 않는다.
+후보 B는 사용자별 단일 로컬 엔진이 큐·DB·파일 쓰기를 소유하고 GUI·CLI·MCP가 연결하는 구조다. GUI를 닫아도 장시간 작업을 유지하기 쉽고 쓰기 규칙을 모으지만, 기동 경쟁·인증된 로컬 IPC·종료·재연결 검증 비용이 있다. **사용자 SID별 후보 B를 위임 채택했다.** 항상 실행되는 Windows 서비스는 요구하지 않는다.
 
-Windows named pipe와 현재 사용자 접근 제한을 IPC 후보로 검토한다. 원격 HTTP 서버는 초기 요구가 아니다. 엔진 자동 기동, 중복 기동 방지, idle 종료와 명시 종료의 작업 처리 정책은 T00-A에서 비교한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
+제품 IPC는 Windows local named pipe와 현재 사용자 SID 접근 제한으로 채택한다. 별도 DACL 실험과 제품 IPC 통합/원격 차단 검증은 구분한다. 원격 HTTP 서버는 초기 요구가 아니다. 최초 GUI/CLI/MCP 요청에서 자동 기동하고 SID별 중복 기동을 막는다. GUI 종료는 작업 취소가 아니다. 정상 busy 종료는 거절하며 연결된 클라이언트·대기/실행 작업이 모두 없는 상태가 5분 지속되면 idle 종료한다. 이 5분은 위임 설계값이며 기존 fixture 수치와 다르다. 사용자 지시로 이전 실기 선행 게이트를 해제하고 T00-B에서 구현한다. GUI 종료와 작업 취소를 동일하게 취급하지 않는다.
 
 SQLite WAL은 읽기/쓰기 동시성에 도움을 주지만 동시 writer는 하나다. WAL만으로 작업·파일의 안전성을 보장하지 않는다. 프로젝트 DB는 로컬 디스크를 우선 검증하며 네트워크 공유의 DB를 지원한다고 가정하지 않는다. DB 트랜잭션을 원격 생성이나 FFmpeg 실행 동안 유지하지 않는다.
 
 ## 저장·데이터 계약 권고
 
-앱 설정·계정 참조·프로젝트 인덱스와 사용자 사운드 작업공간을 분리한다. 절대 경로 기본값은 미결정이다. 제안 논리 구조는 프로젝트별 메타데이터 DB와 originals/, candidates/, exports/, recovery/다. 실행 파일 폴더를 사용자 자료 저장소로 삼지 않는다.
+앱 설정·계정 참조·프로젝트 인덱스와 사용자 사운드 작업공간을 분리한다. 앱 설정·엔진 발견 루트는 `%LOCALAPPDATA%\DK-Elevenlabs-GameSound-Manager`, 작업공간은 사용자가 지정한 로컬 디렉터리다. 세부 스키마·프로젝트 하위 경로는 T01 계약에서 확정한다. 제안 논리 구조는 프로젝트별 메타데이터 DB와 originals/, candidates/, exports/, recovery/다. 실행 파일 폴더를 사용자 자료 저장소로 삼지 않는다.
 
 | 개체 | 최소 관계·속성 |
 | --- | --- |
@@ -81,12 +85,60 @@ CLI·MCP와 GUI가 같은 공통 정책을 통과해야 한다. 자동 호출에
 
 ## API·비밀정보·오디오
 
-연결 모듈만 API Key를 읽고 프런트엔드, 프로젝트 DB, 인자, 로그, 내보내기에 Key를 노출하지 않는 구조를 검증한다. Windows Credential Manager와 DPAPI를 비교하며 구체 저장 방식은 D05다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
+연결 모듈만 API Key를 읽고 GUI password 입력 이외의 조회·프로젝트 DB·인자·로그·내보내기에 Key를 노출하지 않는 구조를 검증한다. D05 위임 결정으로 Windows Credential Manager 현재 사용자 범위를 사용한다. silent DPAPI fallback은 넣지 않고 실제 Key·수명 검증은 T02다. 실제 API·계정 제한 근거는 API_RESEARCH.md를 따른다.
 
 FFmpeg/ffprobe 호출은 셸 문자열 대신 인자 배열을 사용하고 원본과 다른 출력 경로를 쓴다. 재생 지원 형식과 변환 지원 형식은 다를 수 있으므로 WebView2 재생을 실제 파일로 검사한다. 기본 형식·음량/무음 임계값·루프 단위는 D08이며 임의 상수로 확정하지 않는다.
 
 ## 검증 게이트와 근거
 
-T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라이언트 경쟁, 강제 종료·재기동, 한글/공백 경로, 자격증명 보안, 실제 FFmpeg 파일 처리, 정확한 SHA의 Windows artifact·실행 결과를 확보한다. 미확보면 기술 채택을 보류한다.
+T00-A: Windows GUI + 독립 CLI + stdio MCP, GUI 종료 후 작업, 두 클라이언트 경쟁, 강제 종료·재기동, 한글/공백 경로, 자격증명 보안, 실제 FFmpeg 파일 처리, 정확한 SHA의 Windows artifact·실행 결과를 확보한다. 실기 미확보는 기록하되 2026-11-20 후속 사용자 지시로 개발 진행을 막지 않는다.
 
 공식 근거(2026-10-15 열람): [Tauri process model](https://tauri.app/concept/process-model/), [Windows prerequisites](https://tauri.app/start/prerequisites/), [SQLite WAL](https://www.sqlite.org/wal.html), [MCP stdio](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports/stdio), [FFmpeg 배포 조건](https://www.ffmpeg.org/legal.html). 문서 지원 사실과 이 프로젝트의 실측을 구분한다.
+
+초기 패키징은 포터블 ZIP을 선택했다. WebView2는 외부 준비, FFmpeg/ffprobe는 사용자 지정 경로/PATH로 사용하고 자동 설치/동봉하지 않는다. 설치/업데이트/고지·공개 배포 허용은 T06 및 D11의 별도 게이트다.
+
+## T01 실제 저장·명령 계약
+
+[로컬 라이브러리 계약](docs/T01_LOCAL_LIBRARY.md)을 현재 구현 기준으로 사용한다. LOCALAPPDATA catalog와 사용자 선택 workspace의 프로젝트별 schema 1 SQLite/불변 버전 파일을 분리하고 모든 자료 명령에 project_id를 요구한다. 엔진의 단일 writer 스레드가 로컬 명령을 순차 처리하며 queued/running 중 정상 종료를 거절한다. import는 예상 SHA journal → 별도 복사/hash/sync → no-replace hard link 게시 → ready 기록 순서다. 중단 대조는 copying 버전에 한정하며 임의 파일/전원 장애 전체 복구를 보장하지 않는다. CLI schema와 MCP 17개 도구는 같은 명령 카탈로그·검증을 사용한다. 상세 필드/byte 제한/페이지/preview/오류 경계는 위 계약을 따른다. 계정 예산·원격 작업 큐와 별개다.
+
+## T02 실제 계정·큐 계약
+
+[생성 계약](docs/T02_GENERATION.md)을 현재 구현 기준으로 사용한다. catalog schema 2에 계정/workspace identity·공유 한도·불변 요청 snapshot과 attempted 상태를 저장한다. 프로젝트 DB는 schema 1이다. Windows Credential Manager만 실제 Key와 유료 허용/한도 정책을 보관하고 CLI/MCP는 credential 입력을 받지 않는다. D09 숫자 미설정은 거절이며 실제 청구액 상한을 보장하지 않는다.
+
+단일 writer의 timeout tick으로 persistent 큐를 실행하고 status/job.get/list를 원격 요청과 분리한다. POST 직전 attempted를 기록하며 원격 자동 재시도가 없다. output_ready spool을 T01 journal로 후보 등록하고 재기동 시 미완료 요청을 자동 재전송하지 않는다. 상세 한도 유지·취소/복구·오류·32개 명령/31개 MCP 도구는 T02 계약을 따른다. 과거 T01의 원격 큐 미포함/17개 도구 표기는 v0.2.0 기반 설명이다.
+
+## T03 실제 편집·분석 계약
+
+[편집/분석 계약](docs/T03_AUDIO.md)에 따라 catalog schema 3에 도구 경로/hash/version과 프로젝트별 operation snapshot·입력 hash·상태/결과를 추가했다. 프로젝트 DB는 schema 1이다. FFmpeg/ffprobe는 명시적인 신뢰 경로로 설정하며 shell 없이 제한된 인자/timeout/출력 크기로 실행한다. 현재 local audio 명령은 writer에서 동기 실행하며 status는 분리된다. 장시간 async·취소는 후속이다.
+
+출력/검사 수치는 호출마다 명시하고 D08의 제품 기본값을 만들지 않는다. decoded 첫 스트림의 채널별 샘플을 유지해 peak/RMS/quiet/파형·loop seam을 측정한다. 후보는 별도 출력·hash/output_ready → T01 journal 등록 순서로 저장하고 원본/부모/게임 파일을 보존한다. 처리 중 엔진 종료는 interrupted, 수신 완료 파일은 명시적 등록 복구 대상이다. 검증 수치는 주관 적합성/승인과 별개다. 총 39개 명령/MCP 38개 도구가 같은 검증을 사용한다. 과거 절의 schema/명령 수는 해당 버전 기반이다.
+
+## T04 비동기 오디오 보강
+
+[비동기 큐/취소 계약](docs/T04_ASYNC_AUDIO.md)에 따라 catalog schema 4에 cancel_requested/phase/tools_snapshot을 추가했다. 기존 동기 명령은 유지하고 audio.submit은 동일 편집/분석 입력을 정규화하여 즉시 예약한다. 실행 당시 도구/hash·입력 버전을 고정하고 단일 엔진 실행기가 큐를 처리한다. 짧은 제출/상태 조회/취소는 migration/재시작 정리를 하지 않는 별도 catalog 연결로 처리한다.
+
+취소 플래그를 외부 프로세스/PCM 측정·단계 사이에서 대조하고 output_ready 전환/분석 완료 기록과 원자적으로 조정한다. output_ready 이후에는 취소 대신 등록/복구를 보존한다. 재기동 자동 재생은 없고 큐/실행은 interrupted 또는 이미 취소 요청됐으면 cancelled다. 실행 중 status와 audio 제출/조회/취소를 사용할 수 있으며 다른 일반 명령은 계속 직렬일 수 있다. 전체 41개 공통 명령/MCP 40개 도구다. T04 실제 AI 클라이언트 호환·검토 제출과 T05 승인/게임 적용은 별도다.
+
+## T04 검토 제출·이력 보강
+
+[검토 계약](docs/T04_REVIEW.md)에 따라 v0.6 catalog schema 5의 reviews에 불변 요청·후보 SHA/metadata·선택 requirement/검사 보고서 근거와 pending/withdrawn 상태를 저장한다. 제출은 실제 후보 파일 hash를 대조하고 get은 과거 snapshot, check는 현재 파일/연결 자료 대조다. 승인/게임 적용 경로는 없다. review.get/list·asset.history는 별도 RO 연결이고 나머지는 일반 writer다. 생성/편집/검사/검토 이력은 category_then_identifier로 페이지 처리하며 시간순을 주장하지 않는다. 총 47개 명령/MCP 46개 도구다.
+
+## T04 선택형 로컬 작업 정의 클라이언트
+
+v0.7의 [자동화 계약](docs/T04_AUTOMATION.md)에 따라 core/DB schema를 바꾸지 않고 CLI offline validate와 선택형 Python 클라이언트를 추가했다. 고정된 로컬 원본/후보/검사/검토 흐름이며 임의 명령·유료 생성·승인·게임 출력은 받지 않는다. 실행 전 공통 validator로 모든 요청을 검사하고 CLI stdin 또는 순차 MCP stdio로 실행한다. 타임아웃/중단은 결과 미확인으로 반환하고 서버 작업을 자동 취소/재전송하지 않는다. 불변 작업 ID와 hash 대조는 기존 core가 소유한다. GUI 변경은 없다.
+
+## T04 여러 사운드 작업 정의
+
+v0.8 [batch 계약](docs/T04_BATCH.md)은 기존 단일 recipe를 클라이언트에서 순차 조합한다. 모든 요청의 offline 공통 검증·공유 source 일치/후보 예약·전역 operation/review ID 충돌을 실행 전에 검사한다. 각 항목은 독립 CLI/MCP 세션을 쓰고 core가 실제 파일/상태/해시/ID 대조를 소유한다. 결과는 JSON 또는 항목별 JSONL이며 승인/복구 journal이 아니다. 결과 확정 오류만 명시적 keep-going으로 이어가고 통신/불확실 결과는 항상 멈춘다. 전체 transaction·롤백·checkpoint skip·새 ID 자동 발급은 없다. UI/DB schema/공통 도구 수를 유지한다.
+
+## T04 Linux headless 실행 확장 (v0.9)
+
+현재 Codex Linux 환경의 native 호출을 위해 [local Unix socket/전용 private root 계약](docs/T04_LINUX_HEADLESS.md)을 추가했다. Windows GUI·SID/named pipe·Credential Manager 선택은 유지한다. storage worker/dispatch/serve를 공통 engine 모듈로 추출해 Linux도 같은 큐·취소·검토·무재생 정책을 사용한다. Linux는 명시한 DK_SOUND_ROOT별 flock/0700 root/0600 socket 및 peer UID 대조를 사용한다. 원격 서버·Linux GUI·실제 provider 인증/HTTP fallback은 추가하지 않았다.
+
+## T02 Linux 인증/HTTP (v0.10)
+
+[T02 Linux 계약](docs/T02_LINUX_PROVIDER.md)에 따라 engine 전용 stdin 세션(메모리/단일 계정/명시 TTL·한도)과 고정 ElevenLabs HTTPS·retry/redirect/proxy 차단을 추가한다. Windows D05/D06·공통 명령/큐/schema는 유지한다. key는 CLI/MCP/일반 IPC에 넣지 않고 default autostart는 인증 없이 유지한다. Linux의 metadata 전용 session smoke와 런타임 생성 인증서의 로컬 TLS 검사로 실제 유료 서비스와 분리해 검증한다.
+
+## Windows/NAS 파일 입력 확장
+
+사용자는 Windows에서 NAS 파일을 편집하고 Codex는 Docker에서 실행하므로 명시적인 설정 파일 입력을 요청했다. [계약/절차](docs/WINDOWS_NAS_SETUP.md). linux_session.py --config의 strict bounded JSON·UTF-8 BOM/CRLF·NAS mode 표시 허용과 Docker-local runtime을 추가한다. 실제 elevenlabs.local.json/백업은 Git 제외하고 예제는 key 빈 값·생성 false/한도 0으로 둔다. 기존 입력/엔진 정책·공통 명령/schema/GUI는 유지한다. 실제 키 파일을 출력/수정하지 않으며 입력 경로의 원본을 유지한다.

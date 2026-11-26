@@ -35,3 +35,26 @@ workspace-data/
 # Local artifacts
 *.log
 *.tmp
+
+# T00-A generated verification evidence (selected reports committed explicitly)
+spikes/t00-a/evidence/
+spikes/t00-a/artifact/
+spikes/t00-a/user-*.json
+
+spikes/t00-a/icons/
+spikes/t00-a/gen/
+spikes/t00-a/scripts/__pycache__/
+spikes/t00-a/tools/**/__pycache__/
+spikes/t00-a/tools/__pycache__/
+
+# Product GUI generated resources
+app/icons/
+app/gen/
+app/artifact/
+
+# Optional automation client caches
+app/automation/__pycache__/
+
+# User-authorized Windows/NAS credential file and editor backups (never commit)
+/elevenlabs.local*
+/.elevenlabs.local*

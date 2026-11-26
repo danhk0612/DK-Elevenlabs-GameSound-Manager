@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "project": {"project_id": "local-demo", "name": "Local audio", "workspace": "C:\\GameAudio\\workspace"},
+  "source": {"asset_id": "hit", "version_id": "original", "name": "Hit", "kind": "sfx", "source_path": "C:\\GameAudio\\input.wav", "source_note": "Original source and usage rights recorded separately"},
+  "candidate": {"version_id": "take-1", "source_path": "C:\\GameAudio\\candidate.wav", "source_note": "Externally prepared candidate"},
+  "review": {"review_id": "hit-review-1", "summary": "Candidate for listening review", "notes": "No technical analysis is attached in this example"}
+}

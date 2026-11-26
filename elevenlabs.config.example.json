@@ -1,0 +1,10 @@
+{
+  "schema_version": 1,
+  "account_id": "elevenlabs-main",
+  "api_key": "",
+  "enable_generation": false,
+  "request_limit": 0,
+  "credit_limit": 0,
+  "session_seconds": 3600,
+  "state_root": ""
+}

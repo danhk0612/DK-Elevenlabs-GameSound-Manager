@@ -1,0 +1,31 @@
+{
+  "source_sha": "80993133331c134e8a6bea12c7a9c8e0f7493a4e",
+  "os": "Linux-6.18.44-x86_64-with-glibc2.39",
+  "python": "3.12.14",
+  "scope": "isolated synthetic fixtures",
+  "checks": {
+    "concurrent_first_engine_start_one_owner": "passed",
+    "duplicate_engine_rejected": "passed",
+    "wrong_token_rejected": "passed",
+    "common_validation_and_no_apply": "passed",
+    "concurrent_idempotency_and_conflict": "passed",
+    "client_exit_job_continues_and_reconnect": "passed",
+    "concurrent_cli_mcp_fixture_budget": "passed",
+    "stdio_mcp_handshake_stdout_common_status_budget": "passed",
+    "kill_restart_no_auto_retry_reservation_retained": "passed",
+    "explicit_shutdown_marks_interrupted": "passed",
+    "sqlite_integrity_after_termination": "passed",
+    "file_db_gap_fault_injection_detected_limitation": "passed",
+    "ffmpeg_ffprobe_unicode_paths_original_preserved": "passed",
+    "direct_sqlite_writer_exclusion_fixture": "passed"
+  },
+  "manual_gui": "unverified",
+  "listening": "unverified",
+  "ipc_user_acl": "unverified",
+  "root_basename": "T00 한글 공백 m5q4pxc3",
+  "file_db_gap": "observed: interrupted + leftover file; automatic reconciliation NOT implemented",
+  "ffmpeg": "ffmpeg version 6.1.1-3ubuntu5 Copyright (c) 2000-2023 the FFmpeg developers",
+  "ffprobe": "ffprobe version 6.1.1-3ubuntu5 Copyright (c) 2007-2023 the FFmpeg developers",
+  "synthetic_source_sha256": "3a22af6115b00e3e8c01efb8cd045c081b22d1dde9600bcb6d5cbf818a39fb3a",
+  "result": "passed_automated_only"
+}

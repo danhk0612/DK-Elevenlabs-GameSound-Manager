@@ -1,0 +1,21 @@
+{
+  "source_sha": "f8aa463bfd02fa84a10c39f32b353cf83d2c7872",
+  "os": "Windows-2022Server-10.0.20348-SP0",
+  "checks": {
+    "autostart_disabled": "passed",
+    "cli_mcp_concurrent_autostart_one_owner": "passed",
+    "powershell_51_json_argument_preserved": "passed",
+    "busy_shutdown_if_idle_rejected": "passed",
+    "busy_job_survives_idle_interval_and_mcp_exit": "passed",
+    "explicit_busy_shutdown_preserves_interrupted": "passed",
+    "idle_after_completion_preserves_result": "passed",
+    "idle_exit_then_auto_reconnect": "passed",
+    "stale_endpoint_kill_restart_no_replay": "passed",
+    "two_roots_independent_not_user_wide_singleton": "passed",
+    "invalid_idle_config_readiness_failure": "passed"
+  },
+  "scope": "fixture root only; not user-wide singleton",
+  "fixture_idle_ms": 3000,
+  "mcp_submit_elapsed_seconds": 0.016,
+  "result": "passed_automated_only"
+}

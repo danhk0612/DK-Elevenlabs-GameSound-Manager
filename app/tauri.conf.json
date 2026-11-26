@@ -1,0 +1,27 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "DK GameSound Manager",
+  "version": "0.10.0",
+  "identifier": "local.dk.gamesound",
+  "build": {
+    "frontendDist": "dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "DK GameSound Manager",
+        "width": 1040,
+        "height": 720
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; connect-src ipc: http://ipc.localhost; style-src 'self' 'unsafe-inline'; media-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": [
+      "icons/icon.ico"
+    ]
+  }
+}

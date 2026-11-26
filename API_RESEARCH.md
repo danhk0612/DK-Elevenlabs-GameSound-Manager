@@ -1,5 +1,7 @@
 # ElevenLabs 및 기술 근거
 
+2026-11-21 사용자 요청으로 Music API를 구현 범위에 추가했다. [공식 compose](https://elevenlabs.io/docs/api-reference/music/compose)의 POST /v1/music·music_v1·prompt/music_length_ms/force_instrumental/MP3 계약을 구현했다. [공식 요금표](https://elevenlabs.io/pricing)의 근사 비용과 실제 계정 청구를 구분한다. [계약/실제 결과](docs/T02_MUSIC_SHORT_VOICES.md): TTS 6개는 성공했지만 실제 음악 첫 요청은 HTTP 오류이며 원인/성공을 확인하지 못했다. 아래 과거 Music 미구현·Key 미사용 문장은 당시 기록이다.
+
 확인일: 2026-10-15. 아래 URL은 공식 페이지를 직접 열어 접근 가능 여부와 내용을 확인했다. 문서 확인이며 계정 인증·실제 API 호출 성공 증거가 아니다. 모델·요금·필드는 구현 시 다시 확인한다.
 
 ## 핵심 API
@@ -35,3 +37,13 @@ SFX 문서는 모델·duration_seconds·loop와 출력 형식의 제약을 설�
 | [FFmpeg legal](https://www.ffmpeg.org/legal.html) | 빌드 구성에 따라 LGPL/GPL 조건이 다름 | 사용할 바이너리·소스·고지·배포 조건 |
 
 제품 라이선스와 FFmpeg 바이너리의 라이선스는 별도 결정이다. 바이너리·정확한 빌드 설정을 선정하지 않았으므로 현재 재배포 적합 판정을 내리지 않는다.
+
+## 2026-11-20 T02 재확인
+
+- [User get](https://elevenlabs.io/docs/api-reference/user/get): GET /v1/user의 workspace_id, subscription character_count/character_limit를 확인했다. 앱은 workspace_id가 없으면 계정 합산 경계를 추정하지 않고 거절한다.
+- [TTS convert](https://elevenlabs.io/docs/api-reference/text-to-speech/convert): POST /v1/text-to-speech/{voice_id}, output_format·text/model_id/language_code/voice_settings를 사용한다.
+- [SFX convert](https://elevenlabs.io/docs/api-reference/text-to-sound-effects/convert): POST /v1/sound-generation, duration_seconds 0.5..30·loop·prompt_influence와 character-cost 응답 헤더를 확인했다. 헤더 확인량과 앱의 예약량을 분리하고 실제 과금 상한으로 보장하지 않는다.
+- [Voices search](https://elevenlabs.io/docs/api-reference/voices/search), [Voice get](https://elevenlabs.io/docs/api-reference/voices/get), [Voice settings](https://elevenlabs.io/docs/api-reference/voices/settings/get): 저장 Voice의 페이지·상세·설정 읽기를 사용한다. Design 미리보기 저장 경로와 혼동하지 않는다. preview_url 반환과 실제 재생은 별개다.
+- [CredWriteW](https://learn.microsoft.com/en-us/windows/win32/api/wincred/nf-wincred-credwritew), [WinHttpSendRequest](https://learn.microsoft.com/en-us/windows/win32/api/winhttp/nf-winhttp-winhttpsendrequest): Windows credential/HTTPS adapter 근거다. 실제 사용자 Key나 원격 생성은 수행하지 않았다.
+
+이 문서의 API 서술은 공식 문서 기준이다. 실계정 요금제·성공/거절·과금·음질 증거는 없으며 mock 성공으로 대체하지 않는다. 구현과 제한은 [T02 계약](docs/T02_GENERATION.md)을 따른다.
