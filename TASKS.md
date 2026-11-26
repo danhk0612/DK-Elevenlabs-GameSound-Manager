@@ -1,5 +1,9 @@
 # 개발 Task
 
+## v0.10.0 배포
+
+현재 기능으로 Windows x64 ZIP을 배포한다. README는 사람용 첫 프로젝트와 AI용 CLI·MCP 연결을 안내한다. 이후에는 실제 외부 AI 제품과 Windows 11 PC 검증을 이어간다. T05 승인·적용·복구는 별도 작업이다.
+
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
 PR #1에 Windows 라이브러리 생성·가져오기, Fluent 탐색과 Windows 패키지 시작 안내·도구 목록을 추가했다. [Windows/Linux 검증 45843456108](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108)에서 새 프로젝트 → 음원 등록 → 같은 프로젝트 CLI 해시 조회·GUI 재생 종료를 확인했다. Windows 11 사용자 PC의 청감과 독립 AI 제품 클라이언트 연결 검증이 남았다. T05 승인·복구 계약과 T06 배포 라이선스·최종 배포는 열려 있다.

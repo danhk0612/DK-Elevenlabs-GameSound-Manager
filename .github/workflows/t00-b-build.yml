@@ -1,8 +1,8 @@
 name: GameSound build portable library
 on:
   push:
-    branches: [task/t00-a-technical-spike]
-    paths: ['.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
+    branches: [main, task/t00-a-technical-spike]
+    paths: ['README.md', '.github/release/**', '.github/tests/windows_library.py', 'app/**', 'docs/T01_LOCAL_LIBRARY.md', 'docs/T02_GENERATION.md', 'docs/T03_AUDIO.md', 'docs/T04_ASYNC_AUDIO.md', 'docs/T04_REVIEW.md', 'docs/T04_AUTOMATION.md', 'docs/T04_BATCH.md', 'docs/T04_LINUX_HEADLESS.md', 'docs/T02_LINUX_PROVIDER.md', '.github/workflows/t00-b-build.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -68,7 +68,9 @@ jobs:
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
           $schema = Get-Content artifact/tools.json -Raw | ConvertFrom-Json
           if ($schema.tools.Count -lt 1) { throw "Empty CLI schema" }
-          Copy-Item README.md artifact
+          Copy-Item ../README.md artifact
+          python ../.github/release/notices.py
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
           Copy-Item ../docs/T01_LOCAL_LIBRARY.md artifact/LOCAL_LIBRARY.md
           Copy-Item ../docs/T02_GENERATION.md artifact/GENERATION.md
           Copy-Item ../docs/T03_AUDIO.md artifact/AUDIO.md
@@ -124,3 +126,29 @@ jobs:
           python automation/ci_batch_smoke.py --bin-dir target/debug --local-linux
           python automation/ci_linux_smoke.py --bin-dir target/debug --ffmpeg /usr/bin/ffmpeg --ffprobe /usr/bin/ffprobe
           python automation/ci_linux_session_smoke.py --bin-dir target/debug
+  release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, '[release v0.10.0]')
+    needs: [build, linux-headless]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: gamesound-local-library-${{ github.sha }}
+          path: package
+      - name: Verify and publish Windows portable release
+        working-directory: package
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          test "$(tr -d '\r\n' < source-sha.txt)" = "$GITHUB_SHA"
+          sed 's/\r$//' SHA256SUMS.txt | sha256sum --strict -c -
+          for file in dk-sound-{gui,cli,mcp,engine}.exe README.md tools.json THIRD-PARTY-NOTICES.txt; do test -s "$file"; done
+          archive=DK-GameSound-Manager-v0.10.0-windows-x64.zip
+          zip -qr "../$archive" .
+          cd ..
+          sha256sum "$archive" > "$archive.sha256"
+          gh release create v0.10.0 "$archive" "$archive.sha256" --target "$GITHUB_SHA" --title "DK GameSound Manager v0.10.0 · Windows x64" --notes "Windows 11용 포터블 ZIP입니다. 압축을 모두 풀고 사람은 dk-sound-gui.exe, 외부 AI는 dk-sound-cli.exe 또는 dk-sound-mcp.exe로 시작하세요. README에 프로젝트 생성, 로컬 음원 등록, 후보 비교, MCP 설정과 AI 지시문이 있습니다. 실제 게임 적용은 수동입니다. Windows Server 2022 WebView2와 Linux headless 회귀를 검증했습니다."

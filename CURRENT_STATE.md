@@ -1,5 +1,9 @@
 # 현재 상태
 
+## v0.10.0 · Windows x64 배포 기준
+
+2026-11-27 사용자가 현재 구현 버전 배포를 승인했다. 릴리스 대상은 GUI·엔진·CLI·MCP와 사용 설명서, 도구 스키마, 자동화 예제를 포함한 ZIP이다. FFmpeg와 사용자 음원·자격증명은 별도다. main 릴리스 CI에서 Windows·Linux 검증과 체크섬 대조 후 [릴리스](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0)에 게시한다. Windows 11 청감, AI 제품별 검증, T05는 남아 있다.
+
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
 Windows 11 남색 Fluent 화면에서 프로젝트 생성과 원본 가져오기가 기존 공통 엔진을 호출한다. Windows 패키지에 START_HERE.md와 빌드된 CLI의 tools.json을 포함하도록 구성했다. Linux에서 TypeScript/Vite 빌드와 기존 Python 회귀 27개 통과. Chromium의 모의 IPC로 생성·등록 요청과 세 화면 전환, 390·660·1040px 레이아웃을 확인했다. 이전 소스 82d8b6f의 Windows/Linux run 44846395069는 성공으로 확인했다.
