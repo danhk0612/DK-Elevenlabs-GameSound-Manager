@@ -2,7 +2,7 @@
 
 ## v0.10.0 배포
 
-현재 기능으로 Windows x64 ZIP을 배포한다. README는 사람용 첫 프로젝트와 AI용 CLI·MCP 연결을 안내한다. 이후에는 실제 외부 AI 제품과 Windows 11 PC 검증을 이어간다. T05 승인·적용·복구는 별도 작업이다.
+현재 기능의 Windows x64 v0.10.0 공개 배포와 다운로드 검증을 완료했다. Linux 편집 작업의 일시적 output_ready 처리도 후속 점검한다. README는 사람용 첫 프로젝트와 AI용 CLI·MCP 연결을 안내한다. 이후에는 실제 외부 AI 제품과 Windows 11 PC 검증을 이어간다. T05 승인·적용·복구는 별도 작업이다.
 
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 

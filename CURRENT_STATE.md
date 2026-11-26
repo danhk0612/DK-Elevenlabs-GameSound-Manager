@@ -2,7 +2,9 @@
 
 ## v0.10.0 · Windows x64 배포 기준
 
-2026-11-27 사용자가 현재 구현 버전 배포를 승인했다. 릴리스 대상은 GUI·엔진·CLI·MCP와 사용 설명서, 도구 스키마, 자동화 예제를 포함한 ZIP이다. FFmpeg와 사용자 음원·자격증명은 별도다. main 릴리스 CI에서 Windows·Linux 검증과 체크섬 대조 후 [릴리스](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0)에 게시한다. Windows 11 청감, AI 제품별 검증, T05는 남아 있다.
+[v0.10.0 Windows x64 ZIP 공개 배포 완료](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0). 2026-11-27 KST, main 병합 커밋·태그 대상 `571a5fca87f923eaff329c13c1eb546346f402f2`. [Windows·Linux·Release 세 job 성공](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45846413841). 게시된 ZIP을 다시 내려받아 SHA-256 `d6111eedce30458b6eb6eabab43d7af48759ced0d4bd6e3a8761fd069dbc20fd`와 매니페스트 34개 파일, GUI/CLI/MCP/엔진 EXE, 도구 46개, 저장소와 동일한 README를 확인했다.
+
+Windows 11 사용자 청감, 외부 AI 제품별 검증, T05 승인·적용·복구는 남아 있다. 배포 전 [브랜치 CI](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45846379539)에서 Linux 편집 recipe가 `audio_requires_attention_output_ready`로 1회 중단됐다. 같은 코드의 릴리스 CI는 통과했다. 간헐적 중단의 원인은 미확인이다.
 
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 

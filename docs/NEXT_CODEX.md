@@ -1,5 +1,10 @@
 # 다음 Codex — 자동화 우선 구현 계속
 
+## 재개 기준 · 2026-11-27
+
+PR #1 병합 및 Windows x64 v0.10.0 공개 배포를 완료했다. 다음 작업은 최신 main에서 시작한다. 배포 SHA, 검증, 남은 Linux 편집 상태 점검은 [현재 상태](../CURRENT_STATE.md)를 따른다. 후속 후보는 실제 AI 클라이언트 연결과 Windows 11 사용자 환경 검증이다. T05 게임 적용·복구 계약은 미확정이다. 아래 작업 브랜치와 시험 ZIP 지시는 이전 단계의 기록이다.
+
+
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
 아래 이전 우선순위에 더해 AI·사람이 함께 사용하는 Windows 11 남색 Fluent 제품으로 배포하는 것이 최신 목표다. [Windows/Linux 검증 45843456108](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108)에서 GUI 원본 가져오기·재생과 CLI 해시 일치가 통과했다. 다음은 실제 AI 클라이언트 연결과 Windows 11 사용자 환경 검증, T05 승인·복구 정책과 T06 배포 결정이다.
