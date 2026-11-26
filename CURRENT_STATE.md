@@ -1,5 +1,9 @@
 # 현재 상태
 
+## MIT 라이선스 · 2026-11-27
+
+자체 코드·문서에 MIT를 적용했다. v0.10.0은 기존 바이너리를 담은 MIT 고지 포함 ZIP을 별도 자산으로 제공한다.
+
 ## v0.10.0 · Windows x64 배포 기준
 
 [v0.10.0 Windows x64 ZIP 공개 배포 완료](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0). 2026-11-27 KST, main 병합 커밋·태그 대상 `571a5fca87f923eaff329c13c1eb546346f402f2`. [Windows·Linux·Release 세 job 성공](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45846413841). 게시된 ZIP을 다시 내려받아 SHA-256 `d6111eedce30458b6eb6eabab43d7af48759ced0d4bd6e3a8761fd069dbc20fd`와 매니페스트 34개 파일, GUI/CLI/MCP/엔진 EXE, 도구 46개, 저장소와 동일한 README를 확인했다.

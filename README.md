@@ -2,7 +2,7 @@
 
 게임 개발 중 필요한 BGM·효과음·캐릭터 음성을 프로젝트별로 관리하는 Windows 프로그램입니다. AI가 필요한 소리를 목록으로 만들고 원본에서 후보를 제작하면, 사람은 같은 라이브러리에서 버전을 듣고 비교할 수 있습니다.
 
-**[Windows x64 포터블 ZIP 다운로드](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/download/v0.10.0/DK-GameSound-Manager-v0.10.0-windows-x64.zip)** · [릴리스 및 SHA-256](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0)
+**[Windows x64 포터블 ZIP 다운로드](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/download/v0.10.0/DK-GameSound-Manager-v0.10.0-windows-x64-MIT.zip)** · [릴리스 및 SHA-256](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/releases/tag/v0.10.0)
 
 ## 사람용 · 첫 음원 등록하기
 
@@ -66,3 +66,7 @@ FFmpeg·ffprobe가 필요한 편집과 분석은 별도로 준비한 실행 파�
 Windows Server 2022 x64의 실제 WebView2에서 프로젝트 생성, WAV 가져오기·재생 종료, CLI에서 동일한 원본 해시 조회를 검증했습니다. Windows 11 사용자 PC의 청감과 개별 AI 제품의 연결 호환성은 추가 검증 대상입니다.
 
 [상세 사용·빌드 문서](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/blob/v0.10.0/app/README.md) · [구현·검증 상태](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/blob/main/CURRENT_STATE.md)
+
+## 라이선스
+
+DK GameSound Manager의 자체 코드와 문서에는 MIT 라이선스가 적용됩니다. 전문은 저장소와 배포 ZIP의 `LICENSE`에 있습니다. 외부 구성 요소의 고지는 ZIP의 `THIRD-PARTY-NOTICES.txt`에서, 게임 음원과 ElevenLabs 생성물의 사용 조건은 각 출처에서 확인하세요.
