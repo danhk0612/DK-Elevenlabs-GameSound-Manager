@@ -2,9 +2,9 @@
 
 2026-11-21 [음악·짧은 게임 음성/최소 제작 계획](../docs/T02_MUSIC_SHORT_VOICES.md): job.submit의 generation_kind=music/music_v1/bgm 후보, 기존 TTS·캐릭터/대사 재사용, automation/sound_starter.py의 과금 없는 선택/예약 합계/native offline validate를 추가했다. 실제 MP3 음성 6개는 Git 제외 user-data/starter-pack/listen.html에서 확인할 수 있다. 실제 음악 첫 요청은 실패했으며 재시도하지 않았다. 게임 적용/승인을 뜻하지 않는다.
 
-AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 목록과 재생에 필요한 최소 화면을 제공한다. T02 ElevenLabs 계정·한도·TTS/SFX 후보 생성 경로와 Key 없는 mock을 제공한다. T03 로컬 편집·변환·파형/기술 수치 검사와 T04 비동기 큐/조회·취소와 검토 제출/후보 이력을 제공한다. 주관 품질 평가·사람 승인/게임 적용은 아직 제공하지 않는다.
+AI가 CLI·stdio MCP로 프로젝트, 필요한 사운드, 파일·버전, 캐릭터·대사를 관리하는 Windows용 로컬 도구다. GUI는 프로젝트 생성·원본 가져오기·라이브러리 재생·후보 검토·연결 설정을 제공한다. [Windows 시작 안내](START_HERE.md)를 따른다. T02 ElevenLabs 계정·한도·TTS/SFX 후보 생성 경로와 Key 없는 mock을 제공한다. T03 로컬 편집·변환·파형/기술 수치 검사와 T04 비동기 큐/조회·취소와 검토 제출/후보 이력을 제공한다. 주관 품질 평가·사람 승인/게임 적용은 아직 제공하지 않는다.
 
-[계정·생성 계약과 CLI 예시](../docs/T02_GENERATION.md)를 먼저 확인한다. 실제 API Key/허용 비용을 사용한 검증은 수행하지 않았다.
+[계정·생성 계약과 CLI 예시](../docs/T02_GENERATION.md)를 먼저 확인한다. 실제 SFX 및 짧은 음성 생성 결과는 CURRENT_STATE.md에 기록했다.
 
 [전체 명령·입력·저장·중단 복구 계약](../docs/T01_LOCAL_LIBRARY.md)을 따른다. 다운로드한 개발 ZIP에는 같은 내용을 `LOCAL_LIBRARY.md`로 동봉한다. T02 계약은 `GENERATION.md`, T03 계약은 `AUDIO.md`, T04 비동기 계약은 `ASYNC_AUDIO.md`로 동봉한다. 검토/이력 계약은 `REVIEW.md`다.
 

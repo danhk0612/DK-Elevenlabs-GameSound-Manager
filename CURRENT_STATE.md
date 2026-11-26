@@ -1,5 +1,9 @@
 # 현재 상태
 
+## 2026-11-26 · AI 자동화와 Windows 라이브러리
+
+Windows 11 남색 Fluent 화면에서 프로젝트 생성과 원본 가져오기가 기존 공통 엔진을 호출한다. Windows 패키지에 START_HERE.md와 빌드된 CLI의 tools.json을 포함하도록 구성했다. Linux에서 TypeScript/Vite 빌드와 기존 Python 회귀 27개 통과. Chromium의 모의 IPC로 생성·등록 요청과 세 화면 전환, 390·660·1040px 레이아웃을 확인했다. 이전 소스 82d8b6f의 Windows/Linux run 44846395069는 성공으로 확인했다. 새 Windows CI·실기와 정식 배포는 별도 확인한다.
+
 ## 최신 — 월 10,000크레딧/음악·짧은 음성 (2026-11-21)
 
 확장 코드 source `82d8b6f1212ae99e27b0bde38c58f63864527236`, [Windows/Linux CI 44846395069](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/44846395069)는 진행 중이다. 문서 후속 커밋은 실행 source와 구분한다. Linux musl/Rust 1.100.0/Zig·FFmpeg 7.0.2/Python 3.14 환경에서 cargo test --lib -- --include-ignored 45개 통과, HTTP status 보존 보완 후 cargo test --lib 38개 통과/외부 도구 7개 ignore, Python unittest discover 27개 통과, native bins·Windows x64 no-default-features 타입 검사·ci_transport_smoke.py --local-linux/CLI·MCP parity·fmt/diff를 통과했다. GUI 변경/사이트 build는 없다.

@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { invoke } from '@tauri-apps/api/core';
 import './style.css';
@@ -9,8 +9,12 @@ type Reply = { ok: boolean; data?: unknown; error?: { code: string } };
 type Review = {project_id: string; review_id: string; state: string; snapshot: {candidate: {asset_id: string; version_id: string; sha256: string}; summary: string}};
 const empty: Page = { items: [], next_after: null };
 
+const screens = ['라이브러리', '검토 기록', '연결 설정'] as const;
+
 function App() {
-  const [message, setMessage] = useState('로컬 라이브러리. 등록·수정은 CLI 또는 MCP에서 수행합니다.');
+  const [screen, setScreen] = useState<typeof screens[number]>('라이브러리');
+  useEffect(() => { void loadProjects(); }, []);
+  const [message, setMessage] = useState('프로젝트를 선택하세요.');
   const [busy, setBusy] = useState(false);
   const lock = useRef(false);
   const [projects, setProjects] = useState<Page>(empty);
@@ -50,7 +54,7 @@ function App() {
     return reply.data;
   }
   function resetAssets() { setHistory(empty); setWaveform([]); setMeasurement(''); setAssets(empty); setAsset(''); setVersions(empty); setVersion(''); setAudio(''); }
-  function selectProject(id: string) { setProject(id); setReviews(empty); setReview(null); setDetails(''); setComparison(null); setWaveform([]); setMeasurement(''); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
+  function selectProject(id: string) { setProject(id); setOperation(''); setTask(null); setReviews(empty); setReview(null); setDetails(''); setComparison(null); setWaveform([]); setMeasurement(''); resetAssets(); setMessage('파일 목록을 조회하세요.'); }
   async function loadProjects(after = '') {
     await run(async () => {
       const page = await query('project.list', { after }) as Page;
@@ -83,14 +87,40 @@ function App() {
       setHistory(page); setMessage('선택 버전 이력 · 종류/ID 순서');
     });
   }
-  return <main>
-    <header><h1>DK GameSound Manager</h1><button disabled={busy} onClick={() => run(async () => {
+  function submitLocal(event: React.FormEvent<HTMLFormElement>, op: 'project.create' | 'asset.import') {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const fields = Object.fromEntries(new FormData(form));
+    void run(async () => {
+      const command = op === 'asset.import'
+        ? { ...fields, project_id: project, version_id: 'original' }
+        : fields;
+      const reply = await invoke<Reply>('library_write', { command: { ...command, op, protocol_version: 1 } });
+      if (!reply.ok) throw new Error(reply.error?.code ?? '저장 실패');
+      form.reset();
+      if (op === 'project.create') {
+        selectProject(String(fields.project_id));
+        setProjects(await query('project.list') as Page);
+        setMessage('프로젝트를 만들었습니다. 원본 파일을 가져올 수 있습니다.');
+      } else {
+        resetAssets(); setKind(''); setSearch('');
+        setAssets(await query('asset.list', { project_id: project }) as Page);
+        setMessage('원본 파일을 등록했습니다.');
+      }
+    });
+  }
+  return <div className="shell"><aside><div className="brand"><span aria-hidden="true">♫</span> DK GameSound</div>
+    <nav aria-label="작업 화면">{screens.map((name, index) => <button key={name} disabled={busy}
+      aria-current={screen === name ? 'page' : undefined} onClick={() => setScreen(name)}>
+      <span aria-hidden="true">{['▤', '☷', '⚙'][index]}</span>{name}</button>)}</nav></aside>
+    <main>
+    <header><h1>{screen}</h1><button disabled={busy} onClick={() => run(async () => {
       const reply = await invoke<Reply>('sound_status');
       setDetails(JSON.stringify(reply, null, 2));
       setMessage(reply.ok ? '엔진에 연결했습니다.' : reply.error?.code ?? '연결 실패');
     })}>엔진 상태</button></header>
-    <p className="note">오프라인 목록 · 원본/후보 확인 · 재생</p>
-    <section aria-label="ElevenLabs 연결">
+
+    <section hidden={screen !== '연결 설정'} aria-label="ElevenLabs 연결">
       <h2>ElevenLabs 연결</h2>
       <label>계정 ID <input disabled={busy} value={account} onChange={e => setAccount(e.target.value)} autoComplete="off" /></label>
       <label>API Key <input disabled={busy} type="password" value={key} onChange={e => setKey(e.target.value)} autoComplete="off" /></label>
@@ -112,13 +142,31 @@ function App() {
         setMessage('저장된 Key와 생성 허용 설정을 삭제했습니다.');
       })}>연결 해제</button>
     </section>
-    <section aria-label="프로젝트">
+    <section hidden={screen === '연결 설정'} aria-label="프로젝트">
+      <h2>프로젝트</h2>
       <div className="line"><button disabled={busy} onClick={() => loadProjects()}>프로젝트 목록</button>
         <button disabled={busy || !projects.next_after} onClick={() => loadProjects(projects.next_after!)}>다음 10개</button></div>
       <ul>{projects.items.map(row => <li key={String(row.project_id)}><button disabled={busy} onClick={() => selectProject(String(row.project_id))}>{row.name} <small>({row.project_id})</small></button></li>)}</ul>
-      <label>프로젝트 ID <input disabled={busy} value={project} onChange={e => selectProject(e.target.value)} placeholder="CLI에서 만든 ID" /></label>
+      <label>프로젝트 ID <input disabled={busy} value={project} onChange={e => selectProject(e.target.value)} placeholder="프로젝트 선택 또는 ID 입력" /></label>
+      <details><summary>새 프로젝트</summary>
+        <form onSubmit={event => submitLocal(event, 'project.create')}><fieldset disabled={busy}>
+          <label>프로젝트 이름<input name="name" required /></label>
+          <label>프로젝트 ID<input name="project_id" required pattern="[a-z0-9_\-]{1,64}" placeholder="game-a" /></label>
+          <label>작업공간 경로<input name="workspace" required placeholder="기존 로컬 폴더 전체 경로" /></label>
+          <button className="primary">프로젝트 만들기</button>
+        </fieldset></form></details>
     </section>
-    <section aria-label="사운드">
+    <section hidden={screen !== '라이브러리'} aria-label="사운드">
+      <h2>사운드 파일</h2>
+      {project && <details key={project}><summary>원본 가져오기</summary>
+        <form onSubmit={event => submitLocal(event, 'asset.import')}><fieldset disabled={busy}>
+          <label>파일 경로<input name="source_path" required placeholder="로컬 음원 전체 경로" /></label>
+          <label>표시 이름<input name="name" required /></label>
+          <label>자산 ID<input name="asset_id" required pattern="[a-z0-9_\-]{1,64}" placeholder="battle-hit" /></label>
+          <label>종류<select name="kind"><option value="sfx">SFX</option><option value="bgm">BGM</option><option value="voice">Voice</option></select></label>
+          <label>출처<input name="source_note" required /></label>
+          <button className="primary">원본 등록</button>
+        </fieldset></form></details>}
       <div className="line"><label>검색 <input disabled={busy} value={search} onChange={e => { setSearch(e.target.value); resetAssets(); }} /></label>
         <label>종류 <select disabled={busy} value={kind} onChange={e => { setKind(e.target.value); resetAssets(); }}>
           <option value="">전체</option><option value="bgm">BGM</option><option value="sfx">SFX</option><option value="voice">Voices</option>
@@ -166,13 +214,13 @@ function App() {
           setMeasurement(`${metrics.duration_ms.toFixed(1)} ms · ${record.result.metadata?.sample_rate} Hz · ${record.result.metadata?.channels} ch · peak ${metrics.sample_peak_dbfs?.toFixed(2) ?? '−∞'} dBFS · RMS ${metrics.rms_dbfs?.toFixed(2) ?? '−∞'} dBFS`);
           setDetails(JSON.stringify(record, null, 2)); setMessage('검사 수치를 조회했습니다. 음질 평가와 적용 승인은 별도입니다.');
         })}>검사 결과 조회</button></div>
-      {waveform.length > 0 && <figure><svg role="img" aria-label="채널을 합친 최소·최대 파형" viewBox={`0 0 ${waveform.length} 100`} preserveAspectRatio="none" style={{width:'100%',height:120,background:'#fff'}}>
-        <line x1="0" x2={waveform.length} y1="50" y2="50" stroke="#c3c8c0" strokeWidth="0.5" />
-        {waveform.map(([min,max],index) => <line key={index} x1={index+0.5} x2={index+0.5} y1={50-Math.max(-1,Math.min(1,max))*48} y2={50-Math.max(-1,Math.min(1,min))*48} stroke="#303833" strokeWidth="0.8" />)}
+      {waveform.length > 0 && <figure><svg role="img" aria-label="채널을 합친 최소·최대 파형" viewBox={`0 0 ${waveform.length} 100`} preserveAspectRatio="none" style={{width:'100%',height:120,background:'#101d31'}}>
+        <line x1="0" x2={waveform.length} y1="50" y2="50" stroke="#506785" strokeWidth="0.5" />
+        {waveform.map(([min,max],index) => <line key={index} x1={index+0.5} x2={index+0.5} y1={50-Math.max(-1,Math.min(1,max))*48} y2={50-Math.max(-1,Math.min(1,min))*48} stroke="#82caff" strokeWidth="0.8" />)}
       </svg><figcaption>{measurement} · 표시 범위 ±1</figcaption></figure>}
 
     </section>
-    <section aria-label="검토 대기">
+    <section hidden={screen !== '검토 기록'} aria-label="검토 대기">
       <h2>검토 기록</h2>
       <div className="line"><button disabled={busy || !project} onClick={() => loadReviews()}>검토 목록</button>
         <button disabled={busy || !reviews.next_after} onClick={() => loadReviews(reviews.next_after!)}>검토 다음 10개</button></div>
@@ -192,7 +240,7 @@ function App() {
           setComparison(null);
           const candidate = review.snapshot.candidate;
           const source = await invoke<string>('audio_source', {projectId: project, assetId: candidate.asset_id, versionId: candidate.version_id, expectedSha256: candidate.sha256});
-          setComparison({source, label: `${project} / ${candidate.asset_id} / ${candidate.version_id} · 검토 ${review.review_id}`});
+          setScreen('라이브러리'); setComparison({source, label: `${project} / ${candidate.asset_id} / ${candidate.version_id} · 검토 ${review.review_id}`});
           setMessage('검토 후보 해시를 확인했습니다. 비교 버전에서 재생하세요.');
         })}>검토 후보 재생 준비</button>
       </div>}
@@ -200,6 +248,6 @@ function App() {
     <p role="status" aria-live="polite">{message}</p>
     {details && <details><summary>상세 응답</summary><pre>{details}</pre></details>}
     <p className="note">미리듣기는 파일당 16 MiB까지 지원합니다. 생성·편집·검사는 CLI/MCP에서 수행합니다. 게임 적용은 후속 단계입니다.</p>
-  </main>;
+  </main></div>;
 }
 createRoot(document.getElementById('root')!).render(<App />);

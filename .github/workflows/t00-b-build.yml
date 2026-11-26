@@ -58,6 +58,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force artifact | Out-Null
           Copy-Item target/release/dk-sound-*.exe artifact
+          Copy-Item START_HERE.md artifact
+          & ./target/release/dk-sound-cli.exe schema | Set-Content artifact/tools.json -Encoding utf8NoBOM
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $schema = Get-Content artifact/tools.json -Raw | ConvertFrom-Json
+          if ($schema.tools.Count -lt 1) { throw "Empty CLI schema" }
           Copy-Item README.md artifact
           Copy-Item ../docs/T01_LOCAL_LIBRARY.md artifact/LOCAL_LIBRARY.md
           Copy-Item ../docs/T02_GENERATION.md artifact/GENERATION.md

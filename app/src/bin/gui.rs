@@ -18,6 +18,14 @@ async fn local_query(command: Value) -> Value {
 }
 
 #[tauri::command]
+async fn library_write(command: Value) -> Value {
+    match command["op"].as_str() {
+        Some("project.create" | "asset.import") => dk_gamesound::request(command).await,
+        _ => dk_gamesound::protocol::error("unsupported_operation"),
+    }
+}
+
+#[tauri::command]
 async fn cancel_audio(project_id: String, operation_id: String) -> Value {
     dk_gamesound::request(json!({"protocol_version":1,"op":"audio.cancel","project_id":project_id,"operation_id":operation_id})).await
 }
@@ -116,6 +124,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             sound_status,
             local_query,
+            library_write,
             audio_source,
             cancel_audio,
             save_connection,

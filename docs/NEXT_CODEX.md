@@ -1,5 +1,9 @@
 # 다음 Codex — 자동화 우선 구현 계속
 
+## 2026-11-26 · AI 자동화와 Windows 라이브러리
+
+아래 이전 우선순위에 더해 AI·사람이 함께 사용하는 Windows 11 남색 Fluent 제품으로 배포하는 것이 최신 목표다. GUI 프로젝트 생성·원본 가져오기와 CLI의 같은 프로젝트 조회를 Windows에서 확인한 뒤 T05·T06의 미결정을 검토한다.
+
 ## 최우선 후속 — 음악·짧은 음성/월 10,000크레딧
 
 2026-11-21 사용자가 음악과 짧은 기합/피격 음성을 요청했고 월 제공량 10,000이므로 필수분부터 제작하라고 지시했다. [계약/실제 결과](T02_MUSIC_SHORT_VOICES.md)를 먼저 읽는다. Music v1 공통 job.submit/bgm 후보와 sound_starter.py 오프라인 계획/선택/명시 Voice 연결/예약 합계를 추가했다. 전체 초기 계획 예약 1,800/상한 2,000, 사용자 설정/ledger 유지다. 음성 6개 실제 성공/header 비용 합계 15/FFmpeg decode·pending review, NAS Git 제외 user-data/starter-pack/listen.html에 보관했다.
