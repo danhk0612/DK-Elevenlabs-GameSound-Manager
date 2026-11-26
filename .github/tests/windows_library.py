@@ -65,8 +65,10 @@ def main():
                 page.get_by_role("button", name="선택 버전 불러오기").click()
                 audio = page.locator("audio")
                 expect(audio).to_be_visible()
-                page.wait_for_function("document.querySelector('audio')?.readyState >= 2")
-                assert abs(audio.evaluate("a => a.duration") - 1) < 0.01
+                expect(audio).to_have_js_property("duration", 1)
+                audio.focus()
+                audio.press("Space")
+                expect(audio).to_have_js_property("ended", True, timeout=10000)
                 command = {"protocol_version": 1, "op": "asset.file", "project_id": "gui-ci",
                            "asset_id": "hit", "version_id": "original"}
                 result = subprocess.run([cli, "request"], input=json.dumps(command).encode(), env=env,
