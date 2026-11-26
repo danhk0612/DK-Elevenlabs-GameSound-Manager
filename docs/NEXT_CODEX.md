@@ -2,7 +2,7 @@
 
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
-아래 이전 우선순위에 더해 AI·사람이 함께 사용하는 Windows 11 남색 Fluent 제품으로 배포하는 것이 최신 목표다. GUI 프로젝트 생성·원본 가져오기와 CLI의 같은 프로젝트 조회를 Windows에서 확인한 뒤 T05·T06의 미결정을 검토한다.
+아래 이전 우선순위에 더해 AI·사람이 함께 사용하는 Windows 11 남색 Fluent 제품으로 배포하는 것이 최신 목표다. [Windows/Linux 검증 45843456108](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108)에서 GUI 원본 가져오기·재생과 CLI 해시 일치가 통과했다. 다음은 실제 AI 클라이언트 연결과 Windows 11 사용자 환경 검증, T05 승인·복구 정책과 T06 배포 결정이다.
 
 ## 최우선 후속 — 음악·짧은 음성/월 10,000크레딧
 

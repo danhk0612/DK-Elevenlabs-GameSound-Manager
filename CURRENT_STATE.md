@@ -2,7 +2,9 @@
 
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
-Windows 11 남색 Fluent 화면에서 프로젝트 생성과 원본 가져오기가 기존 공통 엔진을 호출한다. Windows 패키지에 START_HERE.md와 빌드된 CLI의 tools.json을 포함하도록 구성했다. Linux에서 TypeScript/Vite 빌드와 기존 Python 회귀 27개 통과. Chromium의 모의 IPC로 생성·등록 요청과 세 화면 전환, 390·660·1040px 레이아웃을 확인했다. 이전 소스 82d8b6f의 Windows/Linux run 44846395069는 성공으로 확인했다. 새 Windows CI·실기와 정식 배포는 별도 확인한다.
+Windows 11 남색 Fluent 화면에서 프로젝트 생성과 원본 가져오기가 기존 공통 엔진을 호출한다. Windows 패키지에 START_HERE.md와 빌드된 CLI의 tools.json을 포함하도록 구성했다. Linux에서 TypeScript/Vite 빌드와 기존 Python 회귀 27개 통과. Chromium의 모의 IPC로 생성·등록 요청과 세 화면 전환, 390·660·1040px 레이아웃을 확인했다. 이전 소스 82d8b6f의 Windows/Linux run 44846395069는 성공으로 확인했다. 
+
+제품·검증 SHA `cbb6bef40938164404091e8ae2ef23380d47eb08`의 [Windows/Linux 검증 45843456108](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108) 두 job 성공. Windows Server 2022 x64 WebView2 실제 창에서 프로젝트 생성 → WAV 등록 → 재생 종료, 독립 CLI에서 동일 SHA-256, 세 화면 전환을 확인했다. Linux headless·배치 회귀도 성공했다. [Windows 시험 ZIP](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108/artifacts/15130970121)은 2026-12-10까지 보관된다. 사용자 Windows 11 청감·정식 배포는 미검증이다.
 
 ## 최신 — 월 10,000크레딧/음악·짧은 음성 (2026-11-21)
 

@@ -2,7 +2,7 @@
 
 ## 2026-11-26 · AI 자동화와 Windows 라이브러리
 
-PR #1에 Windows 라이브러리 생성·가져오기, Fluent 탐색과 Windows 패키지 시작 안내·도구 목록을 추가했다. 다음 검증은 Windows 실기에서 새 프로젝트 → 음원 등록 → 같은 프로젝트 CLI 조회 → GUI 재생이다. T05 승인·복구 계약과 T06 배포 라이선스·최종 배포는 열려 있다.
+PR #1에 Windows 라이브러리 생성·가져오기, Fluent 탐색과 Windows 패키지 시작 안내·도구 목록을 추가했다. [Windows/Linux 검증 45843456108](https://github.com/danhk0612/DK-Elevenlabs-GameSound-Manager/actions/runs/45843456108)에서 새 프로젝트 → 음원 등록 → 같은 프로젝트 CLI 해시 조회·GUI 재생 종료를 확인했다. Windows 11 사용자 PC의 청감과 독립 AI 제품 클라이언트 연결 검증이 남았다. T05 승인·복구 계약과 T06 배포 라이선스·최종 배포는 열려 있다.
 
 ## 최신 T02 확장 — 음악·짧은 음성/최소 제작 예산
 
